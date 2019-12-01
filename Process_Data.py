@@ -1,9 +1,10 @@
 import pandas as pd
 import os
+from tqdm import tqdm
 
 directory = os.fsdecode('Odds-Data')
 
-for file in os.listdir(directory):
+for file in tqdm(os.listdir(directory)):
     filename = os.fsdecode(file)
     year = filename[9:-5]
     if filename.endswith('.xlsx'):
