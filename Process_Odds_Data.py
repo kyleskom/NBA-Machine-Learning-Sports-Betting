@@ -22,7 +22,10 @@ for file in tqdm(os.listdir(directory)):
         margin = ''
         for row in df.itertuples():
             if count % 2 == 0:
-                date = str(year + '-' + str(row[1]))
+                if len(str(row[1])) == 3:
+                    date = str(year + '-' + '0' + str(row[1]))
+                else:
+                    date = str(year + '-' + str(row[1]))
                 away = str(row[4])
                 if row[10] == 'pk':
                     ou = 0
