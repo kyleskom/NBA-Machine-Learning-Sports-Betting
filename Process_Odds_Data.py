@@ -2,6 +2,41 @@ import pandas as pd
 import os
 from tqdm import tqdm
 
+
+team_codes = {
+    'Atlanta': 'Atlanta Hawks',
+    'NewJersey': 'New Jersey Nets',
+    'Boston': 'Boston Celtics',
+    'Charlotte': 'Charlotte Bobcats',
+    'Chicago': 'Chicago Bulls',
+    'Cleveland': 'Cleveland Cavaliers',
+    'Dallas': 'Dallas Mavericks',
+    'Denver': 'Denver Nuggets',
+    'Detroit': 'Detroit Pistons',
+    'GoldenState': 'Golden State Warriors',
+    'Houston': 'Houston Rockets',
+    'Indiana': 'Indiana Pacers',
+    'LAClippers': 'Los Angeles Clippers',
+    'LALakers': 'Los Angeles Lakers',
+    'Memphis': 'Memphis Grizzlies',
+    'Miami': 'Miami Heat',
+    'Milwaukee': 'Milwaukee Bucks',
+    'Minnesota': 'Minnesota Timberwolves',
+    'NewOrleans': 'New Orleans Pelicans',
+    'NewYork': 'New York Knicks',
+    'Seattle': 'Seattle SuperSonics',
+    'Orlando': 'Orlando Magic',
+    'Philadelphia': 'Philadelphia 76ers',
+    'Phoenix': 'Phoenix Suns',
+    'Portland': 'Portland Trail Blazers',
+    'Sacramento': 'Sacramento Kings',
+    'SanAntonio': 'San Antonio Spurs',
+    'Toronto': 'Toronto Raptors',
+    'Utah': 'Utah Jazz',
+    'Washington': 'Washington Wizards'
+}
+
+
 directory = os.fsdecode('Odds-Data')
 
 for file in tqdm(os.listdir(directory)):
@@ -26,7 +61,7 @@ for file in tqdm(os.listdir(directory)):
                     date = str(year + '-' + '0' + str(row[1]))
                 else:
                     date = str(year + '-' + str(row[1]))
-                away = str(row[4])
+                away = team_codes.get(str(row[4]))
                 if row[10] == 'pk':
                     ou = 0
                 else:
@@ -35,7 +70,7 @@ for file in tqdm(os.listdir(directory)):
                 ml_away = str(row[12])
                 count += 1
             else:
-                home = str(row[4])
+                home = team_codes.get(str(row[4]))
                 if row[10] == 'pk':
                     spread = 0
                 else:

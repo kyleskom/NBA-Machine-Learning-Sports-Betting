@@ -8,3 +8,6 @@ logistic regression
 
 
 https://www.youtube.com/watch?v=BqgTU7_cBnk
+
+Hyperparameter tuning
+https://www.youtube.com/watch?v=vvC15l4CY1Q
