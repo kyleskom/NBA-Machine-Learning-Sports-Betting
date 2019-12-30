@@ -42,6 +42,7 @@ team_data_directory = os.fsdecode('../Team-Data')
 
 df = pd.DataFrame
 scores = []
+win_margin = []
 games = []
 file = pd.read_excel(directory + '/' + '2007-08.xlsx')
 
@@ -66,6 +67,10 @@ for row in tqdm(file.itertuples()):
 
     if len(data_frame.index) == 30:
         scores.append(row[9])
+        if row[10] > 0:
+            win_margin.append(1)
+        else:
+            win_margin.append(0)
 
         home_team_series = data_frame.iloc[team_codes.get(home_team)]
         away_team_series = data_frame.iloc[team_codes.get(away_team)]
@@ -77,4 +82,5 @@ x = x.T
 
 frame = x.drop(columns=['TEAM_ID', 'CFID', 'CFPARAMS', 'Unnamed: 0'])
 frame['Score'] = np.asarray(scores)
+frame['Home-Team-Win'] = np.asarray(win_margin)
 frame.to_excel('../2007-2008-Games.xlsx')
