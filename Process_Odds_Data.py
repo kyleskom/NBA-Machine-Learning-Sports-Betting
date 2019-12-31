@@ -1,7 +1,7 @@
-import pandas as pd
 import os
-from tqdm import tqdm
 
+import pandas as pd
+from tqdm import tqdm
 
 team_codes = {
     'Atlanta': 'Atlanta Hawks',
@@ -35,9 +35,9 @@ team_codes = {
     'Utah': 'Utah Jazz',
     'Washington': 'Washington Wizards',
 
-    'OklahomaCity': 'Oklahoma City Thunder'
+    'OklahomaCity': 'Oklahoma City Thunder',
+    'Brooklyn': 'Brooklyn Nets'
 }
-
 
 directory = os.fsdecode('Odds-Data')
 

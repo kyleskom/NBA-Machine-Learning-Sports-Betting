@@ -1,7 +1,6 @@
-import tensorflow as tf
-import pandas as pd
-import os
 import numpy as np
+import pandas as pd
+import tensorflow as tf
 
 data = pd.read_excel('2007-2008-Games.xlsx')
 scores = data['Score']
