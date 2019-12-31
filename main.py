@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 
-data = pd.read_excel('2007-2008-Games.xlsx')
+data = pd.read_excel('Full-Data-Set.xlsx')
 scores = data['Score']
 margin = data['Home-Team-Win']
 data.drop(['Score'], axis=1, inplace=True)
