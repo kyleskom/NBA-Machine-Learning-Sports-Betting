@@ -33,7 +33,9 @@ team_codes = {
     'SanAntonio': 'San Antonio Spurs',
     'Toronto': 'Toronto Raptors',
     'Utah': 'Utah Jazz',
-    'Washington': 'Washington Wizards'
+    'Washington': 'Washington Wizards',
+
+    'OklahomaCity': 'Oklahoma City Thunder'
 }
 
 
