@@ -3,41 +3,7 @@ import os
 import pandas as pd
 from tqdm import tqdm
 
-team_codes = {
-    'Atlanta': 'Atlanta Hawks',
-    'NewJersey': 'New Jersey Nets',
-    'Boston': 'Boston Celtics',
-    'Charlotte': 'Charlotte Bobcats',
-    'Chicago': 'Chicago Bulls',
-    'Cleveland': 'Cleveland Cavaliers',
-    'Dallas': 'Dallas Mavericks',
-    'Denver': 'Denver Nuggets',
-    'Detroit': 'Detroit Pistons',
-    'GoldenState': 'Golden State Warriors',
-    'Houston': 'Houston Rockets',
-    'Indiana': 'Indiana Pacers',
-    'LAClippers': 'Los Angeles Clippers',
-    'LALakers': 'Los Angeles Lakers',
-    'Memphis': 'Memphis Grizzlies',
-    'Miami': 'Miami Heat',
-    'Milwaukee': 'Milwaukee Bucks',
-    'Minnesota': 'Minnesota Timberwolves',
-    'NewOrleans': 'New Orleans Pelicans',
-    'NewYork': 'New York Knicks',
-    'Seattle': 'Seattle SuperSonics',
-    'Orlando': 'Orlando Magic',
-    'Philadelphia': 'Philadelphia 76ers',
-    'Phoenix': 'Phoenix Suns',
-    'Portland': 'Portland Trail Blazers',
-    'Sacramento': 'Sacramento Kings',
-    'SanAntonio': 'San Antonio Spurs',
-    'Toronto': 'Toronto Raptors',
-    'Utah': 'Utah Jazz',
-    'Washington': 'Washington Wizards',
-
-    'OklahomaCity': 'Oklahoma City Thunder',
-    'Brooklyn': 'Brooklyn Nets'
-}
+from src.Dictionaries import team_codes
 
 directory = os.fsdecode('Odds-Data')
 

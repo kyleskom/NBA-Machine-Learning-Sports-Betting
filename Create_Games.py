@@ -4,7 +4,10 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from src.Team_Codes import team_codes
+from src.Dictionaries import team_index_07
+
+season = ["2007-08", "2008-09", "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16", "2016-17",
+          "2017-18", "2018-19", "2019-20"]
 
 directory = os.fsdecode('../Odds-Data-Clean')
 team_data_directory = os.fsdecode('../Team-Data')
@@ -52,4 +55,4 @@ x = x.T
 frame = x.drop(columns=['TEAM_ID', 'CFID', 'CFPARAMS', 'Unnamed: 0'])
 frame['Score'] = np.asarray(scores)
 frame['Home-Team-Win'] = np.asarray(win_margin)
-frame.to_excel('../2007-2008-Games.xlsx')
+frame.to_excel('../Full-Data-Set.xlsx')
