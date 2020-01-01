@@ -1,27 +1,43 @@
-import numpy as np
+# from tensorflow.keras.models import load_model
+# import tensorflow as tf
+from src.tools import get_teams_playing_today, get_json_data, to_data_frame
 import pandas as pd
-import tensorflow as tf
+import numpy as np
+import copy
 
-data = pd.read_excel('Full-Data-Set.xlsx')
-scores = data['Score']
-margin = data['Home-Team-Win']
-data.drop(['Score'], axis=1, inplace=True)
-data.drop(['Home-Team-Win'], axis=1, inplace=True)
 
-data = data.drop(columns=['Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1'])
-data = data.values
-data = data.astype(float)
+url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
+      'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
+      'GameSegment=&LastNGames=0&LeagueID=00&Location=&' \
+      'MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&' \
+      'PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&' \
+      'PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&' \
+      'Season=2019-20&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
+      'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
-x_train = tf.keras.utils.normalize(data, axis=1)
-y_train = np.asarray(margin)
+data = get_json_data(url)
+df = to_data_frame(data)
 
-model = tf.keras.models.Sequential()
-model.add(tf.keras.layers.Flatten())
-model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu))
-model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu))
-model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu))
-model.add(tf.keras.layers.Dense(2, activation=tf.nn.softmax))
-
-model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=3)
+games = get_teams_playing_today()
 print('DONE')
+
+# model = load_model('Trained-Model')
+# data = pd.read_excel('Full-Data-Set.xlsx')
+# data = data.iloc[15068:]
+# copy = copy.deepcopy(data)
+# scores = data['Score']
+# margin = data['Home-Team-Win']
+# data.drop(['Score'], axis=1, inplace=True)
+# data.drop(['Home-Team-Win'], axis=1, inplace=True)
+#
+# data = data.drop(columns=['Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1'])
+# data = data.values
+# data = data.astype(float)
+#
+# x_train = tf.keras.utils.normalize(data, axis=1)
+# arr = []
+# for row in x_train:
+#       arr.append(model.predict(np.array([row])))
+#
+# for x in arr:
+#       print(np.argmax(x))
