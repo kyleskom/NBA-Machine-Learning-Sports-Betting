@@ -3,10 +3,18 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.callbacks import TensorBoard
 import time
+from kerastuner.tuners import RandomSearch
+import gc
+from kerastuner.engine.hyperparameters import HyperParameters
+
+LOG_DIR = f"{int(time.time())}"
 
 tensorboard = TensorBoard(log_dir='Logs/{}'.format(str(time.time())))
 
 data = pd.read_excel('Full-Data-Set.xlsx')
+data = data.iloc[:15068]
+test = data.iloc[15068:]
+
 scores = data['Score']
 margin = data['Home-Team-Win']
 data.drop(['Score'], axis=1, inplace=True)
@@ -19,23 +27,50 @@ data = data.astype(float)
 x_train = tf.keras.utils.normalize(data, axis=1)
 y_train = np.asarray(margin)
 
-model = tf.keras.models.Sequential()
-model.add(tf.keras.layers.Flatten())
-model.add(tf.keras.layers.Dense(512, activation=tf.nn.relu))
-model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu))
-model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu))
-model.add(tf.keras.layers.Dense(2, activation=tf.nn.softmax))
 
-model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=20, validation_split=0.1, callbacks=[tensorboard])
+scoresy = test['Score']
+marginy = test['Home-Team-Win']
+test.drop(['Score'], axis=1, inplace=True)
+test.drop(['Home-Team-Win'], axis=1, inplace=True)
+
+test = test.drop(columns=['Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1'])
+test = test.values
+test = test.astype(float)
+
+x_test = tf.keras.utils.normalize(test, axis=1)
+y_test = np.asarray(marginy)
+
+del data
+del test
+del scores
+del margin
+del scoresy
+del marginy
+gc.collect()
 
 
+def build_model(hp):
+    model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Flatten())
 
-#
-# val_loss, val_acc = model.evaluate(x=x_test,y=y_test,  callbacks=[tensorboard])
-# print(val_loss)
-# print(val_acc)
+    for i in range(hp.Int('n_hidden_layers', 1, 5)):
+        model.add(tf.keras.layers.Dense(hp.Int(f"hidden_{i}_units", 128, 1028, 1), activation=tf.nn.relu))
 
-#model.save('Trained-Model')
+    model.add(tf.keras.layers.Dense(2, activation=tf.nn.softmax))
 
-print('DONE')
+    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+
+    return model
+
+
+tuner = RandomSearch(
+    build_model,
+    objective='val_accuracy',
+    max_trials=10,
+    executions_per_trial=3,
+    directory=LOG_DIR
+)
+gc.collect()
+tuner.search(x=x_train, y=y_train, epochs=20, batch_size=32,  validation_split=0.1)
+print(tuner.get_best_hyperparameters()[0].values)
+print(tuner.results_summary())
