@@ -27,7 +27,7 @@ model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu))
 model.add(tf.keras.layers.Dense(2, activation=tf.nn.softmax))
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=23, validation_split=0.1, callbacks=[tensorboard])
+model.fit(x_train, y_train, epochs=20, validation_split=0.1, callbacks=[tensorboard])
 
 
 
@@ -36,6 +36,6 @@ model.fit(x_train, y_train, epochs=23, validation_split=0.1, callbacks=[tensorbo
 # print(val_loss)
 # print(val_acc)
 
-model.save('Trained-Model')
+#model.save('Trained-Model')
 
 print('DONE')

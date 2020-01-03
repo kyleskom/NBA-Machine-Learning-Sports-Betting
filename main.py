@@ -5,6 +5,12 @@ import pandas as pd
 import numpy as np
 import copy
 
+todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2019/scores/00_todays_scores.json'
+
+data = get_json_data(todays_games_url)
+df = to_data_frame(data)
+
+
 
 url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
       'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
@@ -18,7 +24,7 @@ url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
 data = get_json_data(url)
 df = to_data_frame(data)
 
-games = get_teams_playing_today()
+#games = get_teams_playing_today()
 print('DONE')
 
 # model = load_model('Trained-Model')
