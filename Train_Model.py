@@ -53,8 +53,8 @@ def build_model(hp):
     model = tf.keras.models.Sequential()
     model.add(tf.keras.layers.Flatten())
 
-    for i in range(hp.Int('n_hidden_layers', 1, 5)):
-        model.add(tf.keras.layers.Dense(hp.Int(f"hidden_{i}_units", 128, 1028, 1), activation=tf.nn.relu))
+    for i in range(hp.Int('n_hidden_layers', min_value=1, max_value=5, step=1)):
+        model.add(tf.keras.layers.Dense(hp.Int(f"hidden_{i}_units", min_value=128, max_value=1028, step=32), activation=tf.nn.relu))
 
     model.add(tf.keras.layers.Dense(2, activation=tf.nn.softmax))
 
@@ -65,9 +65,9 @@ def build_model(hp):
 
 tuner = RandomSearch(
     build_model,
-    objective='val_accuracy',
+    objective='val_loss',
     max_trials=10,
-    executions_per_trial=3,
+    executions_per_trial=1,
     directory=LOG_DIR
 )
 gc.collect()
