@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -6,21 +5,17 @@ from tensorflow.keras.models import load_model
 
 model = load_model('Trained-Model')
 data = pd.read_excel('Full-Data-Set.xlsx')
-data = data.iloc[15068:]
-copy = copy.deepcopy(data)
-scores = data['Score']
-margin = data['Home-Team-Win']
-data.drop(['Score'], axis=1, inplace=True)
-data.drop(['Home-Team-Win'], axis=1, inplace=True)
 
-data = data.drop(columns=['Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1'])
+data = data.iloc[15068:]
+data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1'], axis=1, inplace=True)
+
 data = data.values
 data = data.astype(float)
 
-x_train = tf.keras.utils.normalize(data, axis=1)
-arr = []
-for row in x_train:
-    arr.append(model.predict(np.array([row])))
+x_test = tf.keras.utils.normalize(data, axis=1)
+predictions_array = []
+for row in x_test:
+    predictions_array.append(model.predict(np.array([row])))
 
-for x in arr:
-    print(np.argmax(x))
+for index in predictions_array:
+    print(np.argmax(index))
