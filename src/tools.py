@@ -1,6 +1,5 @@
 import requests
 import pandas as pd
-import nba_py
 
 HEADERS = {
     'user-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -10,7 +9,7 @@ HEADERS = {
     'Accept-Language': 'en',
     'origin': 'http://stats.nba.com',
     'Referer': 'https://github.com'
-    }
+}
 
 
 def get_json_data(url):
