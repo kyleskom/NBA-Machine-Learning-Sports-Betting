@@ -4,19 +4,19 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 from tensorflow.keras.models import load_model
-
+from colorama import Fore, Style
 
 model = load_model('Trained-Model')
 
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2019/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
-      'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
-      'GameSegment=&LastNGames=0&LeagueID=00&Location=&' \
-      'MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&' \
-      'PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&' \
-      'PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&' \
-      'Season=2019-20&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
-      'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
+           'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
+           'GameSegment=&LastNGames=0&LeagueID=00&Location=&' \
+           'MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&' \
+           'PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&' \
+           'PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&' \
+           'Season=2019-20&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
+           'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
 data = get_todays_games_json(todays_games_url)
 games = create_todays_games(data)
@@ -27,13 +27,13 @@ df = to_data_frame(data)
 y = []
 
 for game in games:
-      home_team = game[0]
-      away_team = game[1]
+    home_team = game[0]
+    away_team = game[1]
 
-      home_team_series = df.iloc[team_index_14.get(home_team)]
-      away_team_series = df.iloc[team_index_14.get(away_team)]
-      stats = home_team_series.append(away_team_series)
-      y.append(stats)
+    home_team_series = df.iloc[team_index_14.get(home_team)]
+    away_team_series = df.iloc[team_index_14.get(away_team)]
+    stats = home_team_series.append(away_team_series)
+    y.append(stats)
 
 x = pd.concat(y, ignore_index=True, axis=1)
 x = x.T
@@ -45,12 +45,15 @@ data = data.astype(float)
 x_train = tf.keras.utils.normalize(data, axis=1)
 arr = []
 for row in x_train:
-      arr.append(model.predict(np.array([row])))
+    arr.append(model.predict(np.array([row])))
 
 count = 0
 for game in games:
-      home_team = game[0]
-      away_team = game[1]
-      print(home_team + ' vs ' + away_team + ': ' + str(np.argmax(arr[count])))
-      count += 1
-
+    home_team = game[0]
+    away_team = game[1]
+    winner = int(np.argmax(arr[count]))
+    if winner == 1:
+        print(Fore.GREEN + home_team + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL)
+    else:
+        print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL)
+    count += 1
