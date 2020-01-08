@@ -24,7 +24,7 @@ games = create_todays_games(data)
 data = get_json_data(data_url)
 df = to_data_frame(data)
 
-y = []
+match_data = []
 
 for game in games:
     home_team = game[0]
@@ -33,25 +33,25 @@ for game in games:
     home_team_series = df.iloc[team_index_20.get(home_team)]
     away_team_series = df.iloc[team_index_20.get(away_team)]
     stats = home_team_series.append(away_team_series)
-    y.append(stats)
+    match_data.append(stats)
 
-x = pd.concat(y, ignore_index=True, axis=1)
-x = x.T
+games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
+games_data_frame = games_data_frame.T
 
-frame = x.drop(columns=['TEAM_ID', 'CFID', 'CFPARAMS', 'TEAM_NAME'])
+frame = games_data_frame.drop(columns=['TEAM_ID', 'CFID', 'CFPARAMS', 'TEAM_NAME'])
 data = frame.values
 data = data.astype(float)
+data = tf.keras.utils.normalize(data, axis=1)
 
-x_train = tf.keras.utils.normalize(data, axis=1)
-arr = []
-for row in x_train:
-    arr.append(model.predict(np.array([row])))
+predictions_array = []
+for row in data:
+    predictions_array.append(model.predict(np.array([row])))
 
 count = 0
 for game in games:
     home_team = game[0]
     away_team = game[1]
-    winner = int(np.argmax(arr[count]))
+    winner = int(np.argmax(predictions_array[count]))
     if winner == 1:
         print(Fore.GREEN + home_team + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL)
     else:
