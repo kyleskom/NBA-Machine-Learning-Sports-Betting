@@ -19,18 +19,23 @@ def get_json_data(url):
     return json.get('resultSets')
 
 
+def get_todays_games_json(url):
+    raw_data = requests.get(url, headers=HEADERS)
+    json = raw_data.json()
+    return json.get('gs').get('g')
+
+
 def to_data_frame(data):
     data_list = data[0]
     return pd.DataFrame(data=data_list.get('rowSet'), columns=data_list.get('headers'))
 
 
-def get_teams_playing_today():
-    nba_py.HEADERS = HEADERS
-    sb = nba_py.Scoreboard()
-    results = sb.json.get('resultSets')
-    raw_data = results[0]
-    game_data = raw_data.get('rowSet')
+def create_todays_games(list):
     games = []
-    for game in game_data:
-        games.append([game[6], game[7]])
+    for game in list:
+        home = game.get('h')
+        away = game.get('v')
+        home_team = home.get('tc') + ' ' + home.get('tn')
+        away_team = away.get('tc') + ' ' + away.get('tn')
+        games.append([home_team, away_team])
     return games

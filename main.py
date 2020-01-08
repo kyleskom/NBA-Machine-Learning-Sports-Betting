@@ -1,12 +1,15 @@
-from src.tools import get_teams_playing_today, get_json_data, to_data_frame
+from src.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
+from src.Dictionaries import team_index_14
+import tensorflow as tf
+import pandas as pd
+import numpy as np
+from tensorflow.keras.models import load_model
 
+
+model = load_model('Trained-Model')
 
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2019/scores/00_todays_scores.json'
-
-data = get_json_data(todays_games_url)
-df = to_data_frame(data)
-
-url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
+data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
       'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
       'GameSegment=&LastNGames=0&LeagueID=00&Location=&' \
       'MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&' \
@@ -15,8 +18,39 @@ url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
       'Season=2019-20&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
       'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
-data = get_json_data(url)
+data = get_todays_games_json(todays_games_url)
+games = create_todays_games(data)
+
+data = get_json_data(data_url)
 df = to_data_frame(data)
 
-games = get_teams_playing_today()
-print('DONE')
+y = []
+
+for game in games:
+      home_team = game[0]
+      away_team = game[1]
+
+      home_team_series = df.iloc[team_index_14.get(home_team)]
+      away_team_series = df.iloc[team_index_14.get(away_team)]
+      stats = home_team_series.append(away_team_series)
+      y.append(stats)
+
+x = pd.concat(y, ignore_index=True, axis=1)
+x = x.T
+
+frame = x.drop(columns=['TEAM_ID', 'CFID', 'CFPARAMS', 'TEAM_NAME'])
+data = frame.values
+data = data.astype(float)
+
+x_train = tf.keras.utils.normalize(data, axis=1)
+arr = []
+for row in x_train:
+      arr.append(model.predict(np.array([row])))
+
+count = 0
+for game in games:
+      home_team = game[0]
+      away_team = game[1]
+      print(home_team + ' vs ' + away_team + ': ' + str(np.argmax(arr[count])))
+      count += 1
+
