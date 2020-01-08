@@ -31,17 +31,6 @@ model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu6))
 model.add(tf.keras.layers.Dense(2, activation=tf.nn.softmax))
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-#history = model.fit(x_train, y_train, epochs=20, validation_split=0.1)
 model.fit(x_train, y_train, epochs=50, validation_split=0.1, batch_size=32, callbacks=[tensorboard, earlyStopping, mcp_save])
 
-
-#
-# val_loss, val_acc = model.evaluate(x=x_test,y=y_test,  callbacks=[tensorboard])
-# print(val_loss)
-# print(val_acc)
-
-#print(history.history)
-
-#model.save('Trained-Model-' + str(history.history['val_loss']))
-
-print('DONE')
+print('Done')
