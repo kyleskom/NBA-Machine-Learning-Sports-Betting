@@ -1,10 +1,10 @@
-from src.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
-from src.Dictionaries import team_index_14
-import tensorflow as tf
-import pandas as pd
 import numpy as np
-from tensorflow.keras.models import load_model
+import pandas as pd
+import tensorflow as tf
 from colorama import Fore, Style
+from tensorflow.keras.models import load_model
+from src.Dictionaries import team_index_14
+from src.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
 model = load_model('Trained-Model')
 

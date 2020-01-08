@@ -1,8 +1,8 @@
-from tensorflow.keras.models import load_model
-import tensorflow as tf
-import pandas as pd
-import numpy as np
 import copy
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow.keras.models import load_model
 
 model = load_model('Trained-Model')
 data = pd.read_excel('Full-Data-Set.xlsx')
@@ -20,7 +20,7 @@ data = data.astype(float)
 x_train = tf.keras.utils.normalize(data, axis=1)
 arr = []
 for row in x_train:
-      arr.append(model.predict(np.array([row])))
+    arr.append(model.predict(np.array([row])))
 
 for x in arr:
-      print(np.argmax(x))
+    print(np.argmax(x))
