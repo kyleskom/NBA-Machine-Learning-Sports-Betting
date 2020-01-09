@@ -29,7 +29,6 @@ match_data = []
 for game in games:
     home_team = game[0]
     away_team = game[1]
-
     home_team_series = df.iloc[team_index_20.get(home_team)]
     away_team_series = df.iloc[team_index_20.get(away_team)]
     stats = home_team_series.append(away_team_series)
