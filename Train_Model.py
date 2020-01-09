@@ -4,18 +4,17 @@ import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
 
-t = str(time.time())
-tensorboard = TensorBoard(log_dir='Logs/{}'.format(t))
+current_time = str(time.time())
+
+tensorboard = TensorBoard(log_dir='Logs/{}'.format(current_time))
 earlyStopping = EarlyStopping(monitor='val_loss', patience=10, verbose=0, mode='min')
-mcp_save = ModelCheckpoint('Trained-Model-' + t, save_best_only=True, monitor='val_loss', mode='min')
+mcp_save = ModelCheckpoint('Trained-Model-' + current_time, save_best_only=True, monitor='val_loss', mode='min')
 
 data = pd.read_excel('Full-Data-Set.xlsx')
 scores = data['Score']
 margin = data['Home-Team-Win']
-data.drop(['Score'], axis=1, inplace=True)
-data.drop(['Home-Team-Win'], axis=1, inplace=True)
+data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1'], axis=1, inplace=True)
 
-data = data.drop(columns=['Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1'])
 data = data.values
 data = data.astype(float)
 
