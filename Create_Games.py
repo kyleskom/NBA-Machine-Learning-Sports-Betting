@@ -1,10 +1,9 @@
 import os
-
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from src.Dictionaries import team_index_07, team_index_08,team_index_12, team_index_13, team_index_14
+from src.Dictionaries import team_index_07, team_index_08, team_index_12, team_index_13, team_index_14
 
 season = ["2007-08", "2008-09", "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16", "2016-17",
           "2017-18", "2018-19", "2019-20"]
@@ -57,7 +56,6 @@ for x in tqdm(season):
                 home_team_series = data_frame.iloc[team_index_13.get(home_team)]
                 away_team_series = data_frame.iloc[team_index_13.get(away_team)]
             else:
-                print(x, date, home_team, away_team)
                 home_team_series = data_frame.iloc[team_index_14.get(home_team)]
                 away_team_series = data_frame.iloc[team_index_14.get(away_team)]
 

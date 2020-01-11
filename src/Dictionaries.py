@@ -198,7 +198,7 @@ team_index_14 = {
     'Washington Wizards': 29
 }
 
-team_index_20 = {
+team_index_current = {
     'Atlanta Hawks': 0,
     'Boston Celtics': 1,
     'Brooklyn Nets': 2,

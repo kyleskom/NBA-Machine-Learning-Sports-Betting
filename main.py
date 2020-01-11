@@ -3,7 +3,7 @@ import pandas as pd
 import tensorflow as tf
 from colorama import Fore, Style
 from tensorflow.keras.models import load_model
-from src.Dictionaries import team_index_20
+from src.Dictionaries import team_index_current
 from src.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
 model = load_model('Trained-Model')
@@ -29,8 +29,8 @@ match_data = []
 for game in games:
     home_team = game[0]
     away_team = game[1]
-    home_team_series = df.iloc[team_index_20.get(home_team)]
-    away_team_series = df.iloc[team_index_20.get(away_team)]
+    home_team_series = df.iloc[team_index_current.get(home_team)]
+    away_team_series = df.iloc[team_index_current.get(away_team)]
     stats = home_team_series.append(away_team_series)
     match_data.append(stats)
 
