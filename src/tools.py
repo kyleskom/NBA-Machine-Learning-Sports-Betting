@@ -29,9 +29,9 @@ def to_data_frame(data):
     return pd.DataFrame(data=data_list.get('rowSet'), columns=data_list.get('headers'))
 
 
-def create_todays_games(list):
+def create_todays_games(input_list):
     games = []
-    for game in list:
+    for game in input_list:
         home = game.get('h')
         away = game.get('v')
         home_team = home.get('tc') + ' ' + home.get('tn')

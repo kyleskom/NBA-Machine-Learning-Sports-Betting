@@ -1,8 +1,6 @@
 import os
-
 import pandas as pd
 from tqdm import tqdm
-
 from src.Dictionaries import team_codes
 
 directory = os.fsdecode('Odds-Data')
