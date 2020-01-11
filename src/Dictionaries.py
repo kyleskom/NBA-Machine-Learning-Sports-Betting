@@ -212,6 +212,7 @@ team_index_20 = {
     'Houston Rockets': 10,
     'Indiana Pacers': 11,
     'Los Angeles Clippers': 12,
+    'LA Clippers': 12,
     'Los Angeles Lakers': 13,
     'Memphis Grizzlies': 14,
     'Miami Heat': 15,
