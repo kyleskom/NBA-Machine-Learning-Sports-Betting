@@ -6,7 +6,7 @@ from tensorflow.keras.models import load_model
 from src.Dictionaries import team_index_current
 from src.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
-model = load_model('Trained-Model')
+model = load_model('Models/Trained-Model-ML')
 
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2019/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
