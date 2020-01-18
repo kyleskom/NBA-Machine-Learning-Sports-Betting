@@ -10,6 +10,7 @@ XGBoost
 Support Vector Machine
 LSTM
 Recurrent
+Support Vector Regression
 
 
 https://www.youtube.com/watch?v=BqgTU7_cBnk
