@@ -1,7 +1,7 @@
 import requests
 import pandas as pd
 
-HEADERS = {
+games_header = {
     'user-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/57.0.2987.133 Safari/537.36',
     'Dnt': '1',
@@ -11,15 +11,27 @@ HEADERS = {
     'Referer': 'https://github.com'
 }
 
+data_headers = {
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Host': 'stats.nba.com',
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_2) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.4 Safari/605.1.15',
+    'Accept-Language': 'en-us',
+    'Referer': 'https://stats.nba.com/teams/traditional/?sort=W_PCT&dir=-1&Season=2019-20&SeasonType=Regular%20Season',
+    'Connection': 'keep-alive',
+    'x-nba-stats-origin': 'stats',
+    'x-nba-stats-token': 'true'
+}
+
 
 def get_json_data(url):
-    raw_data = requests.get(url, headers=HEADERS)
+    raw_data = requests.get(url, headers=data_headers)
     json = raw_data.json()
     return json.get('resultSets')
 
 
 def get_todays_games_json(url):
-    raw_data = requests.get(url, headers=HEADERS)
+    raw_data = requests.get(url, headers=games_header)
     json = raw_data.json()
     return json.get('gs').get('g')
 
