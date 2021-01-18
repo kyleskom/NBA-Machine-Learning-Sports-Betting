@@ -10,14 +10,14 @@ from src.tools import get_json_data, to_data_frame, get_todays_games_json, creat
 model = load_model('Models/Trained-Model-ML')
 ou_model = load_model("Models/Trained-Model-OU")
 
-todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2019/scores/00_todays_scores.json'
+todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2020/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
            'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
            'GameSegment=&LastNGames=0&LeagueID=00&Location=&' \
            'MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&' \
            'PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&' \
            'PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&' \
-           'Season=2019-20&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
+           'Season=2020-21&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
            'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
 data = get_todays_games_json(todays_games_url)
