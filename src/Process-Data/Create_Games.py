@@ -6,7 +6,7 @@ from src.Dictionaries import team_index_07, team_index_08, team_index_12, team_i
 
 season_array = ["2007-08", "2008-09", "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16",
                 "2016-17", "2017-18", "2018-19", "2019-20"]
-odds_directory = os.fsdecode('Odds-Data-Clean')
+odds_directory = os.fsdecode('../../Odds-Data/Odds-Data-Clean')
 df = pd.DataFrame
 scores = []
 win_margin = []
@@ -16,7 +16,7 @@ games = []
 for season in tqdm(season_array):
     file = pd.read_excel(odds_directory + '/' + '{}.xlsx'.format(season))
 
-    team_data_directory = os.fsdecode('Team-Data/{}'.format(season))
+    team_data_directory = os.fsdecode('../../Team-Data/{}'.format(season))
 
     for row in file.itertuples():
         home_team = row[3]
@@ -78,4 +78,4 @@ frame['Score'] = np.asarray(scores)
 frame['Home-Team-Win'] = np.asarray(win_margin)
 frame['OU'] = np.asarray(OU)
 frame['OU-Cover'] = np.asarray(OU_Cover)
-frame.to_excel('Datasets/Full-Data-Set-UnderOver.xlsx')
+frame.to_excel('Datasets/Full-Data-Set-UnderOver2.xlsx')

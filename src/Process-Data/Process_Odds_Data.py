@@ -3,7 +3,7 @@ import pandas as pd
 from tqdm import tqdm
 from src.Dictionaries import team_codes
 
-directory = os.fsdecode('Odds-Data')
+directory = os.fsdecode('../../Odds-Data')
 
 for file in tqdm(os.listdir(directory)):
     filename = os.fsdecode(file)
@@ -70,6 +70,6 @@ for file in tqdm(os.listdir(directory)):
                 ml_away = ''
                 points = ''
                 margin = ''
-        directory2 = os.fsdecode('Odds-Data-Clean')
+        directory2 = os.fsdecode('../../Odds-Data/Odds-Data-Clean')
         name = directory2 + '/' + year + '.xlsx'
         x.to_excel(name)
