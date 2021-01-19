@@ -40,7 +40,7 @@ for season1 in tqdm(season):
                 general_df = tools.to_data_frame(general_data)
                 general_df['Date'] = str(month1) + '-' + str(day1) + '-' + season1
 
-                directory2 = os.fsdecode('Team-Data')
+                directory2 = os.fsdecode('../../Team-Data')
                 name = directory2 + '/' + str(month1) + '-' + str(day1) + '-' + season1 + '.xlsx'
                 general_df.to_excel(name)
             except:
