@@ -6,11 +6,11 @@ from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoi
 
 current_time = str(time.time())
 
-tensorboard = TensorBoard(log_dir='Logs/{}'.format(current_time))
+tensorboard = TensorBoard(log_dir='../../Logs/{}'.format(current_time))
 earlyStopping = EarlyStopping(monitor='val_loss', patience=10, verbose=0, mode='min')
-mcp_save = ModelCheckpoint('Models/Trained-Model-ML-' + current_time, save_best_only=True, monitor='val_loss', mode='min')
+mcp_save = ModelCheckpoint('../../Models/Trained-Model-ML-' + current_time, save_best_only=True, monitor='val_loss', mode='min')
 
-data = pd.read_excel('Datasets/Full-Data-Set-UnderOver.xlsx')
+data = pd.read_excel('../../Datasets/Full-Data-Set-UnderOver-2020-21.xlsx')
 OU = data['OU-Cover']
 data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover'], axis=1, inplace=True)
 
