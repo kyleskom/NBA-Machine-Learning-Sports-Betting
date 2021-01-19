@@ -10,10 +10,10 @@ tensorboard = TensorBoard(log_dir='../../Logs/{}'.format(current_time))
 earlyStopping = EarlyStopping(monitor='val_loss', patience=10, verbose=0, mode='min')
 mcp_save = ModelCheckpoint('../../Models/Trained-Model-ML-' + current_time, save_best_only=True, monitor='val_loss', mode='min')
 
-data = pd.read_excel('../../Datasets/Full-Data-Set.xlsx')
+data = pd.read_excel('../../Datasets/Full-Data-Set-UnderOver-2020-21.xlsx')
 scores = data['Score']
 margin = data['Home-Team-Win']
-data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1'], axis=1, inplace=True)
+data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU', 'OU-Cover'], axis=1, inplace=True)
 
 data = data.values
 data = data.astype(float)

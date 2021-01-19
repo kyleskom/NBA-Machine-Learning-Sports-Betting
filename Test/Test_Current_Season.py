@@ -4,10 +4,10 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 
 model = load_model('../Models/Trained-Model-ML')
-data = pd.read_excel('Full-Data-Set.xlsx')
+data = pd.read_excel('../Datasets/Full-Data-Set-UnderOver-2020-21.xlsx')
 
-data = data.iloc[15068:]
-data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1'], axis=1, inplace=True)
+data = data.iloc[16211:]
+data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU', 'OU-Cover'], axis=1, inplace=True)
 
 data = data.values
 data = data.astype(float)
