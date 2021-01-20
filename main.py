@@ -68,18 +68,26 @@ for game in games:
     away_team = game[1]
     winner = int(np.argmax(ml_predictions_array[count]))
     under_over = int(np.argmax(ou_predictions_array[count]))
+    winner_confidence = ml_predictions_array[count]
+    un_confidence = ou_predictions_array[count]
     if winner == 1:
+        winner_confidence = round(winner_confidence[0][1] * 100, 1)
         if under_over == 0:
-            print(Fore.GREEN + home_team + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
-                  Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(todays_games_uo[count]))
+            un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
+            print(Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
+                  Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
         else:
-            print(Fore.GREEN + home_team + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
-                  Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]))
+            un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
+            print(Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
+                  Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
     else:
+        winner_confidence = round(winner_confidence[0][0] * 100, 1)
         if under_over == 0:
-            print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + ': ' +
-                  Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(todays_games_uo[count]))
+            un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
+            print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
+                  Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
         else:
-            print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + ': ' +
-                  Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]))
+            un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
+            print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
+                  Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
     count += 1

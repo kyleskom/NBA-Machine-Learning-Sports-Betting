@@ -19,3 +19,10 @@ for row in x_test:
 
 for index in predictions_array:
     print(np.argmax(index))
+
+# Print with confidence %
+# for index in predictions_array:
+#     if index[0][0] > index[0][1]:
+#         print(str(np.argmax(index)) + ' ' + str(index[0][0]))
+#     else:
+#         print(str(np.argmax(index)) + ' ' + str(index[0][1]))
