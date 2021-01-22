@@ -73,7 +73,6 @@ for season in tqdm(season_array):
             games.append(game)
 season = pd.concat(games, ignore_index=True, axis=1)
 season = season.T
-season[season.index.duplicated()]
 
 frame = season.drop(columns=['TEAM_ID', 'CFID', 'CFPARAMS', 'Unnamed: 0'])
 frame['Score'] = np.asarray(scores)
