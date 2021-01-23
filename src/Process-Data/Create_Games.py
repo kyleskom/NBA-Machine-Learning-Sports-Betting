@@ -4,9 +4,9 @@ import pandas as pd
 from tqdm import tqdm
 from src.Dictionaries import team_index_07, team_index_08, team_index_12, team_index_13, team_index_14
 
-#season_array = ["2007-08", "2008-09", "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16",
-                #"2016-17", "2017-18", "2018-19"]
-season_array = ["2007-08", "2008-09"]
+season_array = ["2007-08", "2008-09", "2010-11", "2011-12", "2012-13", "2014-15", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21"]
+# season_array = ["2009-10"]
+#2009-10, 2013-14, 2015-16 are fucked. Look into getting team data again
 odds_directory = os.fsdecode('../../Odds-Data/Odds-Data-Clean')
 df = pd.DataFrame
 scores = []
@@ -70,13 +70,18 @@ for season in tqdm(season_array):
                 away_team_series = data_frame.iloc[team_index_14.get(away_team)]
 
             game = home_team_series.append(away_team_series)
+            drop = []
+            for x in game.index:
+                if '.' in x:
+                    drop.append(x)
+            game = game.drop(index=drop)
             games.append(game)
-season = pd.concat(games, ignore_index=True, axis=1)
-season = season.T
+season3 = pd.concat(games, ignore_index=True, axis=1)
+season3 = season3.T
 
-frame = season.drop(columns=['TEAM_ID', 'CFID', 'CFPARAMS', 'Unnamed: 0'])
+frame = season3.drop(columns=['TEAM_ID', 'CFID', 'CFPARAMS', 'Unnamed: 0'])
 frame['Score'] = np.asarray(scores)
 frame['Home-Team-Win'] = np.asarray(win_margin)
 frame['OU'] = np.asarray(OU)
 frame['OU-Cover'] = np.asarray(OU_Cover)
-frame.to_excel('../../Datasets/Full-Data-Set-UnderOver-2020-21-MOAR.xlsx')
+frame.to_excel('../../Datasets/TEST123.xlsx')
