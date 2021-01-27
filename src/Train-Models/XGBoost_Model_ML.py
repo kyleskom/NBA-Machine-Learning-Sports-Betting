@@ -6,23 +6,22 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 data = pd.read_excel('../../Datasets/Full-Data-Set-UnderOver-2020-21.xlsx')
-scores = data['Score']
-OU = data['OU-Cover']
+margin = data['Home-Team-Win']
 data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover'], axis=1, inplace=True)
 data = data.values
 data = data.astype(float)
 
 for x in tqdm(range(100)):
-    x_train, x_test, y_train, y_test = train_test_split(data, OU, test_size=.1)
+    x_train, x_test, y_train, y_test = train_test_split(data, margin, test_size=.1)
 
     train = xgb.DMatrix(x_train, label=y_train)
     test = xgb.DMatrix(x_test, label=y_test)
 
     param = {
-        'max_depth': 7,
+        'max_depth': 3,
         'eta': 0.1,
         'objective': 'multi:softmax',
-        'num_class': 3
+        'num_class': 2
     }
     epochs = 100
 
@@ -32,8 +31,4 @@ for x in tqdm(range(100)):
 
     acc = round(accuracy_score(y_test, predictions), 3) * 100
     print(acc)
-    model.save_model('../../Models/XGBoost_{}%.model'.format(acc))
-
-#xgb.plot_tree(model)
-#plt.show()
-#plt.savefig("graph.pdf")
+    model.save_model('../../Models/XGBoost_{}%_ML.model'.format(acc))
