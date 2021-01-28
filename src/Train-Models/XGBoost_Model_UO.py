@@ -15,7 +15,7 @@ for x in tqdm(range(1)):
     x_train, x_test, y_train, y_test = train_test_split(data, OU, test_size=.1)
 
     train = xgb.DMatrix(x_train, label=y_train)
-    test = xgb.DMatrix(x_test, label=y_test)
+    test = xgb.DMatrix(x_test)
 
     param = {
         'max_depth': 7,
@@ -31,7 +31,7 @@ for x in tqdm(range(1)):
 
     acc = round(accuracy_score(y_test, predictions), 3) * 100
     print(acc)
-    model.save_model('../../Models/XGBoost_{}%_UO.model'.format(acc))
+    model.save_model('../../Models/XGBoost_{}%_UO.json'.format(acc))
 
 #xgb.plot_tree(model)
 #plt.show()
