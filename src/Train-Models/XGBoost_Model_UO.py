@@ -11,7 +11,7 @@ data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NA
 data = data.values
 data = data.astype(float)
 
-for x in tqdm(range(1)):
+for x in tqdm(range(250)):
     x_train, x_test, y_train, y_test = train_test_split(data, OU, test_size=.1)
 
     train = xgb.DMatrix(x_train, label=y_train)
@@ -23,7 +23,7 @@ for x in tqdm(range(1)):
         'objective': 'multi:softmax',
         'num_class': 3
     }
-    epochs = 100
+    epochs = 200
 
     model = xgb.train(param, train, epochs)
 

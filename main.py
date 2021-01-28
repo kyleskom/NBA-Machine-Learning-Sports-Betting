@@ -11,9 +11,9 @@ import xgboost as xgb
 # model = load_model('Models/Trained-Model-ML')
 # ou_model = load_model("Models/Trained-Model-OU")
 xgb_ml = xgb.Booster()
-xgb_ml.load_model('Models/XGBoost_71.0%_ML.json')
+xgb_ml.load_model('Models/XGBoost_74.5%_ML.json')
 xgb_uo = xgb.Booster()
-xgb_uo.load_model('Models/XGBoost_74.5%_UO.model')
+xgb_uo.load_model('Models/XGBoost_57.9%_UO.json')
 
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2020/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
@@ -60,7 +60,7 @@ frame_uo = copy.deepcopy(frame_ml)
 frame_uo['OU'] = np.asarray(todays_games_uo)
 data = frame_uo.values
 data = data.astype(float)
-data = tf.keras.utils.normalize(data, axis=1)
+#data = tf.keras.utils.normalize(data, axis=1)
 
 ou_predictions_array = []
 
@@ -72,7 +72,7 @@ for game in games:
     home_team = game[0]
     away_team = game[1]
     winner = int(ml_predictions_array[count][0])
-    under_over = int(np.argmax(ou_predictions_array[count]))
+    under_over = int(ou_predictions_array[count][0])
     winner_confidence = ml_predictions_array[count]
     un_confidence = ou_predictions_array[count]
     if winner == 1:
