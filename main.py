@@ -6,9 +6,14 @@ from colorama import Fore, Style
 from tensorflow.keras.models import load_model
 from src.Dictionaries import team_index_current
 from src.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
+import xgboost as xgb
 
-model = load_model('Models/Trained-Model-ML')
-ou_model = load_model("Models/Trained-Model-OU")
+# model = load_model('Models/Trained-Model-ML')
+# ou_model = load_model("Models/Trained-Model-OU")
+xgb_ml = xgb.Booster()
+xgb_ml.load_model('Models/XGBoost_75.2%_ML.model')
+xgb_uo = xgb.Booster()
+xgb_uo.load_model('Models/XGBoost_57.49999999999999%_UO.model')
 
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2020/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
@@ -49,7 +54,11 @@ data = tf.keras.utils.normalize(data, axis=1)
 ml_predictions_array = []
 
 for row in data:
-    ml_predictions_array.append(model.predict(np.array([row])))
+    x = np.array([row])
+    z = xgb.DMatrix(x)
+    y = xgb_ml.predict(z)
+    print(y)
+    #ml_predictions_array.append(xgb_ml.predict(xgb.DMatrix(np.array([row]))))
 
 frame_uo = copy.deepcopy(frame_ml)
 frame_uo['OU'] = np.asarray(todays_games_uo)
@@ -60,34 +69,34 @@ data = tf.keras.utils.normalize(data, axis=1)
 ou_predictions_array = []
 
 for row in data:
-    ou_predictions_array.append(ou_model.predict(np.array([row])))
+    ou_predictions_array.append(xgb_uo.predict(xgb.DMatrix(np.array([row]))))
 
-count = 0
-for game in games:
-    home_team = game[0]
-    away_team = game[1]
-    winner = int(np.argmax(ml_predictions_array[count]))
-    under_over = int(np.argmax(ou_predictions_array[count]))
-    winner_confidence = ml_predictions_array[count]
-    un_confidence = ou_predictions_array[count]
-    if winner == 1:
-        winner_confidence = round(winner_confidence[0][1] * 100, 1)
-        if under_over == 0:
-            un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
-            print(Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
-                  Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
-        else:
-            un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
-            print(Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
-                  Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
-    else:
-        winner_confidence = round(winner_confidence[0][0] * 100, 1)
-        if under_over == 0:
-            un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
-            print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
-                  Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
-        else:
-            un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
-            print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
-                  Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
-    count += 1
+# count = 0
+# for game in games:
+#     home_team = game[0]
+#     away_team = game[1]
+#     winner = int(np.argmax(ml_predictions_array[count]))
+#     under_over = int(np.argmax(ou_predictions_array[count]))
+#     winner_confidence = ml_predictions_array[count]
+#     un_confidence = ou_predictions_array[count]
+#     if winner == 1:
+#         #winner_confidence = round(winner_confidence[0][1] * 100, 1)
+#         if under_over == 0:
+#             #un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
+#             print(Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
+#                   Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
+#         else:
+#             #un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
+#             print(Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
+#                   Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
+#     else:
+#         #winner_confidence = round(winner_confidence[0][0] * 100, 1)
+#         if under_over == 0:
+#             #un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
+#             print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
+#                   Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
+#         else:
+#             #un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
+#             print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
+#                   Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)")
+#     count += 1
