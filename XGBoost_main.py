@@ -9,9 +9,9 @@ from src.Dictionaries import team_index_current
 from src.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
 xgb_ml = xgb.Booster()
-xgb_ml.load_model('Models/XGBoost_74.5%_ML.json')
+xgb_ml.load_model('Models/XGBoost_Models/XGBoost_74.5%_ML.json')
 xgb_uo = xgb.Booster()
-xgb_uo.load_model('Models/XGBoost_57.9%_UO.json')
+xgb_uo.load_model('Models/XGBoost_Models/XGBoost_57.9%_UO.json')
 
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2020/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
