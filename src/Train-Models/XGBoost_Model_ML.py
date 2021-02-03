@@ -27,7 +27,7 @@ for x in tqdm(range(250)):
         'objective': 'multi:softmax',
         'num_class': 2
     }
-    epochs = 200
+    epochs = 250
 
     model = xgb.train(param, train, epochs)
 

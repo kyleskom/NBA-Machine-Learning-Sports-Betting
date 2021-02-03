@@ -26,3 +26,6 @@ Days since last game
 https://klane.github.io/databall
 https://www.covers.com
 https://www.oddsportal.com
+
+Leaky ReLu for most
+try elu and selu
