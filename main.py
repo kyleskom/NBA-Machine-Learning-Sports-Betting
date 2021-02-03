@@ -46,7 +46,7 @@ def main():
     df = to_data_frame(data)
     data, todays_games_uo, frame_ml = createTodaysGames(games, df)
     if args.nn:
-        print("------------Neural Netowrk Model Predictions-----------")
+        print("------------Neural Network Model Predictions-----------")
         data = tf.keras.utils.normalize(data, axis=1)
         NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games)
         print("-------------------------------------------------------")
@@ -59,7 +59,7 @@ def main():
         XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games)
         print("-------------------------------------------------------")
         data = tf.keras.utils.normalize(data, axis=1)
-        print("------------Neural Netowrk Model Predictions-----------")
+        print("------------Neural Network Model Predictions-----------")
         NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games)
         print("-------------------------------------------------------")
 
