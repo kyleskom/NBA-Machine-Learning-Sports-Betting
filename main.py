@@ -46,14 +46,22 @@ def main():
     df = to_data_frame(data)
     data, todays_games_uo, frame_ml = createTodaysGames(games, df)
     if args.nn:
-      data = tf.keras.utils.normalize(data, axis=1)
-      NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games)
-    if args.xgb:
-        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games)
-    if args.A:
-        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games)
+        print("------------Neural Netowrk Model Predictions-----------")
         data = tf.keras.utils.normalize(data, axis=1)
         NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games)
+        print("-------------------------------------------------------")
+    if args.xgb:
+        print("---------------XGBoost Model Predictions---------------")
+        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games)
+        print("-------------------------------------------------------")
+    if args.A:
+        print("---------------XGBoost Model Predictions---------------")
+        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games)
+        print("-------------------------------------------------------")
+        data = tf.keras.utils.normalize(data, axis=1)
+        print("------------Neural Netowrk Model Predictions-----------")
+        NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games)
+        print("-------------------------------------------------------")
 
 
 if __name__ == "__main__":

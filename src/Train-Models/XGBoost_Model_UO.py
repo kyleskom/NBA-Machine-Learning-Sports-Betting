@@ -32,7 +32,3 @@ for x in tqdm(range(250)):
     acc = round(accuracy_score(y_test, predictions), 3) * 100
     print(acc)
     model.save_model('../../Models/XGBoost_{}%_UO.json'.format(acc))
-
-# xgb.plot_tree(model)
-# plt.show()
-# plt.savefig("graph.pdf")

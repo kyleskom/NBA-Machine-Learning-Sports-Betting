@@ -29,3 +29,7 @@ https://www.oddsportal.com
 
 Leaky ReLu for most
 try elu and selu
+
+# xgb.plot_tree(model)
+# plt.show()
+# plt.savefig("graph.pdf")
