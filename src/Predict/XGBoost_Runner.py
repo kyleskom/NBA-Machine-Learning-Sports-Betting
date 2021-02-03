@@ -5,8 +5,8 @@ import pandas as pd
 import xgboost as xgb
 from colorama import Fore, Style
 
-from src.Dictionaries import team_index_current
-from src.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
+from src.Utils.Dictionaries import team_index_current
+from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
 xgb_ml = xgb.Booster()
 xgb_ml.load_model('Models/XGBoost_Models/XGBoost_74.5%_ML.json')
