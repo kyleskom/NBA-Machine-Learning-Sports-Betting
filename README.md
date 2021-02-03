@@ -20,7 +20,7 @@ Make sure all packages above are installed.
 ```bash
 $ git clone https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting.git
 $ cd NBA-Machine-Learning-Sports-Betting
-$ python3 XGBoost_main.py
+$ python3 main.py -xgb
 ```
 Enter under/over for today's games.
 
