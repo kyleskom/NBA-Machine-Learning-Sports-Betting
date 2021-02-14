@@ -33,3 +33,11 @@ try elu and selu
 # xgb.plot_tree(model)
 # plt.show()
 # plt.savefig("graph.pdf")
+
+look into tensorboard/ callbacks. Improve NN arc. See what data is helpful with a confusion matrix.
+Normalize data?
+Improve NN performance
+https://machinelearningmastery.com/improve-deep-learning-performance/
+https://www.tensorflow.org/tutorials/keras/keras_tuner
+https://www.youtube.com/watch?v=k7KfYXXrOj0
+https://keras.io/api/layers/
