@@ -11,6 +11,8 @@ LSTM
 Recurrent
 Support Vector Regression
 
+recurrent NN
+
 
 https://www.youtube.com/watch?v=BqgTU7_cBnk
 
