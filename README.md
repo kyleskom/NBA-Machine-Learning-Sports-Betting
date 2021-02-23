@@ -7,6 +7,7 @@ A machine learning AI used to predict the winners and under/overs of NBA games. 
 Use Python 3.8. In particular the packages/libraries used are...
 
 * Tensorflow - Machine learning library
+* XGBoost - Gradient boosting framework
 * Numpy - Package for scientific computing in Python
 * Pandas - Data manipulation and analysis
 * Colorama - Color text output
