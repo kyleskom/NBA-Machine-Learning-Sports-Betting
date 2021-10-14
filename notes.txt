@@ -44,10 +44,4 @@ https://machinelearningmastery.com/improve-deep-learning-performance/
 https://www.tensorflow.org/tutorials/keras/keras_tuner
 https://www.youtube.com/watch?v=k7KfYXXrOj0
 https://keras.io/api/layers/
-<<<<<<< HEAD
-
 https://medium.com/@Mandysidana/machine-learning-types-of-classification-9497bd4f2e14
-
-=======
-https://medium.com/@Mandysidana/machine-learning-types-of-classification-9497bd4f2e14
->>>>>>> 644bd9d183ca9ba3989814a1edbf269ea3315a9e
