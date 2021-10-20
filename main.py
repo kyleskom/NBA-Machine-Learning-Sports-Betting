@@ -19,11 +19,17 @@ data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
 def createTodaysGames(games, df):
     match_data = []
     todays_games_uo = []
+    home_team_odds = []
+    away_team_odds = []
 
     for game in games:
         home_team = game[0]
         away_team = game[1]
         todays_games_uo.append(input(home_team + ' vs ' + away_team + ': '))
+
+        home_team_odds.append(input(home_team + ' odds: '))
+        away_team_odds.append(input(away_team + ' odds: '))
+
         home_team_series = df.iloc[team_index_current.get(home_team)]
         away_team_series = df.iloc[team_index_current.get(away_team)]
         stats = home_team_series.append(away_team_series)
@@ -36,7 +42,7 @@ def createTodaysGames(games, df):
     data = frame_ml.values
     data = data.astype(float)
 
-    return data, todays_games_uo, frame_ml
+    return data, todays_games_uo, frame_ml, home_team_odds, away_team_odds
 
 
 def main():
@@ -44,23 +50,23 @@ def main():
     games = create_todays_games(data)
     data = get_json_data(data_url)
     df = to_data_frame(data)
-    data, todays_games_uo, frame_ml = createTodaysGames(games, df)
+    data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = createTodaysGames(games, df)
     if args.nn:
         print("------------Neural Network Model Predictions-----------")
         data = tf.keras.utils.normalize(data, axis=1)
-        NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games)
+        NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds)
         print("-------------------------------------------------------")
     if args.xgb:
         print("---------------XGBoost Model Predictions---------------")
-        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games)
+        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds)
         print("-------------------------------------------------------")
     if args.A:
         print("---------------XGBoost Model Predictions---------------")
-        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games)
+        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds)
         print("-------------------------------------------------------")
         data = tf.keras.utils.normalize(data, axis=1)
         print("------------Neural Network Model Predictions-----------")
-        NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games)
+        NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds)
         print("-------------------------------------------------------")
 
 

@@ -1,7 +1,7 @@
 def expected_value(Pwin, odds):
     Ploss = 1 - Pwin
     Mwin = payout(odds)
-    return (Pwin * Mwin) - (Ploss * 100)
+    return round((Pwin * Mwin) - (Ploss * 100), 2)
 
 
 def payout(odds):
