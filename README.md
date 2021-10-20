@@ -16,6 +16,8 @@ Use Python 3.8. In particular the packages/libraries used are...
 
 ## Usage
 
+<img src="https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting/blob/master/Screenshots/Expected_value.png" width="1010" height="292" />
+
 Make sure all packages above are installed.
 
 ```bash
