@@ -2,10 +2,11 @@ import copy
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from colorama import Fore, Style
+from colorama import Fore, Style, init, deinit
 from tensorflow.keras.models import load_model
 from src.Utils import Expected_Value
 
+init()
 model = load_model('Models/NN_Models/Trained-Model-ML')
 ou_model = load_model("Models/NN_Models/Trained-Model-OU")
 
@@ -74,3 +75,5 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
         else:
             print(away_team + ' EV: ' + Fore.RED + str(ev_away) + Style.RESET_ALL)
         count += 1
+
+    deinit()

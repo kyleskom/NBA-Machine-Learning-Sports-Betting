@@ -3,12 +3,13 @@ import copy
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from colorama import Fore, Style
+from colorama import Fore, Style, init, deinit
 from src.Utils import Expected_Value
+
 
 # from src.Utils.Dictionaries import team_index_current
 # from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
-
+init()
 xgb_ml = xgb.Booster()
 #xgb_ml.load_model('Models/XGBoost_Models/XGBoost_74.5%_ML.json')
 xgb_ml.load_model('Models/XGBoost_Models/XGBoost_74.9%_ML-2.json')
@@ -87,3 +88,5 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
         else:
             print(away_team + ' EV: ' + Fore.RED + str(ev_away) + Style.RESET_ALL)
         count += 1
+
+    deinit()
