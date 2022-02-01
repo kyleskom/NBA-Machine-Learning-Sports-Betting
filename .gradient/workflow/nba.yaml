@@ -1,0 +1,37 @@
+on:
+  github:
+    branches:
+      only: master
+      
+jobs:
+  CloneRepo:
+    resources:
+      instance-type: C3
+    outputs:
+     nba:
+        type: volume
+    uses: git-checkout@v1
+    with:
+      url: context.event.github.url
+      ref: context.event.github.ref
+  nba1:
+    env:
+      PYTHONUNBUFFERED: "1"
+    resources:
+      instance-type: P5000
+    needs:
+      - CloneRepo
+    inputs:
+      nba: CloneRepo.outputs.nba
+    outputs:
+      nbaoutputs:
+        type: dataset
+        with:
+          ref: demo-dataset
+    uses: script@v1
+    with:
+      script: |-
+        cd NBA-Machine-Learning-Sports-Betting
+        pip3 install -r requirements.txt
+        python3 main.py -xgb
+      image: pytorch/pytorch:latest
