@@ -2,10 +2,12 @@ import os
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from src.Dictionaries import team_index_07, team_index_08, team_index_12, team_index_13, team_index_14
+from src.Utils.Dictionaries import team_index_07, team_index_08, team_index_12, team_index_13, team_index_14
 
+# season_array = ["2007-08", "2008-09", "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16",
+#                 "2016-17", "2017-18", "2018-19", "2019-20", "2020-21"]
 season_array = ["2007-08", "2008-09", "2010-11", "2011-12", "2012-13", "2014-15", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21"]
-# season_array = ["2009-10"]
+# season_array = ["2007-08"]
 #2009-10, 2013-14, 2015-16 are fucked. Look into getting team data again
 odds_directory = os.fsdecode('../../Odds-Data/Odds-Data-Clean')
 df = pd.DataFrame
@@ -84,4 +86,4 @@ frame['Score'] = np.asarray(scores)
 frame['Home-Team-Win'] = np.asarray(win_margin)
 frame['OU'] = np.asarray(OU)
 frame['OU-Cover'] = np.asarray(OU_Cover)
-frame.to_excel('../../Datasets/TEST123.xlsx')
+frame.to_excel('../../Datasets/More_Data_2020-21.xlsx')
