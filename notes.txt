@@ -1,0 +1,47 @@
+https://arxiv.org/pdf/1710.02824.pdf
+https://www.sportsbookreviewsonline.com/scoresoddsarchives/nba/nbaoddsarchives.htm
+https://www.youtube.com/watch?v=wQ8BIBpya2k
+Random Forrest
+https://www.analyticsvidhya.com/blog/2015/09/random-forest-algorithm-multiple-challenges/?utm_source=blog&utm_medium=understandingsupportvectormachinearticle
+Regression
+logistic regression
+naive bayes
+XGBoost
+Support Vector Machine
+LSTM
+Recurrent
+Support Vector Regression
+
+recurrent NN
+
+
+https://www.youtube.com/watch?v=BqgTU7_cBnk
+
+Hyperparameter tuning
+https://www.youtube.com/watch?v=vvC15l4CY1Q
+
+FIX ODDS-DATA
+1-24-16 Raptors.....OKC
+
+Miles travled since last game?
+Days since last game
+
+https://klane.github.io/databall
+https://www.covers.com
+https://www.oddsportal.com
+
+Leaky ReLu for most
+try elu and selu
+
+# xgb.plot_tree(model)
+# plt.show()
+# plt.savefig("graph.pdf")
+
+look into tensorboard/ callbacks. Improve NN arc. See what data is helpful with a confusion matrix.
+Normalize data?
+Improve NN performance
+https://machinelearningmastery.com/improve-deep-learning-performance/
+https://www.tensorflow.org/tutorials/keras/keras_tuner
+https://www.youtube.com/watch?v=k7KfYXXrOj0
+https://keras.io/api/layers/
+https://medium.com/@Mandysidana/machine-learning-types-of-classification-9497bd4f2e14
