@@ -3,7 +3,8 @@ import os
 from tqdm import tqdm
 import pandas as pd
 import time
-from src.Utils import tools
+from src.Utils.tools import get_json_data, to_data_frame
+
 
 url = 'https://stats.nba.com/stats/' \
       'leaguedashteamstats?Conference=&' \
@@ -45,8 +46,8 @@ for season1 in tqdm(season):
             for stat in stats:
                 time.sleep(1)
                 try:
-                    general_data = tools.get_json_data(url.format(month1, day1, begin_year_pointer, end_year_pointer, season1, stat))
-                    general_df = tools.to_data_frame(general_data)
+                    general_data = get_json_data(url.format(month1, day1, begin_year_pointer, end_year_pointer, season1, stat))
+                    general_df = to_data_frame(general_data)
                     df_list.append(general_df)
                 except:
                     continue

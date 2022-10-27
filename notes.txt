@@ -45,3 +45,12 @@ https://www.tensorflow.org/tutorials/keras/keras_tuner
 https://www.youtube.com/watch?v=k7KfYXXrOj0
 https://keras.io/api/layers/
 https://medium.com/@Mandysidana/machine-learning-types-of-classification-9497bd4f2e14
+
+
+More Data:
+    Depth 2 - 67.38399999999999
+    Depth 3 - 67.34200000000001
+    Depth 5 - 67.12200000000001
+    Depth 7 - 66.62600000000002
+
+    https://www.gamblingsites.org/sports-betting/kelly-criterion/
