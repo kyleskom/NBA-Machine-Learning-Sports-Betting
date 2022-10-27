@@ -32,7 +32,7 @@ def createTodaysGames(games, df):
 
         home_team_series = df.iloc[team_index_current.get(home_team)]
         away_team_series = df.iloc[team_index_current.get(away_team)]
-        stats = home_team_series.append(away_team_series)
+        stats = pd.concat([home_team_series, away_team_series])
         match_data.append(stats)
 
     games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
