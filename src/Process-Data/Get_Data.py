@@ -18,8 +18,8 @@ url = 'https://stats.nba.com/stats/' \
       'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
 # year = [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
-year = [2015, 2016]
-season = ["2015-16"]
+year = [2010, 2011]
+season = ["2010-11"]
 # season = ["2007-08", "2008-09", "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16", "2016-17",
 #           "2017-18", "2018-19", "2019-20", "2020-2021", "2021-2022"]
 
@@ -47,7 +47,7 @@ for season1 in tqdm(season):
                 directory2 = os.fsdecode('../../Team-Data')
                 x = str(real_date).split('-')
 
-                name = directory2 + '/' + '{}-{}-{}'.format(x[1], str(int(x[2])), season1) + '.xlsx'
+                name = directory2 + '/' + '{}-{}-{}'.format(str(int(x[1])), str(int(x[2])), season1) + '.xlsx'
                 general_df.to_excel(name)
             except:
                 continue
