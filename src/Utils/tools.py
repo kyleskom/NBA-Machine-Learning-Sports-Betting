@@ -77,6 +77,5 @@ def get_odds():
                 team_money_line_odds = match_info[0].get_text()
                 dict_res[team_name] = team_money_line_odds
                 i += 1
-            print(i)
 
     return dict_res
