@@ -5,14 +5,14 @@ from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
 from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
-todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2021/scores/00_todays_scores.json'
+todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2022/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
            'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
            'GameSegment=&LastNGames=0&LeagueID=00&Location=&' \
            'MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&' \
            'PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&' \
            'PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&' \
-           'Season=2021-22&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
+           'Season=2022-23&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
            'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
 
@@ -32,7 +32,7 @@ def createTodaysGames(games, df):
 
         home_team_series = df.iloc[team_index_current.get(home_team)]
         away_team_series = df.iloc[team_index_current.get(away_team)]
-        stats = home_team_series.append(away_team_series)
+        stats = pd.concat([home_team_series, away_team_series])
         match_data.append(stats)
 
     games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
