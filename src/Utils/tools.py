@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-
+from colorama import Style
 games_header = {
     'user-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/57.0.2987.133 Safari/537.36',
@@ -50,3 +50,9 @@ def create_todays_games(input_list):
         away_team = away.get('tc') + ' ' + away.get('tn')
         games.append([home_team, away_team])
     return games
+
+def team_print(team, ml):
+    if int(ml) > 0:
+        return team + Style.RESET_ALL + '(+' + ml + ')'
+    else:
+        return team + Style.RESET_ALL + '(' + ml + ')'

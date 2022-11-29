@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from colorama import Fore, Style, init, deinit
-from src.Utils import Expected_Value
+from src.Utils import Expected_Value, tools
 
 
 # from src.Utils.Dictionaries import team_index_current
@@ -47,13 +47,13 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
             if under_over == 0:
                 un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
                 print(
-                    Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
+                    Fore.GREEN + tools.team_print(home_team, home_team_odds[count]) + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + tools.team_print(away_team, away_team_odds[count]) + Style.RESET_ALL + ': ' +
                     Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(
                         todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)" + Style.RESET_ALL)
             else:
                 un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
                 print(
-                    Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
+                    Fore.GREEN + tools.team_print(home_team, home_team_odds[count]) + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + tools.team_print(away_team, away_team_odds[count]) + Style.RESET_ALL + ': ' +
                     Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(
                         todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)" + Style.RESET_ALL)
         else:
@@ -61,13 +61,13 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
             if under_over == 0:
                 un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
                 print(
-                    Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
+                    Fore.RED + tools.team_print(home_team, home_team_odds[count]) + Style.RESET_ALL + ' vs ' + Fore.GREEN + tools.team_print(away_team, away_team_odds[count]) + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
                     Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(
                         todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)" + Style.RESET_ALL)
             else:
                 un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
                 print(
-                    Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
+                    Fore.RED + tools.team_print(home_team, home_team_odds[count]) + Style.RESET_ALL + ' vs ' + Fore.GREEN + tools.team_print(away_team, away_team_odds[count]) + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
                     Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(
                         todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)" + Style.RESET_ALL)
         count += 1
