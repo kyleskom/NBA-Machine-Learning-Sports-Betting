@@ -1,0 +1,74 @@
+[
+    {
+        "id": [
+            "Charlotte Hornets",
+            "LA Clippers"
+        ],
+        "home": "100",
+        "away": "100",
+        "o/u": "200"
+    },
+    {
+        "id": [
+            "Orlando Magic",
+            "Milwaukee Bucks"
+        ],
+        "home": "100",
+        "away": "100",
+        "o/u": "200"
+    },
+    {
+        "id": [
+            "Atlanta Hawks",
+            "Oklahoma City Thunder"
+        ],
+        "home": "100",
+        "away": "100",
+        "o/u": "200"
+    },
+    {
+        "id": [
+            "Toronto Raptors",
+            "Boston Celtics"
+        ],
+        "home": "100",
+        "away": "100",
+        "o/u": "200"
+    },
+    {
+        "id": [
+            "Houston Rockets",
+            "Philadelphia 76ers"
+        ],
+        "home": "100",
+        "away": "100",
+        "o/u": "200"
+    },
+    {
+        "id": [
+            "Memphis Grizzlies",
+            "Miami Heat"
+        ],
+        "home": "100",
+        "away": "100",
+        "o/u": "200"
+    },
+    {
+        "id": [
+            "Dallas Mavericks",
+            "Phoenix Suns"
+        ],
+        "home": "100",
+        "away": "100",
+        "o/u": "200"
+    },
+    {
+        "id": [
+            "Golden State Warriors",
+            "Indiana Pacers"
+        ],
+        "home": "100",
+        "away": "100",
+        "o/u": "200"
+    }
+]

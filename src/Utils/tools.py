@@ -1,6 +1,10 @@
 import requests
 import pandas as pd
 from colorama import Style
+import glob
+import os
+from datetime import datetime
+import json
 games_header = {
     'user-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/57.0.2987.133 Safari/537.36',
@@ -22,6 +26,10 @@ data_headers = {
     'x-nba-stats-origin': 'stats',
     'x-nba-stats-token': 'true'
 }
+
+def get_odds(url):
+    raw_data = requests.get(url)
+    return raw_data.json()
 
 
 def get_json_data(url):
@@ -50,6 +58,25 @@ def create_todays_games(input_list):
         away_team = away.get('tc') + ' ' + away.get('tn')
         games.append([home_team, away_team])
     return games
+
+def create_json_input(games):
+    output = []
+    for game in games:
+        output.append(
+            {
+                'id': game,
+                'home': '100',
+                'away': '100',
+                'o/u': '200'
+            }
+        )
+    with open('./Odds-Input/odds-input-'+ datetime.today().strftime('%Y-%m-%d') + '.json', 'w', encoding='utf-8') as f:
+        json.dump(output, f, ensure_ascii=False, indent=4)
+
+def get_latest_file(path):
+    list_of_files = glob.glob(f'{path}/*') # * means all if need specific format then *.csv
+    latest_file = max(list_of_files, key=os.path.getctime)
+    return(latest_file)
 
 def team_print(team, ml):
     if int(ml) > 0:

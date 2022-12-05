@@ -1,9 +1,68 @@
-requests==2.25.1
-tqdm==4.59.0
-colorama==0.4.4
-pandas
-numpy
-scikit_learn==1.0
-keras==2.6.0
-tensorflow==2.6.0
-xgboost==1.4.2
+absl-py==1.3.0
+astunparse==1.6.3
+brotlipy==0.7.0
+cachetools==5.2.0
+certifi @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_4d2o0arbv6/croot/certifi_1665076671099/work/certifi
+cffi @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/croot-jgj0vmyy/cffi_1642701117808/work
+charset-normalizer @ file:///tmp/build/80754af9/charset-normalizer_1630003229654/work
+colorama==0.4.6
+conda==22.9.0
+conda-content-trust @ file:///tmp/build/80754af9/conda-content-trust_1617045594566/work
+conda-package-handling @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_croot-4sc96bd_/conda-package-handling_1649105290173/work
+cryptography @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_5871d1ea-0250-4cd7-ac89-4b1e60514f5daqk8t0ow/croots/recipe/cryptography_1652101128666/work
+et-xmlfile==1.1.0
+flatbuffers==22.11.23
+gast==0.4.0
+google-auth==2.14.1
+google-auth-oauthlib==0.4.6
+google-pasta==0.2.0
+grpcio @ file:///Users/builder/miniconda3/envs/prefect/conda-bld/grpcio_1637592348692/work
+h5py @ file:///Users/builder/miniconda3/envs/prefect/conda-bld/h5py_1637162753555/work
+idna @ file:///tmp/build/80754af9/idna_1637925883363/work
+importlib-metadata==5.1.0
+joblib==1.2.0
+keras==2.10.0
+Keras-Preprocessing==1.1.2
+libclang==14.0.6
+Markdown==3.4.1
+MarkupSafe==2.1.1
+numpy==1.23.5
+oauthlib==3.2.2
+openpyxl==3.0.10
+opt-einsum==3.3.0
+packaging==21.3
+pandas==1.5.2
+protobuf==3.19.6
+pyasn1==0.4.8
+pyasn1-modules==0.2.8
+pycosat==0.6.3
+pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
+pyOpenSSL @ file:///opt/conda/conda-bld/pyopenssl_1643788558760/work
+pyparsing==3.0.9
+PySocks @ file:///Users/ktietz/Code/oss/ci_pkgs/pysocks_1626781349491/work
+python-dateutil==2.8.2
+pytz==2022.6
+requests @ file:///opt/conda/conda-bld/requests_1641824580448/work
+requests-oauthlib==1.3.1
+rsa==4.9
+ruamel-yaml-conda @ file:///Users/ktietz/demo/mc3/conda-bld/ruamel_yaml_1629464769899/work
+scikit-learn==1.1.3
+scipy==1.9.3
+six @ file:///tmp/build/80754af9/six_1644875935023/work
+sklearn==0.0.post1
+tensorboard==2.10.1
+tensorboard-data-server==0.6.1
+tensorboard-plugin-wit==1.8.1
+tensorflow-estimator==2.10.0
+tensorflow-macos==2.10.0
+tensorflow-metal==0.6.0
+termcolor==2.1.1
+threadpoolctl==3.1.0
+toolz @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_362wyqvvgy/croot/toolz_1667464079070/work
+tqdm @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_d8374dd1-2388-4771-b0ef-a205a18076f0p40h0nwh/croots/recipe/tqdm_1650891080348/work
+typing_extensions==4.4.0
+urllib3 @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_dc7bd08d-3aa9-4e45-9124-1c432b2bee1dmp2r0ell/croots/recipe/urllib3_1650640006820/work
+Werkzeug==2.2.2
+wrapt==1.14.1
+xgboost==1.7.1
+zipp==3.10.0
