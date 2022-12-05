@@ -33,7 +33,7 @@ def createTodaysGames(games, df):
         json_obj = next((x for x in input_json if [team_index_current.get(x['id'][0]), team_index_current.get(
             x['id'][1])] == [team_index_current.get(home_team), team_index_current.get(away_team)]), None)
 
-        # keep these for manual input
+        # keep these for manual inputasdfas
         if input_json is None or json_obj is None:
             todays_games_uo.append(
                 input(home_team + ' vs ' + away_team + ': '))
