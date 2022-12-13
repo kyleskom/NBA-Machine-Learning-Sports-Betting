@@ -1,9 +1,11 @@
 import os
-from datetime import date, datetime, timedelta
-from tqdm import tqdm
-import time
-from src.Utils.tools import get_json_data, to_data_frame
 import random
+import time
+from datetime import date, timedelta
+
+from tqdm import tqdm
+
+from src.Utils.tools import get_json_data, to_data_frame
 
 url = 'https://stats.nba.com/stats/' \
       'leaguedashteamstats?Conference=&' \
