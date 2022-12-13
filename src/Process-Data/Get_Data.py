@@ -7,7 +7,7 @@ import random
 
 url = 'https://stats.nba.com/stats/' \
       'leaguedashteamstats?Conference=&' \
-      'DateFrom=10%2F25%2F{2}&DateTo={0}%2F{1}%2F{3}' \
+      'DateFrom=10%2F15%2F{2}&DateTo={0}%2F{1}%2F{3}' \
       '&Division=&GameScope=&GameSegment=&LastNGames=0&' \
       'LeagueID=00&Location=&MeasureType=Base&Month=0&' \
       'OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&' \
@@ -18,8 +18,8 @@ url = 'https://stats.nba.com/stats/' \
       'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
 # year = [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
-year = [2015, 2016]
-season = ["2015-16"]
+year = [2021, 2022]
+season = ["2021-22"]
 # season = ["2007-08", "2008-09", "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16", "2016-17",
 #           "2017-18", "2018-19", "2019-20", "2020-2021", "2021-2022"]
 
