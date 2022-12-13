@@ -8,7 +8,7 @@ directory = os.fsdecode('../../Odds-Data')
 for file in tqdm(os.listdir(directory)):
     filename = os.fsdecode(file)
     year = filename[9:-5]
-    if filename.endswith('21.xlsx'):
+    if filename.endswith('22.xlsx'):
         df = pd.read_excel(directory + '/' + filename)
         x = pd.DataFrame(columns=['Date', 'Home', 'Away', 'OU', 'Spread', 'ML_Home', 'ML_Away', 'Points', 'Win_Margin'])
         count = 2
