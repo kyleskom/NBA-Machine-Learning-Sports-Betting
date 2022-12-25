@@ -63,6 +63,10 @@ def main():
     if args.odds:
         print("--------------Automatic odds data scraping-------------")
         odds = odds_provider.get_odds()
+        if(games[0][0] not in list(odds.keys())):
+            print(Fore.RED, "--------------Games list not up to date for todays games!!! Scraping disabled until list is updated.--------------")
+            print(Style.RESET_ALL)
+            odds = None
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = createTodaysGames(games, df, odds)
     if args.nn:
         print("------------Neural Network Model Predictions-----------")
