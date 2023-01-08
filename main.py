@@ -1,10 +1,12 @@
 import argparse
+from colorama import Fore, Style
 import pandas as pd
 import tensorflow as tf
 from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
 from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
-from src.DataProviders.YahooOddsProvider import YahooOddsProvider
+from src.DataProviders.SbrOddsProvider import SbrOddsProvider
+
 
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2022/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
@@ -15,7 +17,7 @@ data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
            'PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&' \
            'Season=2022-23&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
            'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
-odds_provider = YahooOddsProvider('https://sports.yahoo.com/nba/odds/')
+
 
 def createTodaysGames(games, df, odds):
     match_data = []
@@ -62,8 +64,9 @@ def main():
     df = to_data_frame(data)
     if args.odds:
         print("--------------Automatic odds data scraping-------------")
-        odds = odds_provider.get_odds()
+        odds = SbrOddsProvider(sportsbook=args.odds).get_odds()
         if((games[0][0]+':'+games[0][1]) not in list(odds.keys())):
+            print(games[0][0]+':'+games[0][1])
             print(Fore.RED, "--------------Games list not up to date for todays games!!! Scraping disabled until list is updated.--------------")
             print(Style.RESET_ALL)
             odds = None
@@ -92,6 +95,6 @@ if __name__ == "__main__":
     parser.add_argument('-xgb', action='store_true', help='Run with XGBoost Model')
     parser.add_argument('-nn', action='store_true', help='Run with Neural Network Model')
     parser.add_argument('-A', action='store_true', help='Run all Models')
-    parser.add_argument('-odds', action='store_true', help='Automatically parse in fill in current odds')
+    parser.add_argument('--odds', default='fanduel', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
     args = parser.parse_args()
     main()
