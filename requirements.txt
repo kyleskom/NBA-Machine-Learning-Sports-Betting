@@ -8,3 +8,4 @@ keras==2.6.0
 tensorflow==2.6.0
 xgboost==1.4.2
 sbrscrape==0.0.2
+Flask==2.2.2

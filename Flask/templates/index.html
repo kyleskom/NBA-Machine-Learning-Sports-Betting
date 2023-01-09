@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+    <title>NBA Machine Learning Picks</title>
+    <style>
+      .green {color: green}
+      .red {color: red}
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <h1>NBA Machine Learning Picks</h1>
+      <div class="grid">
+        {% for sportsbook in ["fanduel", "draftkings", "betmgm"] %}
+          <div>
+            <h3>{{sportsbook}}</h3>
+            <table role="grid">
+                {% for game in data.get(sportsbook) %}
+                <tr>
+                    <td>
+                      {% if game.away_confidence %}<b>{{ game.away_team }} ({{game.away_confidence}}%)</b>{% else %}{{ game.away_team }}{% endif %}
+                        <br>
+                        {% if game.home_confidence %}<b>{{ game.home_team }} ({{game.home_confidence}}%)</b>{% else %}{{ game.home_team }}{% endif %}
+                      </td>
+                    <td style="text-align: right">
+                      <span class="ev-value">{{ game.away_team_ev }}</span><br>
+                      <span class="ev-value">{{ game.home_team_ev }}</span>
+                    </td>
+                    <td>{{ game.ou_pick }} {{ game.ou_value }} (<span class="ou-confidence">{{game.ou_confidence}}%</span>)</td>
+                </tr>
+                {% endfor %}
+            </table>
+          </div>
+        {% endfor %}
+    </div>
+    </main>
+    <script>
+      function perc2color(perc,min,max) {
+            var base = (max - min);
+            if (base == 0) { perc = 100; }
+            else {
+                perc = (perc - min) / base * 100; 
+            }
+            var r, g, b = 0;
+            if (perc < 50) {
+                r = 255;
+                g = Math.round(5.1 * perc);
+            }
+            else {
+                g = 255;
+                r = Math.round(510 - 5.10 * perc);
+            }
+            var h = r * 0x10000 + g * 0x100 + b * 0x1;
+            return '#' + ('000000' + h.toString(16)).slice(-6);
+        }
+      evs = document.getElementsByClassName("ev-value")
+      ous = document.getElementsByClassName("ou-confidence")
+      for (var i = 0; i < evs.length; i++) {
+          evs[i].style.color = perc2color(parseFloat(evs[i].textContent)+100,0,200)
+      }
+      for (var i = 0; i < ous.length; i++) {
+          ous[i].style.color = perc2color(parseFloat(ous[i].textContent),0,100)
+      }
+      </script>
+  </body>
+</html>
+
+
+
+
