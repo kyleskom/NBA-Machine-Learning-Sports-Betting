@@ -63,13 +63,17 @@ def main():
     data = get_json_data(data_url)
     df = to_data_frame(data)
     if args.odds:
-        print("--------------Automatic odds data scraping-------------")
         odds = SbrOddsProvider(sportsbook=args.odds).get_odds()
         if((games[0][0]+':'+games[0][1]) not in list(odds.keys())):
             print(games[0][0]+':'+games[0][1])
             print(Fore.RED, "--------------Games list not up to date for todays games!!! Scraping disabled until list is updated.--------------")
             print(Style.RESET_ALL)
             odds = None
+        else:
+            print(f"------------------{args.odds} odds data------------------")
+            for g in odds.keys():
+                home_team, away_team = g.split(":")
+                print(f"{away_team} ({odds[g][away_team]['money_line_odds']}) @ {home_team} ({odds[g][home_team]['money_line_odds']})")
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = createTodaysGames(games, df, odds)
     if args.nn:
         print("------------Neural Network Model Predictions-----------")
@@ -95,6 +99,6 @@ if __name__ == "__main__":
     parser.add_argument('-xgb', action='store_true', help='Run with XGBoost Model')
     parser.add_argument('-nn', action='store_true', help='Run with Neural Network Model')
     parser.add_argument('-A', action='store_true', help='Run all Models')
-    parser.add_argument('--odds', default='fanduel', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
+    parser.add_argument('-odds', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
     args = parser.parse_args()
     main()
