@@ -25,9 +25,12 @@ Make sure all packages above are installed.
 $ git clone https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting.git
 $ cd NBA-Machine-Learning-Sports-Betting
 $ pip3 install -r requirements.txt
-$ python3 main.py -xgb
+$ python3 main.py -xgb -odds=fanduel
 ```
-Enter under/over and odds for today's games.
+
+Odds data will be automatically fetched from sbrodds if the -odds option is provided with a sportsbook.  Options include: fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny
+
+If `-odds` is not given, enter the under/over and odds for today's games manually after starting the script.
 
 ## Contributing
 
