@@ -4,7 +4,7 @@ import pandas as pd
 import tensorflow as tf
 from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
-from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
+from src.Utils.tools import create_todays_games_from_odds, get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 
 
@@ -58,12 +58,9 @@ def createTodaysGames(games, df, odds):
 
 def main():
     odds = None
-    data = get_todays_games_json(todays_games_url)
-    games = create_todays_games(data)
-    data = get_json_data(data_url)
-    df = to_data_frame(data)
     if args.odds:
         odds = SbrOddsProvider(sportsbook=args.odds).get_odds()
+        games = create_todays_games_from_odds(odds)
         if((games[0][0]+':'+games[0][1]) not in list(odds.keys())):
             print(games[0][0]+':'+games[0][1])
             print(Fore.RED, "--------------Games list not up to date for todays games!!! Scraping disabled until list is updated.--------------")
@@ -74,6 +71,11 @@ def main():
             for g in odds.keys():
                 home_team, away_team = g.split(":")
                 print(f"{away_team} ({odds[g][away_team]['money_line_odds']}) @ {home_team} ({odds[g][home_team]['money_line_odds']})")
+    else:
+        data = get_todays_games_json(todays_games_url)
+        games = create_todays_games(data)
+    data = get_json_data(data_url)
+    df = to_data_frame(data)
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = createTodaysGames(games, df, odds)
     if args.nn:
         print("------------Neural Network Model Predictions-----------")
