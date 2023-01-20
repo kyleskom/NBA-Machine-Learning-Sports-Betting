@@ -8,34 +8,67 @@
     <style>
       .green {color: green}
       .red {color: red}
+      td {padding: 2px;}
+      td.numbers { width: 40px; text-align: right;}
+      table {margin-bottom: 6px;}
+      th {text-align: center;}
     </style>
   </head>
   <body>
     <main class="container">
-      <h1>NBA Machine Learning Picks</h1>
-      <div class="grid">
-        {% for sportsbook in ["fanduel", "draftkings", "betmgm"] %}
-          <div>
-            <h3>{{sportsbook}}</h3>
-            <table role="grid">
-                {% for game in data.get(sportsbook) %}
+      <h1>NBA Machine Learning Picks ({{today}})</h1>
+      <table role="grid">
+      <thead>
+          <th>Teams</th>
+          <th>Fanduel</th>
+          <th>Draftkings</th>
+          <th>Betmgm</th>
+      </thead>
+        <tbody>
+        <tr>
+          {% for game in data.get('fanduel') %}
+          {% set game_idx = loop.index0 %}
+          <tr>
+            <td width="180px;">
+            <table>
+              <tbody>
                 <tr>
-                    <td>
-                      {% if game.away_confidence %}<b>{{ game.away_team }} ({{game.away_confidence}}%)</b>{% else %}{{ game.away_team }}{% endif %}
-                        <br>
-                        {% if game.home_confidence %}<b>{{ game.home_team }} ({{game.home_confidence}}%)</b>{% else %}{{ game.home_team }}{% endif %}
-                      </td>
-                    <td style="text-align: right">
-                      <span class="ev-value">{{ game.away_team_ev }}</span><br>
-                      <span class="ev-value">{{ game.home_team_ev }}</span>
-                    </td>
-                    <td>{{ game.ou_pick }} {{ game.ou_value }} (<span class="ou-confidence">{{game.ou_confidence}}%</span>)</td>
+                  <td>{{ game.away_team }}</td>
                 </tr>
-                {% endfor %}
+                <tr>
+                  <td>{{ game.home_team }}</td>
+                </tr>
+              </tbody>
             </table>
-          </div>
-        {% endfor %}
-    </div>
+            </td>
+            {% for sportsbook in ['fanduel', 'draftkings', 'betmgm'] %}
+            {% set sbgame = data.get(sportsbook)[game_idx] %}
+            {% if not sbgame or not sbgame.away_team or not sbgame.home_team %}{% continue %}{%endif%}
+            <td>
+              <table>
+                <tbody>
+                  <tr>
+                    <td class="numbers">{% if sbgame.away_team_odds|int > 0 %}+{%endif%}{{ sbgame.away_team_odds }}{% if sbgame.away_confidence %} <span class="ev-confidence">({{sbgame.away_confidence}}%)</span>{% endif %}</td>
+                    <td class="numbers">
+                      <span class="ev-value">{{ sbgame.away_team_ev }}</span>
+                    </td>
+                    <td class="numbers">{% if sbgame.ou_pick == 'OVER' %}O{%else%}U{%endif%} {{ sbgame.ou_value }}</td>
+                  </tr>
+                  <tr>
+                    <td class="numbers">{% if sbgame.home_team_odds|int > 0 %}+{%endif%}{{ sbgame.home_team_odds }}{% if sbgame.home_confidence %} <span class="ev-confidence">({{sbgame.home_confidence}}%)</span>{% endif %}</td>
+                    <td class="numbers">
+                      <span class="ev-value">{{ sbgame.home_team_ev }}</span>
+                    </td>
+                    <td class="numbers"><span class="ou-confidence">{{sbgame.ou_confidence}}%</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+            {% endfor %}
+          </tr>
+          {%endfor%}
+        </tbody>
+      </table>
     </main>
     <script>
       function perc2color(perc,min,max) {
@@ -57,12 +90,16 @@
             return '#' + ('000000' + h.toString(16)).slice(-6);
         }
       evs = document.getElementsByClassName("ev-value")
+      evconfs = document.getElementsByClassName("ev-confidence")
       ous = document.getElementsByClassName("ou-confidence")
       for (var i = 0; i < evs.length; i++) {
-          evs[i].style.color = perc2color(parseFloat(evs[i].textContent)+100,0,200)
+          evs[i].style.color = perc2color(parseFloat(evs[i].textContent.replace('(','').replace(')',''))+100,0,200)
+      }
+      for (var i = 0; i < evconfs.length; i++) {
+          evconfs[i].style.color = perc2color(parseFloat(evconfs[i].textContent.replace('(','').replace(')','')),0,100)
       }
       for (var i = 0; i < ous.length; i++) {
-          ous[i].style.color = perc2color(parseFloat(ous[i].textContent),0,100)
+          ous[i].style.color = perc2color(parseFloat(ous[i].textContent.replace('(','').replace(')','')),0,100)
       }
       </script>
   </body>
