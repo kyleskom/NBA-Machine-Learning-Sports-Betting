@@ -1,4 +1,5 @@
 from datetime import date
+import json
 from flask import Flask, render_template
 from functools import lru_cache
 import subprocess
@@ -27,7 +28,7 @@ def fetch_game_data(sportsbook="fanduel"):
     data_re = re.compile(r'\n(?P<home_team>[\w ]+)(\((?P<home_confidence>[\d+\.]+)%\))? vs (?P<away_team>[\w ]+)(\((?P<away_confidence>[\d+\.]+)%\))?: (?P<ou_pick>OVER|UNDER) (?P<ou_value>[\d+\.]+) (\((?P<ou_confidence>[\d+\.]+)%\))?', re.MULTILINE)
     ev_re = re.compile(r'(?P<team>[\w ]+) EV: (?P<ev>[-\d+\.]+)', re.MULTILINE)
     odds_re = re.compile(r'(?P<away_team>[\w ]+) \((?P<away_team_odds>-?\d+)\) @ (?P<home_team>[\w ]+) \((?P<home_team_odds>-?\d+)\)', re.MULTILINE)
-    games = []
+    games = {}
     for match in data_re.finditer(stdout):
         game_dict = {'away_team': match.group('away_team').strip(),
                      'home_team': match.group('home_team').strip(),
@@ -47,8 +48,8 @@ def fetch_game_data(sportsbook="fanduel"):
             if odds_match.group('home_team') == game_dict['home_team']:
                 game_dict['home_team_odds'] = odds_match.group('home_team_odds')
 
-        print(game_dict)
-        games.append(game_dict)
+        print(json.dumps(game_dict, sort_keys=True, indent=4))
+        games[f"{game_dict['away_team']}:{game_dict['home_team']}"] = game_dict
     return games
 
 
