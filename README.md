@@ -33,6 +33,7 @@ Odds data will be automatically fetched from sbrodds if the -odds option is prov
 If `-odds` is not given, enter the under/over and odds for today's games manually after starting the script.
 
 ## Flask Web App
+<img src="https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting/blob/master/Screenshots/Flask-App.png" width="1010" height="424" />
 This repo also includes a small Flask application to help view the data from this tool in the browser.  To run it:
 ```
 cd Flask
