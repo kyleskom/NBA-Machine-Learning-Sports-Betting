@@ -26,27 +26,28 @@
       </thead>
         <tbody>
         <tr>
-          {% for game in data.get('fanduel') %}
-          {% set game_idx = loop.index0 %}
+          {% for game_key in data.get('fanduel') %}
+          {% set teams = game_key.split(':') %}
           <tr>
             <td width="180px;">
             <table>
               <tbody>
                 <tr>
-                  <td>{{ game.away_team }}</td>
+                  <td>{{ teams[0] }}</td>
                 </tr>
                 <tr>
-                  <td>{{ game.home_team }}</td>
+                  <td>{{ teams[1] }}</td>
                 </tr>
               </tbody>
             </table>
             </td>
             {% for sportsbook in ['fanduel', 'draftkings', 'betmgm'] %}
-            {% set sbgame = data.get(sportsbook)[game_idx] %}
+            {% set sbgame = data.get(sportsbook)[game_key] %}
             {% if not sbgame or not sbgame.away_team or not sbgame.home_team %}
             <td class="{{sportsbook}}"></td>
             {% else %}
-            <td class="{{sportsbook}}">
+            {% if teams[0] == sbgame.away_team %}
+            <td class="{{sportsbook}}-{{sbgame.away_team}}">
               <table>
                 <tbody>
                   <tr>
@@ -66,6 +67,7 @@
                 </tbody>
               </table>
             </td>
+            {% endif %}
             {% endif %}
             {% endfor %}
           </tr>
