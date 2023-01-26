@@ -43,8 +43,10 @@
             </td>
             {% for sportsbook in ['fanduel', 'draftkings', 'betmgm'] %}
             {% set sbgame = data.get(sportsbook)[game_idx] %}
-            {% if not sbgame or not sbgame.away_team or not sbgame.home_team %}{% continue %}{%endif%}
-            <td>
+            {% if not sbgame or not sbgame.away_team or not sbgame.home_team %}
+            <td class="{{sportsbook}}"></td>
+            {% else %}
+            <td class="{{sportsbook}}">
               <table>
                 <tbody>
                   <tr>
@@ -64,6 +66,7 @@
                 </tbody>
               </table>
             </td>
+            {% endif %}
             {% endfor %}
           </tr>
           {%endfor%}
@@ -104,7 +107,3 @@
       </script>
   </body>
 </html>
-
-
-
-
