@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 import numpy as np
 
-data = pd.read_excel('../../Datasets/DataSet-2021-22.xlsx')
+data = pd.read_excel('../../Datasets/DataSet-2022-23.xlsx')
 OU = data['OU-Cover']
 data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover'], axis=1,
           inplace=True)
