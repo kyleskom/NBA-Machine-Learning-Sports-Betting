@@ -50,3 +50,11 @@ def create_todays_games(input_list):
         away_team = away.get('tc') + ' ' + away.get('tn')
         games.append([home_team, away_team])
     return games
+
+
+def create_todays_games_from_odds(input_dict):
+    games = []
+    for game in input_dict.keys():
+        home_team, away_team = game.split(":")
+        games.append([home_team, away_team])
+    return games
