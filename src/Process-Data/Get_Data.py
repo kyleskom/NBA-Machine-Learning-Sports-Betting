@@ -1,5 +1,6 @@
 import os
 import random
+import sqlite3
 import time
 import sys
 from datetime import date, datetime, timedelta
@@ -35,6 +36,8 @@ end_year_pointer = year[0]
 count = 0
 year_count = 0
 
+con = sqlite3.connect("../../Data/db.sqlite")
+
 for season1 in tqdm(season):
     for month1 in tqdm(month):
         if month1 == 1:
@@ -57,11 +60,10 @@ for season1 in tqdm(season):
             real_date = date(year=end_year_pointer, month=month1, day=day1) + timedelta(days=1)
             general_df['Date'] = str(real_date)
 
-            directory2 = os.fsdecode('../../Team-Data/' + season1)
             x = str(real_date).split('-')
-
-            name = directory2 + '/' + '{}-{}-{}'.format(str(int(x[1])), str(int(x[2])), season1) + '.xlsx'
-            general_df.to_excel(name)
+            general_df.to_sql(f"teams_{str(int(x[1]))}-{str(int(x[2]))}-{season1}", con, if_exists="replace")
             time.sleep(random.randint(1, 3))
     year_count += 1
     begin_year_pointer = year[count]
+
+con.close()

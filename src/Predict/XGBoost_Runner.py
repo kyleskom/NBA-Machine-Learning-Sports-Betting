@@ -12,7 +12,7 @@ from src.Utils import Expected_Value
 init()
 xgb_ml = xgb.Booster()
 #xgb_ml.load_model('Models/XGBoost_Models/XGBoost_74.5%_ML.json')
-xgb_ml.load_model('Models/XGBoost_Models/XGBoost_69.5%_ML-2.json')
+xgb_ml.load_model('Models/XGBoost_Models/XGBoost_73.3%_ML-2.json')
 xgb_uo = xgb.Booster()
 #xgb_uo.load_model('Models/XGBoost_Models/XGBoost_57.9%_UO.json')
 xgb_uo.load_model('Models/XGBoost_Models/XGBoost_53.3%_UO-6.json')
