@@ -43,9 +43,10 @@ flask --debug run
 
 ## Getting new data and training models
 ```
-# Get data
+# Create dataset with the latest data for 2022-23 season
 cd src/Process-Data
 python -m Get_Data
+python -m Create_Games
 
 # Train models
 cd ../Train-Models
