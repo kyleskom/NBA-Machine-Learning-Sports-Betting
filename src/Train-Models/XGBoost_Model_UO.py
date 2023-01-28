@@ -12,7 +12,7 @@ con = sqlite3.connect("../../Data/db.sqlite")
 data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")
 con.close()
 OU = data['OU-Cover']
-data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover'], axis=1,
+data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover'], axis=1,
           inplace=True)
 data = data.values
 data = data.astype(float)
