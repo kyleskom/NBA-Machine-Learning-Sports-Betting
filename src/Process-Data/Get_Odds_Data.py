@@ -21,7 +21,7 @@ year_count = 0
 sportsbook='fanduel'
 df_data = []
 
-con = sqlite3.connect("../../Data/db.sqlite")
+con = sqlite3.connect("../../Data/odds.sqlite")
 
 for season1 in tqdm(season):
     for month1 in tqdm(month):

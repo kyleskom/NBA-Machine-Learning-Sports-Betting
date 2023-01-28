@@ -8,7 +8,7 @@ import numpy as np
 
 
 dataset = "dataset_2015-23"
-con = sqlite3.connect("../../Data/db.sqlite")
+con = sqlite3.connect("../../Data/dataset.sqlite")
 data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")
 con.close()
 OU = data['OU-Cover']

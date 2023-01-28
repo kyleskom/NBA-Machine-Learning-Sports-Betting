@@ -17,10 +17,11 @@ win_margin = []
 OU = []
 OU_Cover = []
 games = []
-con = sqlite3.connect("../../Data/db.sqlite")
+teams_con = sqlite3.connect("../../Data/teams.sqlite")
+odds_con = sqlite3.connect("../../Data/odds.sqlite")
 
 for season in tqdm(season_array):
-    odds_df = pd.read_sql_query(f"select * from \"odds_{season}\"", con, index_col="index")
+    odds_df = pd.read_sql_query(f"select * from \"odds_{season}\"", odds_con, index_col="index")
     team_table_str = "teams_{}-{}-" + season
 
     for row in odds_df.itertuples():
@@ -34,14 +35,13 @@ for season in tqdm(season_array):
         year = date_array[0] + '-' + date_array[1]
         month = date_array[2][:2]
         day = date_array[2][2:]
-        print(year,month,day)
 
         if month[0] == '0':
             month = month[1:]
         if day[0] == '0':
             day = day[1:]
 
-        team_df = pd.read_sql_query(f"select * from \"teams_{month}-{day}-{year}\"", con, index_col="index")
+        team_df = pd.read_sql_query(f"select * from \"teams_{month}-{day}-{year}\"", teams_con, index_col="index")
 
         if len(team_df.index) == 30:
             scores.append(row[9])
@@ -84,6 +84,8 @@ for season in tqdm(season_array):
                 index={col:f"{col}.1" for col in team_df.columns.values}
             )])
             games.append(game)
+odds_con.close()
+teams_con.close()
 season = pd.concat(games, ignore_index=True, axis=1)
 season = season.T
 frame = season.drop(columns=['TEAM_ID', 'CFID', 'CFPARAMS', 'Unnamed: 0', 'Unnamed: 0.1', 'CFPARAMS.1', 'TEAM_ID.1', 'CFID.1'])
@@ -96,5 +98,6 @@ for field in frame.columns.values:
     if 'TEAM_' in field  or 'Date' in field or field not in frame:
         continue
     frame[field] = frame[field].astype(float)
+con = sqlite3.connect("../../Data/dataset.sqlite")
 frame.to_sql("dataset_2015-23", con, if_exists="replace")
 con.close()
