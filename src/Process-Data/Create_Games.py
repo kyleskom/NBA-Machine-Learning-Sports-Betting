@@ -9,7 +9,7 @@ from Utils.Dictionaries import team_index_07, team_index_08, team_index_12, team
 
 # season_array = ["2007-08", "2008-09", "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16",
 #                 "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"]
-season_array = ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"]
+season_array = ["2012-13", "2013-14", "2014-15", "2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"]
 
 df = pd.DataFrame
 scores = []
@@ -41,7 +41,7 @@ for season in tqdm(season_array):
         if day[0] == '0':
             day = day[1:]
 
-        team_df = pd.read_sql_query(f"select * from \"teams_{month}-{day}-{year}\"", teams_con, index_col="index")
+        team_df = pd.read_sql_query(f"select * from \"teams_{year}-{month}-{day}\"", teams_con, index_col="index")
 
         if len(team_df.index) == 30:
             scores.append(row[9])
@@ -99,5 +99,5 @@ for field in frame.columns.values:
         continue
     frame[field] = frame[field].astype(float)
 con = sqlite3.connect("../../Data/dataset.sqlite")
-frame.to_sql("dataset_2015-23", con, if_exists="replace")
+frame.to_sql("dataset_2012-23", con, if_exists="replace")
 con.close()

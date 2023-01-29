@@ -7,7 +7,7 @@ from tqdm import tqdm
 import numpy as np
 
 
-dataset = "dataset_2015-23"
+dataset = "dataset_2012-23"
 con = sqlite3.connect("../../Data/dataset.sqlite")
 data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")
 con.close()
