@@ -48,7 +48,6 @@ for season1 in tqdm(season):
                     'Unnamed: 0': 0,
                     'Date': f"{season1}-{month1:02}{day1:02}",
                     'Home': game['home_team'],
-                    'Home': game['home_team'],
                     'Away': game['away_team'],
                     'OU': game['total'][sportsbook],
                     'Spread': game['away_spread'][sportsbook],
