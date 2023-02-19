@@ -1,5 +1,6 @@
 import requests
 import pandas as pd
+from src.Utils.Dictionaries import team_index_current
 
 games_header = {
     'user-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -56,5 +57,7 @@ def create_todays_games_from_odds(input_dict):
     games = []
     for game in input_dict.keys():
         home_team, away_team = game.split(":")
+        if home_team not in team_index_current or away_team not in team_index_current:
+            continue
         games.append([home_team, away_team])
     return games
