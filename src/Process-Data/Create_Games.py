@@ -3,6 +3,7 @@ import sqlite3
 import numpy as np
 import pandas as pd
 import sys
+from datetime import datetime
 from tqdm import tqdm
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
 from Utils.Dictionaries import team_index_07, team_index_08, team_index_12, team_index_13, team_index_14, team_index_current
@@ -23,6 +24,7 @@ odds_con = sqlite3.connect("../../Data/odds.sqlite")
 for season in tqdm(season_array):
     odds_df = pd.read_sql_query(f"select * from \"odds_{season}\"", odds_con, index_col="index")
     team_table_str = "teams_{}-{}-" + season
+    year_count = 0
 
     for row in odds_df.itertuples():
         home_team = row[3]
@@ -40,6 +42,14 @@ for season in tqdm(season_array):
             month = month[1:]
         if day[0] == '0':
             day = day[1:]
+        if int(month) == 1:
+            year_count = 1
+        end_year_pointer = int(date_array[0]) + year_count
+        if end_year_pointer == datetime.now().year:
+            if int(month) == datetime.now().month and int(day) >= datetime.now().day:
+                continue
+            if int(month) > datetime.now().month:
+                continue
 
         team_df = pd.read_sql_query(f"select * from \"teams_{year}-{month}-{day}\"", teams_con, index_col="index")
 

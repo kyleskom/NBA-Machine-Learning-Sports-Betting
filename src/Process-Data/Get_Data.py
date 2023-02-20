@@ -61,7 +61,8 @@ for season1 in tqdm(season):
             general_df['Date'] = str(real_date)
 
             x = str(real_date).split('-')
-            general_df.to_sql(f"teams_{str(int(x[1]))}-{str(int(x[2]))}-{season1}", con, if_exists="replace")
+            general_df.to_sql(f"teams_{season1}-{str(int(x[1]))}-{str(int(x[2]))}", con, if_exists="replace")
+            
             time.sleep(random.randint(1, 3))
     year_count += 1
     begin_year_pointer = year[count]
