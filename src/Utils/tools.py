@@ -1,6 +1,6 @@
 import requests
 import pandas as pd
-from src.Utils.Dictionaries import team_index_current
+from .Dictionaries import team_index_current
 
 games_header = {
     'user-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
