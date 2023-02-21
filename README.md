@@ -46,6 +46,7 @@ flask --debug run
 # Create dataset with the latest data for 2022-23 season
 cd src/Process-Data
 python -m Get_Data
+python -m Get_Odds_Data
 python -m Create_Games
 
 # Train models

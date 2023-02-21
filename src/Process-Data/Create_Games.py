@@ -18,6 +18,8 @@ win_margin = []
 OU = []
 OU_Cover = []
 games = []
+days_rest_away = []
+days_rest_home = []
 teams_con = sqlite3.connect("../../Data/teams.sqlite")
 odds_con = sqlite3.connect("../../Data/odds.sqlite")
 
@@ -52,10 +54,11 @@ for season in tqdm(season_array):
                 continue
 
         team_df = pd.read_sql_query(f"select * from \"teams_{year}-{month}-{day}\"", teams_con, index_col="index")
-
         if len(team_df.index) == 30:
             scores.append(row[9])
             OU.append(row[5])
+            days_rest_home.append(row[11])
+            days_rest_away.append(row[12])
             if row[10] > 0:
                 win_margin.append(1)
             else:
@@ -103,6 +106,8 @@ frame['Score'] = np.asarray(scores)
 frame['Home-Team-Win'] = np.asarray(win_margin)
 frame['OU'] = np.asarray(OU)
 frame['OU-Cover'] = np.asarray(OU_Cover)
+frame['Days-Rest-Home'] = np.asarray(days_rest_home)
+frame['Days-Rest-Away'] = np.asarray(days_rest_away)
 # fix types
 for field in frame.columns.values:
     if 'TEAM_' in field  or 'Date' in field or field not in frame:
