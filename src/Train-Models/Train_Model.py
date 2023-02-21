@@ -1,3 +1,4 @@
+import sqlite3
 import time
 import numpy as np
 import pandas as pd
@@ -10,10 +11,14 @@ tensorboard = TensorBoard(log_dir='../../Logs/{}'.format(current_time))
 earlyStopping = EarlyStopping(monitor='val_loss', patience=10, verbose=0, mode='min')
 mcp_save = ModelCheckpoint('../../Models/Trained-Model-ML-' + current_time, save_best_only=True, monitor='val_loss', mode='min')
 
-data = pd.read_excel('../../Datasets/DataSet-2021-22.xlsx')
+dataset = "dataset_2012-23"
+con = sqlite3.connect("../../Data/dataset.sqlite")
+data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")
+con.close()
+
 scores = data['Score']
 margin = data['Home-Team-Win']
-data.drop(['Score', 'Home-Team-Win', 'Unnamed: 0', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU', 'OU-Cover'], axis=1, inplace=True)
+data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU', 'OU-Cover'], axis=1, inplace=True)
 
 data = data.values
 data = data.astype(float)

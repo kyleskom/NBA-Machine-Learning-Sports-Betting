@@ -46,28 +46,28 @@
             {% if not sbgame or not sbgame.away_team or not sbgame.home_team %}
             <td class="{{sportsbook}}"></td>
             {% else %}
-            {% if teams[0] == sbgame.away_team %}
-            <td class="{{sportsbook}}-{{sbgame.away_team}}">
-              <table>
-                <tbody>
-                  <tr>
-                    <td class="numbers">{% if sbgame.away_team_odds|int > 0 %}+{%endif%}{{ sbgame.away_team_odds }}{% if sbgame.away_confidence %} <span class="ev-confidence">({{sbgame.away_confidence}}%)</span>{% endif %}</td>
-                    <td class="numbers">
-                      <span class="ev-value">{{ sbgame.away_team_ev }}</span>
-                    </td>
-                    <td class="numbers">{% if sbgame.ou_pick == 'OVER' %}O{%else%}U{%endif%} {{ sbgame.ou_value }}</td>
-                  </tr>
-                  <tr>
-                    <td class="numbers">{% if sbgame.home_team_odds|int > 0 %}+{%endif%}{{ sbgame.home_team_odds }}{% if sbgame.home_confidence %} <span class="ev-confidence">({{sbgame.home_confidence}}%)</span>{% endif %}</td>
-                    <td class="numbers">
-                      <span class="ev-value">{{ sbgame.home_team_ev }}</span>
-                    </td>
-                    <td class="numbers"><span class="ou-confidence">{{sbgame.ou_confidence}}%</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </td>
-            {% endif %}
+              {% if teams[0] == sbgame.away_team %}
+              <td class="{{sportsbook}}">
+                <table>
+                  <tbody>
+                    <tr>
+                      <td class="numbers">{% if sbgame.away_team_odds|int > 0 %}+{%endif%}{{ sbgame.away_team_odds }}{% if sbgame.away_confidence %} <span class="ev-confidence">({{sbgame.away_confidence}}%)</span>{% endif %}</td>
+                      <td class="numbers">
+                        <span class="ev-value">{{ sbgame.away_team_ev }}</span>
+                      </td>
+                      <td class="numbers">{% if sbgame.ou_pick == 'OVER' %}O{%else%}U{%endif%} {{ sbgame.ou_value }}</td>
+                    </tr>
+                    <tr>
+                      <td class="numbers">{% if sbgame.home_team_odds|int > 0 %}+{%endif%}{{ sbgame.home_team_odds }}{% if sbgame.home_confidence %} <span class="ev-confidence">({{sbgame.home_confidence}}%)</span>{% endif %}</td>
+                      <td class="numbers">
+                        <span class="ev-value">{{ sbgame.home_team_ev }}</span>
+                      </td>
+                      <td class="numbers"><span class="ou-confidence">{{sbgame.ou_confidence}}%</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </td>
+              {% endif %}
             {% endif %}
             {% endfor %}
           </tr>

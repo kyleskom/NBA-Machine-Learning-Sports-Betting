@@ -7,5 +7,6 @@ scikit_learn==1.0
 keras==2.6.0
 tensorflow==2.6.0
 xgboost==1.4.2
-sbrscrape==0.0.4
+sbrscrape==0.0.6
 Flask==2.2.2
+openpyxl

@@ -41,6 +41,19 @@ cd Flask
 flask --debug run
 ```
 
+## Getting new data and training models
+```
+# Create dataset with the latest data for 2022-23 season
+cd src/Process-Data
+python -m Get_Data
+python -m Create_Games
+
+# Train models
+cd ../Train-Models
+python -m XGBoost_Model_ML
+python -m XGBoost_Model_UO
+```
+
 ## Contributing
 
 All contributions welcomed and encouraged.
