@@ -1,6 +1,7 @@
 from datetime import date
 import json
 from flask import Flask, render_template
+from flask_ngrok import run_with_ngrok
 from functools import lru_cache
 import subprocess
 import re
@@ -59,6 +60,7 @@ def get_ttl_hash(seconds=600):
 
 
 app = Flask(__name__)
+run_with_ngrok(app)
 app.jinja_env.add_extension('jinja2.ext.loopcontrols')
 
 
