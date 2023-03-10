@@ -16,6 +16,7 @@ data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1
           inplace=True)
 data = data.values
 data = data.astype(float)
+acc_results = []
 
 for x in tqdm(range(100)):
     x_train, x_test, y_train, y_test = train_test_split(data, OU, test_size=.1)
@@ -40,5 +41,8 @@ for x in tqdm(range(100)):
         y.append(np.argmax(z))
 
     acc = round(accuracy_score(y_test, y)*100, 1)
-    print(acc)
-    model.save_model('../../Models/XGBoost_{}%_UO-6.json'.format(acc))
+    print(f"{acc}%")
+    acc_results.append(acc)
+    # only save results if they are the best so far
+    if acc == max(acc_results):
+        model.save_model('../../Models/XGBoost_{}%_UO-6.json'.format(acc))

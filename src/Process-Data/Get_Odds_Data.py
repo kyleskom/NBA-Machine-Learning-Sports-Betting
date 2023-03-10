@@ -16,7 +16,6 @@ days = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 2
 begin_year_pointer = year[0]
 end_year_pointer = year[0]
 count = 0
-year_count = 0
 
 sportsbook='fanduel'
 df_data = []
@@ -27,7 +26,7 @@ for season1 in tqdm(season):
     for month1 in tqdm(month):
         if month1 == 1:
             count += 1
-            end_year_pointer = year[year_count]
+            end_year_pointer = year[count]
         for day1 in tqdm(days):
             if month1 == 10 and day1 < 19:
                 continue
@@ -60,7 +59,6 @@ for season1 in tqdm(season):
                 except KeyError:
                     print(f"No {sportsbook} odds data found for game: {game}")
             time.sleep(random.randint(1, 3))
-    year_count += 1
     begin_year_pointer = year[count]
 
     df = pd.DataFrame(df_data,)
