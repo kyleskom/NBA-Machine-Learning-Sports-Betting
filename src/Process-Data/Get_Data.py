@@ -34,7 +34,6 @@ days = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 2
 begin_year_pointer = year[0]
 end_year_pointer = year[0]
 count = 0
-year_count = 0
 
 con = sqlite3.connect("../../Data/teams.sqlite")
 
@@ -64,7 +63,6 @@ for season1 in tqdm(season):
             general_df.to_sql(f"teams_{season1}-{str(int(x[1]))}-{str(int(x[2]))}", con, if_exists="replace")
             
             time.sleep(random.randint(1, 3))
-    year_count += 1
     begin_year_pointer = year[count]
 
 con.close()
