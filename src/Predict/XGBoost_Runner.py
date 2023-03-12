@@ -13,7 +13,7 @@ init()
 xgb_ml = xgb.Booster()
 xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.6%_ML-2.json')
 xgb_uo = xgb.Booster()
-xgb_uo.load_model('Models/XGBoost_Models/XGBoost_53.8%_UO-6.json')
+xgb_uo.load_model('Models/XGBoost_Models/XGBoost_54.8%_UO-8.json')
 
 
 def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds):
