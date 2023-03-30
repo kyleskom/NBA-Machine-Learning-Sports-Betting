@@ -1,3 +1,5 @@
+from datetime import datetime
+import re
 import requests
 import pandas as pd
 from .Dictionaries import team_index_current
@@ -68,3 +70,8 @@ def create_todays_games_from_odds(input_dict):
             continue
         games.append([home_team, away_team])
     return games
+
+def get_date(date_string):
+    year1,month,day = re.search(r'(\d+)-\d+-(\d\d)(\d\d)', date_string).groups()
+    year = year1 if int(month) > 8 else int(year1) + 1
+    return datetime.strptime(f"{year}-{month}-{day}", '%Y-%m-%d')

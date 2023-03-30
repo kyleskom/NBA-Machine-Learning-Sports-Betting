@@ -12,8 +12,11 @@ con = sqlite3.connect("../../Data/dataset.sqlite")
 data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")
 con.close()
 OU = data['OU-Cover']
-data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover'], axis=1,
+total = data['OU']
+data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover', 'OU'], axis=1,
           inplace=True)
+
+data['OU'] = np.asarray(total)
 data = data.values
 data = data.astype(float)
 acc_results = []
@@ -45,4 +48,4 @@ for x in tqdm(range(100)):
     acc_results.append(acc)
     # only save results if they are the best so far
     if acc == max(acc_results):
-        model.save_model('../../Models/XGBoost_{}%_UO-6.json'.format(acc))
+        model.save_model('../../Models/XGBoost_{}%_UO-8.json'.format(acc))

@@ -2,10 +2,14 @@ import random
 import time
 import pandas as pd
 import sqlite3
+import os
+import sys
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from tqdm import tqdm
 from sbrscrape import Scoreboard
+sys.path.insert(1, os.path.join(sys.path[0], '..'))
+from Utils.tools import get_date
 
 year = [2022, 2023]
 season = ["2022-23"]
@@ -23,6 +27,7 @@ df_data = []
 con = sqlite3.connect("../../Data/odds.sqlite")
 
 for season1 in tqdm(season):
+    teams_last_played = {}
     for month1 in tqdm(month):
         if month1 == 1:
             count += 1
@@ -43,6 +48,23 @@ for season1 in tqdm(season):
             if not hasattr(sb, "games"):
                 continue
             for game in sb.games:
+                if game['home_team'] not in teams_last_played:
+                    teams_last_played[game['home_team']] = get_date(f"{season1}-{month1:02}{day1:02}")
+                    home_games_rested = timedelta(days=7) # start of season, big number
+                else:
+                    current_date = get_date(f"{season1}-{month1:02}{day1:02}")
+                    home_games_rested = current_date - teams_last_played[game['home_team']]
+                    teams_last_played[game['home_team']] = current_date
+                    # todo update row
+
+                if game['away_team'] not in teams_last_played:
+                    teams_last_played[game['away_team']] = get_date(f"{season1}-{month1:02}{day1:02}")
+                    away_games_rested = timedelta(days=7) # start of season, big number
+                else:
+                    current_date = get_date(f"{season1}-{month1:02}{day1:02}")
+                    away_games_rested = current_date - teams_last_played[game['away_team']]
+                    teams_last_played[game['away_team']] = current_date
+                
                 try:
                     df_data.append({
                         'Unnamed: 0': 0,
@@ -55,6 +77,8 @@ for season1 in tqdm(season):
                         'ML_Away': game['away_ml'][sportsbook],
                         'Points': game['away_score'] + game['home_score'],
                         'Win_Margin': game['home_score'] - game['away_score'],
+                        'Days_Rest_Home': home_games_rested.days,
+                        'Days_Rest_Away': away_games_rested.days
                     })
                 except KeyError:
                     print(f"No {sportsbook} odds data found for game: {game}")

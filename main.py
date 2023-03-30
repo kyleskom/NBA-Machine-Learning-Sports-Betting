@@ -1,4 +1,6 @@
 import argparse
+from datetime import datetime, timedelta
+import time
 from colorama import Fore, Style
 import pandas as pd
 import tensorflow as tf
@@ -24,6 +26,9 @@ def createTodaysGames(games, df, odds):
     todays_games_uo = []
     home_team_odds = []
     away_team_odds = []
+    # todo: get the days rest for current games
+    home_team_days_rest = []
+    away_team_days_rest = []
 
     for game in games:
         home_team = game[0]
@@ -42,10 +47,25 @@ def createTodaysGames(games, df, odds):
 
             home_team_odds.append(input(home_team + ' odds: '))
             away_team_odds.append(input(away_team + ' odds: '))
+        
+        # calculate days rest for both teams
+        dateparse = lambda x: datetime.strptime(x, '%d/%m/%Y %H:%M')
+        schedule_df = pd.read_csv('Data/nba-2022-UTC.csv', parse_dates=['Date'], date_parser=dateparse)
+        home_games = schedule_df[(schedule_df['Home Team'] == home_team) | (schedule_df['Away Team'] == home_team)]
+        away_games = schedule_df[(schedule_df['Home Team'] == away_team) | (schedule_df['Away Team'] == away_team)]
+        last_home_date = home_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date'].iloc[0]
+        last_away_date = away_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date'].iloc[0]
+        home_days_off = timedelta(days=1) + datetime.today() - last_home_date
+        away_days_off = timedelta(days=1) + datetime.today() - last_away_date
+        # print(f"{away_team} days off: {away_days_off.days} @ {home_team} days off: {home_days_off.days}")
 
+        home_team_days_rest.append(home_days_off.days)
+        away_team_days_rest.append(away_days_off.days)
         home_team_series = df.iloc[team_index_current.get(home_team)]
         away_team_series = df.iloc[team_index_current.get(away_team)]
         stats = pd.concat([home_team_series, away_team_series])
+        stats['Days-Rest-Home'] = home_days_off.days
+        stats['Days-Rest-Away'] = away_days_off.days
         match_data.append(stats)
 
     games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
