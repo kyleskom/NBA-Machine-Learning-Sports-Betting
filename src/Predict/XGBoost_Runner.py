@@ -78,15 +78,17 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
         if home_team_odds[count] and away_team_odds[count]:
             ev_home = float(Expected_Value.expected_value(ml_predictions_array[count][0][1], int(home_team_odds[count])))
             ev_away = float(Expected_Value.expected_value(ml_predictions_array[count][0][0], int(away_team_odds[count])))
+            kelly_home = float(Expected_Value.kelly(ml_predictions_array[count][0][1], int(home_team_odds[count])))
+            kelly_away = float(Expected_Value.kelly(ml_predictions_array[count][0][0], int(away_team_odds[count])))
         if ev_home > 0:
-            print(home_team + ' EV: ' + Fore.GREEN + str(ev_home) + Style.RESET_ALL)
+            print(home_team + ' EV: ' + Fore.GREEN + str(ev_home) + Style.RESET_ALL + ' Wager: $' + str(kelly_home))
         else:
-            print(home_team + ' EV: ' + Fore.RED + str(ev_home) + Style.RESET_ALL)
+            print(home_team + ' EV: ' + Fore.RED + str(ev_home) + Style.RESET_ALL + ' Wager: $' + str(kelly_home))
 
         if ev_away > 0:
-            print(away_team + ' EV: ' + Fore.GREEN + str(ev_away) + Style.RESET_ALL)
+            print(away_team + ' EV: ' + Fore.GREEN + str(ev_away) + Style.RESET_ALL + ' Wager: $' + str(kelly_away))
         else:
-            print(away_team + ' EV: ' + Fore.RED + str(ev_away) + Style.RESET_ALL)
+            print(away_team + ' EV: ' + Fore.RED + str(ev_away) + Style.RESET_ALL + ' Wager: $' + str(kelly_away))
         count += 1
 
     deinit()
