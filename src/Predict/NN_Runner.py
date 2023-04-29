@@ -5,6 +5,7 @@ import tensorflow as tf
 from colorama import Fore, Style, init, deinit
 from tensorflow.keras.models import load_model
 from src.Utils import Expected_Value
+from src.Utils import Kelly_Criterion as kc
 
 init()
 model = load_model('Models/NN_Models/Trained-Model-ML-1680133120.689445')
@@ -58,22 +59,23 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
                       Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)" + Style.RESET_ALL)
         count += 1
 
-    print("--------------------Expected Value---------------------")
+    print("------------Expected Value & Kelly Criterion------------")
     count = 0
     for game in games:
         home_team = game[0]
         away_team = game[1]
-        ev_home = float(Expected_Value.expected_value(ml_predictions_array[count][0][1], int(home_team_odds[count])))
-        ev_away = float(Expected_Value.expected_value(ml_predictions_array[count][0][0], int(away_team_odds[count])))
-        if ev_home > 0:
-            print(home_team + ' EV: ' + Fore.GREEN + str(ev_home) + Style.RESET_ALL)
-        else:
-            print(home_team + ' EV: ' + Fore.RED + str(ev_home) + Style.RESET_ALL)
+        ev_home = ev_away = 0
+        if home_team_odds[count] and away_team_odds[count]:
+            ev_home = float(Expected_Value.expected_value(ml_predictions_array[count][0][1], int(home_team_odds[count])))
+            ev_away = float(Expected_Value.expected_value(ml_predictions_array[count][0][0], int(away_team_odds[count])))
+        expected_value_colors = {'home_color': Fore.GREEN if ev_home > 0 else Fore.RED,
+                        'away_color': Fore.GREEN if ev_away > 0 else Fore.RED}
+        bankroll_descriptor = ' Fraction of Bankroll: '
+        bankroll_fraction_home = bankroll_descriptor + str(kc.calculate_kelly_criterion(home_team_odds[count], ml_predictions_array[count][0][1])) + '%'
+        bankroll_fraction_away = bankroll_descriptor + str(kc.calculate_kelly_criterion(away_team_odds[count], ml_predictions_array[count][0][0])) + '%'
 
-        if ev_away > 0:
-            print(away_team + ' EV: ' + Fore.GREEN + str(ev_away) + Style.RESET_ALL)
-        else:
-            print(away_team + ' EV: ' + Fore.RED + str(ev_away) + Style.RESET_ALL)
+        print(home_team + ' EV: ' + expected_value_colors['home_color'] + str(ev_home) + Style.RESET_ALL + bankroll_fraction_home)
+        print(away_team + ' EV: ' + expected_value_colors['away_color'] + str(ev_away) + Style.RESET_ALL + bankroll_fraction_away)
         count += 1
 
     deinit()

@@ -82,12 +82,7 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
             ev_away = float(Expected_Value.expected_value(ml_predictions_array[count][0][0], int(away_team_odds[count])))
         expected_value_colors = {'home_color': Fore.GREEN if ev_home > 0 else Fore.RED,
                         'away_color': Fore.GREEN if ev_away > 0 else Fore.RED}
-        
         bankroll_descriptor = ' Fraction of Bankroll: '
-        print('winner_confidence_home:', ml_predictions_array[count][0][1])
-        print('winner_confidence_away:', ml_predictions_array[count][0][0])
-        print('home_team_odds', home_team_odds[count])
-        print('away team odds', away_team_odds[count])
         bankroll_fraction_home = bankroll_descriptor + str(kc.calculate_kelly_criterion(home_team_odds[count], ml_predictions_array[count][0][1])) + '%'
         bankroll_fraction_away = bankroll_descriptor + str(kc.calculate_kelly_criterion(away_team_odds[count], ml_predictions_array[count][0][0])) + '%'
 
