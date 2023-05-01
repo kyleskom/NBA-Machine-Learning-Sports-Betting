@@ -12,7 +12,7 @@ model = load_model('Models/NN_Models/Trained-Model-ML-1680133120.689445')
 ou_model = load_model("Models/NN_Models/Trained-Model-OU-1680133008.6887271")
 
 
-def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds):
+def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
     ml_predictions_array = []
 
     for row in data:
@@ -58,8 +58,10 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
                 print(Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
                       Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)" + Style.RESET_ALL)
         count += 1
-
-    print("------------Expected Value & Kelly Criterion------------")
+    if kelly_criterion:
+        print("------------Expected Value & Kelly Criterion-----------")
+    else:
+        print("---------------------Expected Value--------------------")
     count = 0
     for game in games:
         home_team = game[0]
@@ -74,8 +76,8 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
         bankroll_fraction_home = bankroll_descriptor + str(kc.calculate_kelly_criterion(home_team_odds[count], ml_predictions_array[count][0][1])) + '%'
         bankroll_fraction_away = bankroll_descriptor + str(kc.calculate_kelly_criterion(away_team_odds[count], ml_predictions_array[count][0][0])) + '%'
 
-        print(home_team + ' EV: ' + expected_value_colors['home_color'] + str(ev_home) + Style.RESET_ALL + bankroll_fraction_home)
-        print(away_team + ' EV: ' + expected_value_colors['away_color'] + str(ev_away) + Style.RESET_ALL + bankroll_fraction_away)
+        print(home_team + ' EV: ' + expected_value_colors['home_color'] + str(ev_home) + Style.RESET_ALL + (bankroll_fraction_home if kelly_criterion else ''))
+        print(away_team + ' EV: ' + expected_value_colors['away_color'] + str(ev_away) + Style.RESET_ALL + (bankroll_fraction_away if kelly_criterion else ''))
         count += 1
 
     deinit()

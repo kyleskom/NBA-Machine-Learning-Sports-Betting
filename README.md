@@ -32,6 +32,8 @@ Odds data will be automatically fetched from sbrodds if the -odds option is prov
 
 If `-odds` is not given, enter the under/over and odds for today's games manually after starting the script.
 
+Optionally, you can add '-kc' as a command line argument to see the recommended fraction of your bankroll to wager based on the model's edge
+
 ## Flask Web App
 <img src="https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting/blob/master/Screenshots/Flask-App.png" width="922" height="580" />
 
