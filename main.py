@@ -53,10 +53,18 @@ def createTodaysGames(games, df, odds):
         schedule_df = pd.read_csv('Data/nba-2023-UTC.csv', parse_dates=['Date'], date_parser=dateparse)
         home_games = schedule_df[(schedule_df['Home Team'] == home_team) | (schedule_df['Away Team'] == home_team)]
         away_games = schedule_df[(schedule_df['Home Team'] == away_team) | (schedule_df['Away Team'] == away_team)]
-        last_home_date = home_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date'].iloc[0]
-        last_away_date = away_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date'].iloc[0]
-        home_days_off = timedelta(days=1) + datetime.today() - last_home_date
-        away_days_off = timedelta(days=1) + datetime.today() - last_away_date
+        previous_home_games = home_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date']
+        previous_away_games = away_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date']
+        if len(previous_home_games) > 0:
+            last_home_date = previous_home_games.iloc[0]
+            home_days_off = timedelta(days=1) + datetime.today() - last_home_date
+        else:
+            home_days_off = timedelta(days=7)
+        if len(previous_away_games) > 0:
+            last_away_date = previous_away_games.iloc[0]
+            away_days_off = timedelta(days=1) + datetime.today() - last_away_date
+        else:
+            away_days_off = timedelta(days=7)
         # print(f"{away_team} days off: {away_days_off.days} @ {home_team} days off: {home_days_off.days}")
 
         home_team_days_rest.append(home_days_off.days)
