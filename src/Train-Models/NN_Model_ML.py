@@ -1,9 +1,10 @@
 import sqlite3
 import time
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
+from keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint
 
 current_time = str(time.time())
 
@@ -34,7 +35,6 @@ model.add(tf.keras.layers.Dense(128, activation=tf.nn.relu6))
 model.add(tf.keras.layers.Dense(2, activation=tf.nn.softmax))
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=50, validation_split=0.1, batch_size=32,
-          callbacks=[tensorboard, earlyStopping, mcp_save])
+model.fit(x_train, y_train, epochs=50, validation_split=0.1, batch_size=32, callbacks=[tensorboard, earlyStopping, mcp_save])
 
 print('Done')
