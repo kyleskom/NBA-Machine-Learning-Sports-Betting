@@ -1,9 +1,10 @@
 import copy
+
 import numpy as np
-import pandas as pd
 import tensorflow as tf
 from colorama import Fore, Style, init, deinit
-from tensorflow.keras.models import load_model
+from keras.models import load_model
+
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
 
@@ -70,8 +71,7 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
         if home_team_odds[count] and away_team_odds[count]:
             ev_home = float(Expected_Value.expected_value(ml_predictions_array[count][0][1], int(home_team_odds[count])))
             ev_away = float(Expected_Value.expected_value(ml_predictions_array[count][0][0], int(away_team_odds[count])))
-        expected_value_colors = {'home_color': Fore.GREEN if ev_home > 0 else Fore.RED,
-                        'away_color': Fore.GREEN if ev_away > 0 else Fore.RED}
+        expected_value_colors = {'home_color': Fore.GREEN if ev_home > 0 else Fore.RED, 'away_color': Fore.GREEN if ev_away > 0 else Fore.RED}
         bankroll_descriptor = ' Fraction of Bankroll: '
         bankroll_fraction_home = bankroll_descriptor + str(kc.calculate_kelly_criterion(home_team_odds[count], ml_predictions_array[count][0][1])) + '%'
         bankroll_fraction_away = bankroll_descriptor + str(kc.calculate_kelly_criterion(away_team_odds[count], ml_predictions_array[count][0][0])) + '%'
