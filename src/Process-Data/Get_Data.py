@@ -1,14 +1,15 @@
 import os
 import random
 import sqlite3
-import time
 import sys
+import time
 from datetime import date, datetime, timedelta
 
 from tqdm import tqdm
 
+from src.Utils.tools import get_json_data, to_data_frame
+
 sys.path.insert(1, os.path.join(sys.path[0], '..'))
-from Utils.tools import get_json_data, to_data_frame
 
 url = 'https://stats.nba.com/stats/' \
       'leaguedashteamstats?Conference=&' \
@@ -29,7 +30,8 @@ season = ["2022-23"]
 #           "2017-18", "2018-19", "2019-20", "2020-2021", "2021-2022"]
 
 month = [10, 11, 12, 1, 2, 3, 4, 5, 6]
-days = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+days = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+        31]
 
 begin_year_pointer = year[0]
 end_year_pointer = year[0]
@@ -45,7 +47,7 @@ for season1 in tqdm(season):
         for day1 in tqdm(days):
             if month1 == 10 and day1 < 19:
                 continue
-            if month1 in [4,6,9,11] and day1 > 30:
+            if month1 in [4, 6, 9, 11] and day1 > 30:
                 continue
             if month1 == 2 and day1 > 28:
                 continue
@@ -61,7 +63,7 @@ for season1 in tqdm(season):
 
             x = str(real_date).split('-')
             general_df.to_sql(f"teams_{season1}-{str(int(x[1]))}-{str(int(x[2]))}", con, if_exists="replace")
-            
+
             time.sleep(random.randint(1, 3))
     begin_year_pointer = year[count]
 
