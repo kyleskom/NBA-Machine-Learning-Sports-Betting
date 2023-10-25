@@ -4,7 +4,7 @@
 A machine learning AI used to predict the winners and under/overs of NBA games. Takes all team data from the 2007-08 season to current season, matched with odds of those games, using a neural network to predict winning bets for today's games. Achieves ~69% accuracy on money lines and ~55% on under/overs. Outputs expected value for teams money lines to provide better insight. The fraction of your bankroll to bet based on the Kelly Criterion is also outputted. Note that a popular, less risky approach is to bet 50% of the stake recommended by the Kelly Criterion.
 ## Packages Used
 
-Use Python 3.8. In particular the packages/libraries used are...
+Use Python 3.11. In particular the packages/libraries used are...
 
 * Tensorflow - Machine learning library
 * XGBoost - Gradient boosting framework
