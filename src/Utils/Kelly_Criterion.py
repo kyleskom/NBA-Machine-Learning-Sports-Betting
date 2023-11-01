@@ -2,11 +2,14 @@ def american_to_decimal(american_odds):
     """
     Converts American odds to decimal odds (European odds).
     """
+    if american_odds is None:
+        raise ValueError("American odds value cannot be None.")
     if american_odds >= 100:
-        decimal_odds = (american_odds / 100)
+        decimal_odds = (american_odds / 100) + 1
     else:
-        decimal_odds = (100 / abs(american_odds))
+        decimal_odds = (100 / abs(american_odds)) + 1
     return round(decimal_odds, 2)
+
 
 def calculate_kelly_criterion(american_odds, model_prob):
     """
