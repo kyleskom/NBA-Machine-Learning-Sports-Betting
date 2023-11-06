@@ -2,7 +2,7 @@ colorama==0.4.6
 pandas==2.1.1
 sbrscrape==0.0.9
 tensorflow==2.14.0
-tensorflow-metal==1.1.0
+#tensorflow-metal==1.1.0
 xgboost==2.0.0
 tqdm==4.66.1
 flask==3.0.0

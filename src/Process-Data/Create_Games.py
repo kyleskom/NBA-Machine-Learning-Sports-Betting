@@ -7,12 +7,13 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 from src.Utils.Dictionaries import team_index_07, team_index_08, team_index_12, team_index_13, team_index_14, team_index_current
 
 # season_array = ["2007-08", "2008-09", "2009-10", "2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16",
 #                 "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"]
-season_array = ["2012-13", "2013-14", "2014-15", "2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"]
+season_array = ["2012-13", "2013-14", "2014-15", "2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21",
+                "2021-22", "2022-23","2023-24"]
 
 df = pd.DataFrame
 scores = []
@@ -85,7 +86,7 @@ for season in tqdm(season_array):
             elif season == '2013-14':
                 home_team_series = team_df.iloc[team_index_13.get(home_team)]
                 away_team_series = team_df.iloc[team_index_13.get(away_team)]
-            elif season == '2022-23':
+            elif season == '2022-23' or season == '2023-24':
                 home_team_series = team_df.iloc[team_index_current.get(home_team)]
                 away_team_series = team_df.iloc[team_index_current.get(away_team)]
             else:
@@ -116,5 +117,5 @@ for field in frame.columns.values:
         continue
     frame[field] = frame[field].astype(float)
 con = sqlite3.connect("../../Data/dataset.sqlite")
-frame.to_sql("dataset_2012-23", con, if_exists="replace")
+frame.to_sql("dataset_2012-24", con, if_exists="replace")
 con.close()

@@ -9,11 +9,11 @@ import pandas as pd
 from sbrscrape import Scoreboard
 from tqdm import tqdm
 
-sys.path.insert(1, os.path.join(sys.path[0], '..'))
+sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 from src.Utils.tools import get_date
 
-year = ["2022", "2023"]
-season = ["2022-23"]
+year = ["2023", "2024"]
+season = ["2023-24"]
 
 month = [10, 11, 12, 1, 2, 3, 4, 5, 6]
 days = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
@@ -34,17 +34,15 @@ for season1 in tqdm(season):
             count += 1
             end_year_pointer = year[count]
         for day1 in tqdm(days):
-            if month1 == 10 and day1 < 19:
+            if month1 == 10 and day1 < 24:
                 continue
             if month1 in [4, 6, 9, 11] and day1 > 30:
                 continue
             if month1 == 2 and day1 > 28:
                 continue
-            if end_year_pointer == datetime.now().year:
-                if month1 == datetime.now().month and day1 >= datetime.now().day:
-                    continue
-                if month1 > datetime.now().month:
-                    continue
+            # skip future games
+            if datetime.now() < datetime(year=int(end_year_pointer), month=month1, day=day1):
+                continue
             print(f"{end_year_pointer}-{month1:02}-{day1:02}")
             sb = Scoreboard(date=f"{end_year_pointer}-{month1:02}-{day1:02}")
             if not hasattr(sb, "games"):
