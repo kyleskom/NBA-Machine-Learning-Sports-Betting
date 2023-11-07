@@ -12,9 +12,9 @@ from src.Utils import Kelly_Criterion as kc
 # from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 init()
 xgb_ml = xgb.Booster()
-xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.9%_ML-3.json')
+xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.7%_ML-4.json')
 xgb_uo = xgb.Booster()
-xgb_uo.load_model('Models/XGBoost_Models/XGBoost_54.8%_UO-8.json')
+xgb_uo.load_model('Models/XGBoost_Models/XGBoost_53.7%_UO-9.json')
 
 
 def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
