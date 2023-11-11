@@ -68,6 +68,10 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
         home_team = game[0]
         away_team = game[1]
         ev_home = ev_away = 0
+        if home_team_odds[count] is None or away_team_odds[count] is None:
+            print('Incomplete Odds data - unable to calculate further')
+            deinit()
+            return
         if home_team_odds[count] and away_team_odds[count]:
             ev_home = float(Expected_Value.expected_value(ml_predictions_array[count][0][1], int(home_team_odds[count])))
             ev_away = float(Expected_Value.expected_value(ml_predictions_array[count][0][0], int(away_team_odds[count])))
