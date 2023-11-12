@@ -247,7 +247,8 @@ def getLastGame(game_date,team_id,cache,game_objects):
 def AugmentData(data):
     # can add or remove this line here, only works if its been run once before and we have cache saved
     # but makes it alot faster if re running
-    #return load_obj('res')
+
+    #return load_obj('res')#uncomment here to load from cache
 
     header = getLabels()
     for stat in header:
@@ -366,7 +367,8 @@ def AugmentFutureData(home_team, away_team,row):
     print('Augmenting data for',home_team, 'v',away_team)
     home_team_lg_data = getLastGameFutures(home_team)
     visitor_team_lg_data = getLastGameFutures(away_team)
-
+    print(home_team_lg_data)
+    print(visitor_team_lg_data)
     combined_data = home_team_lg_data[:87] + visitor_team_lg_data[:87]
     combined_data = np.array(combined_data, dtype=np.float32)
 
@@ -398,6 +400,7 @@ def getLastGameFutures(team_name):
     # games endpoint url with params for start date, end date and team id...
     # this api call basically gets the last month of games before the game date...
     # we use the url as our cache key in order to make things go alot faster...
+    save_obj_root({},'futureCache')
    
     futureCache = load_obj_root('futureCache')
 
@@ -426,8 +429,52 @@ def getLastGameFutures(team_name):
                 #print('found close game date setting game id here to: '+str(lastID))
                 #print(game_date.strftime('%Y-%m-%d'),game['date'])
 
-    
-    
+
+    url = 'https://www.balldontlie.io/api/v1/stats?game_ids[]='+str(lastID)
+
+    print('url')
+    try:
+        r = futureCache[url]
+    except KeyError:
+        r = req(url)
+        futureCache[url] = r
+        save_obj_root(futureCache,'futureCache')
+
+    data =  formLastGame(r,team_id)
+    formed_data = []
+    formed_data.append(data['history_score'])
+    formed_data.append(data['opponent_score'])
+
+    for player in data['best_history_players']:
+        for label in labels:
+            formed_data.append(player[label])
+
+    for player in data['best_opponent_players']:
+        for label in labels:
+            formed_data.append(player[label])
+
+    return formed_data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

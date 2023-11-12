@@ -145,6 +145,6 @@ if __name__ == "__main__":
     parser.add_argument('-A', action='store_true', help='Run all Models')
     parser.add_argument('-odds', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
     parser.add_argument('-kc', action='store_true', help='Calculates percentage of bankroll to bet based on model edge')
-    parser.add_argument('-lg', action='store_true', help='Run with last game stats. Currently only supported for xgb money line.')
+    parser.add_argument('-lg', action='store_true', help='Run with last game stats. Currently only supported for xgb money line model.')
     args = parser.parse_args()
     main()

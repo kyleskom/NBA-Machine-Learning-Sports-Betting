@@ -1,10 +1,11 @@
 
+
 import sys
 from pathlib import Path
 src = str(Path(__file__).resolve().parent.parent)
 sys.path.insert(0, src)
 
-from src.Utils.lg import AugmentData
+from Utils.lg import AugmentData
 
 
 

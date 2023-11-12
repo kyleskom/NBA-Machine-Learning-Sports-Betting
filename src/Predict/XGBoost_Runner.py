@@ -23,7 +23,7 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
     for row in data:
         home_team = games[c][0]
         away_team = games[c][1]
-        if lg:
+        if lg:#call augment future data if -lg flag is passed
             row = afd(home_team, away_team,row)#AugmentFutureData fetches last game and adds to row...
         ml_predictions_array.append(xgb_ml.predict(xgb.DMatrix(np.array([row]))))
         c += 1
