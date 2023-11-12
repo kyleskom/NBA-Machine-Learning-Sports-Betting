@@ -302,12 +302,10 @@ def AugmentData(data):
             print('out of data')
             #this is the end of the training data script. we should exit here ideally if things are working.
             break
-        
-
-
+       
         # Concatenate home and visitor data
         try:
-            combined_data = home_team_lg_data[:87] + visitor_team_lg_data[:87]
+            combined_data = home_team_lg_data + visitor_team_lg_data
         except TypeError:
             data = data.drop(foo)
             print('type error')
@@ -347,18 +345,20 @@ def getLabels():
     for i in range(0,5):
         for label in labels:
             header.append('hh-'+str(i)+'-'+label)
-
+    for i in range(0,5):
+        for label in labels:
+            header.append('ho-'+str(i)+'-'+label)
     header.append('visitor_history_score')
     header.append('visitor_history_op_score')
     for i in range(0,5):
         for label in labels:
             header.append('vh-'+str(i)+'-'+label)
-
-
+    for i in range(0,5):
+        for label in labels:
+            header.append('vo-'+str(i)+'-'+label)
     headers = ''
     for stat in header:
         headers += stat+','
-
     return header
 
 
@@ -367,9 +367,7 @@ def AugmentFutureData(home_team, away_team,row):
     print('Augmenting data for',home_team, 'v',away_team)
     home_team_lg_data = getLastGameFutures(home_team)
     visitor_team_lg_data = getLastGameFutures(away_team)
-    print(home_team_lg_data)
-    print(visitor_team_lg_data)
-    combined_data = home_team_lg_data[:87] + visitor_team_lg_data[:87]
+    combined_data = home_team_lg_data + visitor_team_lg_data
     combined_data = np.array(combined_data, dtype=np.float32)
 
     row = np.concatenate((row, combined_data), axis=0)
@@ -454,33 +452,6 @@ def getLastGameFutures(team_name):
             formed_data.append(player[label])
 
     return formed_data
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

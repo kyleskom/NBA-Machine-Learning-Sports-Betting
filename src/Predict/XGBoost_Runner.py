@@ -12,7 +12,7 @@ from src.Utils.lg import AugmentFutureData as afd
 # from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 init()
 xgb_ml = xgb.Booster()
-xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.9%_ML-3.json')
+xgb_ml.load_model('Models/XGBoost_68.9%_ML-3.json')
 xgb_uo = xgb.Booster()
 xgb_uo.load_model('Models/XGBoost_Models/XGBoost_53.7%_UO-9.json')
 
