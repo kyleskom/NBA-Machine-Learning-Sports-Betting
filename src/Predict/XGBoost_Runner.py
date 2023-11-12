@@ -6,23 +6,41 @@ import xgboost as xgb
 from colorama import Fore, Style, init, deinit
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
-
+from src.Utils.lg import AugmentFutureData as afd
 
 # from src.Utils.Dictionaries import team_index_current
 # from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 init()
-xgb_ml = xgb.Booster()
-xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.9%_ML-3.json')
+        
+xgb_ml = xgb.Booster()#''
+xgb_ml.load_model('Models/XGBoost_68.6%_ML-3.json')
+#xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.9%_ML-3.json')
+
+
+# Get feature importance
+feature_importance = xgb_ml.get_fscore()
+
+# Print the number of features (parameters)
+num_parameters = len(feature_importance)
+print("Number of parameters in the model:", num_parameters)
+
+
+
+
 xgb_uo = xgb.Booster()
 xgb_uo.load_model('Models/XGBoost_Models/XGBoost_54.8%_UO-8.json')
 
 
-def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
+def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion,lg):
     ml_predictions_array = []
-
+    c = 0
     for row in data:
+        home_team = games[c][0]
+        away_team = games[c][1]
+        if lg:
+            row = afd(home_team, away_team,row)#AugmentFutureData fetches last game and adds to row...
         ml_predictions_array.append(xgb_ml.predict(xgb.DMatrix(np.array([row]))))
-
+        c += 1
     frame_uo = copy.deepcopy(frame_ml)
     frame_uo['OU'] = np.asarray(todays_games_uo)
     data = frame_uo.values
@@ -92,5 +110,4 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
         print(home_team + ' EV: ' + expected_value_colors['home_color'] + str(ev_home) + Style.RESET_ALL + (bankroll_fraction_home if kelly_criterion else ''))
         print(away_team + ' EV: ' + expected_value_colors['away_color'] + str(ev_away) + Style.RESET_ALL + (bankroll_fraction_away if kelly_criterion else ''))
         count += 1
-
     deinit()

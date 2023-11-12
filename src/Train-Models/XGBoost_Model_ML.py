@@ -1,3 +1,17 @@
+
+import sys
+from pathlib import Path
+src = str(Path(__file__).resolve().parent.parent)
+sys.path.insert(0, src)
+
+from src.Utils.lg import AugmentData
+
+
+
+
+
+
+
 import sqlite3
 
 import numpy as np
@@ -12,6 +26,16 @@ con = sqlite3.connect("../../Data/dataset.sqlite")
 data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")
 con.close()
 
+
+
+if len(sys.argv) > 1:
+    argument = sys.argv[1]
+    if argument == "-lg":
+        data = AugmentData(data)
+else:
+    print("No specific arguments provided. Running with default configuration.")
+
+
 margin = data['Home-Team-Win']
 data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover', 'OU'],
           axis=1, inplace=True)
@@ -19,8 +43,10 @@ data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1
 data = data.values
 
 data = data.astype(float)
+print("Number of features in the training data:", data.shape[1])
+
 acc_results = []
-for x in tqdm(range(300)):
+for x in tqdm(range(500)):
     x_train, x_test, y_train, y_test = train_test_split(data, margin, test_size=.1)
 
     train = xgb.DMatrix(x_train, label=y_train)
@@ -32,7 +58,7 @@ for x in tqdm(range(300)):
         'objective': 'multi:softprob',
         'num_class': 2
     }
-    epochs = 750
+    epochs = 500
 
     model = xgb.train(param, train, epochs)
     predictions = model.predict(test)

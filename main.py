@@ -10,6 +10,15 @@ from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
 from src.Utils.tools import create_todays_games_from_odds, get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
+
+
+
+
+
+
+
+
+
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2023/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
            'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
@@ -109,6 +118,7 @@ def main():
     data = get_json_data(data_url)
     df = to_data_frame(data)
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = createTodaysGames(games, df, odds)
+
     if args.nn:
         print("------------Neural Network Model Predictions-----------")
         data = tf.keras.utils.normalize(data, axis=1)
@@ -116,11 +126,11 @@ def main():
         print("-------------------------------------------------------")
     if args.xgb:
         print("---------------XGBoost Model Predictions---------------")
-        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc)
+        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc, args.lg)
         print("-------------------------------------------------------")
     if args.A:
         print("---------------XGBoost Model Predictions---------------")
-        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc)
+        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc, args.lg)
         print("-------------------------------------------------------")
         data = tf.keras.utils.normalize(data, axis=1)
         print("------------Neural Network Model Predictions-----------")
@@ -135,5 +145,6 @@ if __name__ == "__main__":
     parser.add_argument('-A', action='store_true', help='Run all Models')
     parser.add_argument('-odds', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
     parser.add_argument('-kc', action='store_true', help='Calculates percentage of bankroll to bet based on model edge')
+    parser.add_argument('-lg', action='store_true', help='Run with last game stats. Currently only supported for xgb money line.')
     args = parser.parse_args()
     main()
