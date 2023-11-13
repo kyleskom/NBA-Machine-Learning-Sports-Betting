@@ -1,9 +1,5 @@
 
 
-
-
-
-
 # Author: Neal Mick
 # Created: November 2023
 # nbadata.cloud nealmick.com
@@ -49,9 +45,6 @@ def req(url):
     print('success')
     time.sleep(2)#lets rate limit a bit here
     return r.json()
-
-
-
 
 
 
@@ -196,7 +189,7 @@ def getLastGame(game_date,team_id,cache,game_objects):
     
     # basically here we get the current season labeled as the game data year
     # To avoid any issues just in case we also get the season before and after
-    # we check for the las game id in all 3 seasons in order to get max coverage
+    # we check for the last game id in all 3 seasons in order to get max coverage
     try:
         g1 = game_objects[str(year)]
         g2 = game_objects[str(year-1)]
@@ -248,7 +241,7 @@ def AugmentData(data):
     # can add or remove this line here, only works if its been run once before and we have cache saved
     # but makes it alot faster if re running
 
-    #return load_obj('res')#uncomment here to load from cache
+    return load_obj('res')#uncomment here to load from cache
 
     header = getLabels()
     for stat in header:
@@ -369,9 +362,7 @@ def AugmentFutureData(home_team, away_team,row):
     visitor_team_lg_data = getLastGameFutures(away_team)
     combined_data = home_team_lg_data + visitor_team_lg_data
     combined_data = np.array(combined_data, dtype=np.float32)
-
     row = np.concatenate((row, combined_data), axis=0)
-
     return row
 
 
@@ -384,9 +375,8 @@ def getLastGameFutures(team_name):
     id_team_names = {}
     for id in team_name_ids:
         id_team_names[team_name_ids[id]] = id
-
     team_id = id_team_names[team_name]
-    
+
 
     game_date = datetime.now()
     one_month_before_game = (game_date - timedelta(days=30)).strftime('%Y-%m-%d')
@@ -398,7 +388,7 @@ def getLastGameFutures(team_name):
     # games endpoint url with params for start date, end date and team id...
     # this api call basically gets the last month of games before the game date...
     # we use the url as our cache key in order to make things go alot faster...
-    save_obj_root({},'futureCache')
+    #save_obj_root({},'futureCache')#you can clear a cache by doing this too
    
     futureCache = load_obj_root('futureCache')
 
@@ -430,9 +420,11 @@ def getLastGameFutures(team_name):
 
     url = 'https://www.balldontlie.io/api/v1/stats?game_ids[]='+str(lastID)
 
-    print('url')
     try:
         r = futureCache[url]
+        print(url)
+        print('found in cache')
+
     except KeyError:
         r = req(url)
         futureCache[url] = r
@@ -452,6 +444,13 @@ def getLastGameFutures(team_name):
             formed_data.append(player[label])
 
     return formed_data
+
+
+
+
+
+
+
 
 
 

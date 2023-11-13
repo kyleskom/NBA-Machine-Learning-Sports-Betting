@@ -47,7 +47,7 @@ data = data.astype(float)
 print("Number of features in the training data:", data.shape[1])
 
 acc_results = []
-for x in tqdm(range(500)):
+for x in tqdm(range(300)):
     x_train, x_test, y_train, y_test = train_test_split(data, margin, test_size=.1)
 
     train = xgb.DMatrix(x_train, label=y_train)
@@ -59,9 +59,12 @@ for x in tqdm(range(500)):
         'objective': 'multi:softprob',
         'num_class': 2
     }
-    epochs = 500
+    epochs = 750
 
     model = xgb.train(param, train, epochs)
+
+    model.set_attr(num_features=str(data.shape[1]))
+
     predictions = model.predict(test)
     y = []
 
@@ -73,4 +76,8 @@ for x in tqdm(range(500)):
     acc_results.append(acc)
     # only save results if they are the best so far
     if acc == max(acc_results):
+
         model.save_model('../../Models/XGBoost_{}%_ML-4.json'.format(acc))
+
+
+
