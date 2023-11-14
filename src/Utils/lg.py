@@ -35,7 +35,9 @@ def save_obj_root(obj, name):
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)
 
 
-#request url
+# request url and returns json results
+# this method is intended to be used to call balldontlie.io api
+# this function also rate limits us to 2 second sleep per request
 def req(url):
     print('requesting url: '+url)
     r = requests.get(url)#request url
@@ -50,12 +52,15 @@ def req(url):
 
 
 
-
+# this function requires passing in a team id, and data object of the last game
+# The game data objects are requested from this endpoint:
+# 'https://www.balldontlie.io/api/v1/stats?game_ids[]='+str(lastID)
+# we pass the team id so we know who is the original team and who is the opponent
 def formLastGame(data,team):
     #print('forming last game data')
     if data is None:
         print('no data=---------=========------------==========')
-
+    #determine if the opponent or original team was home or away
     if data['data'][0]['game']['home_team_id'] == team:
         history_id = data['data'][0]['game']['home_team_id']
         opponent_id = data['data'][0]['game']['visitor_team_id']
@@ -66,11 +71,14 @@ def formLastGame(data,team):
         history_id = data['data'][0]['game']['visitor_team_id']
         opponent_score = data['data'][0]['game']['home_team_score']
         history_score = data['data'][0]['game']['visitor_team_score']
-    gameid = data['data'][0]['game']['id']
+    
 
+    gameid = data['data'][0]['game']['id']
     opponent_players = []
     history_players = []
     
+    # this loops over all the players and splits them into history_players and opponent_players
+    # We also check the player did infact play and convert the playtime from min:sec to just min
     for player in  data['data']:
         p = {}
         p['id'] = player['id']
@@ -92,6 +100,8 @@ def formLastGame(data,team):
         if p['teamid'] == opponent_id:
             opponent_players.append(p)
 
+    # now we have a list of all of the player that played on both teams
+    # we now determine the best 5 players based on minutes played
     best_history_players = []
     best_opponent_players = []
 
@@ -109,7 +119,7 @@ def formLastGame(data,team):
             break
         best_player = opponent_players.pop(int(best))
         best_opponent_players.append(best_player)
-
+    
     r = {
         'best_history_players': best_history_players,
         'best_opponent_players': best_opponent_players,
@@ -122,7 +132,7 @@ def formLastGame(data,team):
     return r
 
 
-#we decide on the best player based on minutes played
+# we decide on the best player based on minutes played
 def historyBestPlayer(players):
     best = ''
     topMin = 0
@@ -180,7 +190,8 @@ def getLastGame(game_date,team_id,cache,game_objects):
                 lastID = closest_game['id']
                 #print('found close game date setting game id here to: '+str(lastID))
                 #print(game_date.strftime('%Y-%m-%d'),game['date'])
-   
+
+    #check that we found last id
     try:
         print(lastID)
     except UnboundLocalError:
@@ -217,7 +228,9 @@ def getLastGame(game_date,team_id,cache,game_objects):
 
     data = formLastGame(g, team_id)
 
-    #print('got last game data!!')
+    # No we have all the data we do the final formation here
+    # the data ends up as formed as history_score,opponent_score,history players.. opponent players....
+
     formed_data = []
     formed_data.append(data['history_score'])
     formed_data.append(data['opponent_score'])
@@ -236,23 +249,34 @@ def getLastGame(game_date,team_id,cache,game_objects):
 
 
 
-
+#Take a data frame and augments it with last game data for both teams
 def AugmentData(data):
     # can add or remove this line here, only works if its been run once before and we have cache saved
     # but makes it alot faster if re running
+    #return load_obj('res')#uncomment here to load from cache
 
-    return load_obj('res')#uncomment here to load from cache
 
+    #here we add the new columns to the data frame initialized as none
     header = getLabels()
     for stat in header:
         data[stat] = None  # Initialize new columns
 
-
+    #load cache object
     cache = load_obj('cache')
+
+    # here we convert team names by id => team id's by name
+    # Makes it easier when we are in main loop below 
     team_name_ids = load_obj('teamNamesById')
     id_team_names = {}
     for id in team_name_ids:
         id_team_names[team_name_ids[id]] = id
+
+
+    # load game objects
+    # We load the game objects here to keep them in memory while we are running
+    # Otherwise its much slower to be constantly loading up from the disk....
+    # This may cause issues with low memory systems, but should be fine for most
+    # specifically untested on colab, this whole script takes a good bit of memory
 
     game_objects = {}
     for i in range(2009,2023):
@@ -260,7 +284,7 @@ def AugmentData(data):
         games = load_obj(str(i)+'Games')
         game_objects[str(i)] = games
 
-
+    #loop over a range of the length of rows in the data frame
     for foo in range(len(data)):
 
 
@@ -302,7 +326,7 @@ def AugmentData(data):
         except TypeError:
             data = data.drop(foo)
             print('type error')
-            #we just skip rows we dont want
+            # we just skip rows we dont want
             continue
 
         # Assign all data for this row at once
@@ -315,7 +339,7 @@ def AugmentData(data):
         print(home_team_lg_data[0],home_team_lg_data[1])
         print(header)
         '''
-    #drop any rows with values that didnt get filled in...
+    # drop any rows with values that didnt get filled in...
     data = data.dropna()
 
     print(data.iloc[0].to_string())  # Display the first updated row
@@ -358,42 +382,46 @@ def getLabels():
 
 def AugmentFutureData(home_team, away_team,row):
     print('Augmenting data for',home_team, 'v',away_team)
+    # Get Last Game data for future games
     home_team_lg_data = getLastGameFutures(home_team)
     visitor_team_lg_data = getLastGameFutures(away_team)
+    # combine last game data for home and visitor
     combined_data = home_team_lg_data + visitor_team_lg_data
+    # convert to numpy array
     combined_data = np.array(combined_data, dtype=np.float32)
+    # concatenate the new data to end of row
     row = np.concatenate((row, combined_data), axis=0)
     return row
 
 
 
-
-
 def getLastGameFutures(team_name):
     print('getting last game for: '+team_name)
+
+    # this converts the correct team names to team ids which we use in the api
     team_name_ids = load_obj_root('teamNamesById')
     id_team_names = {}
     for id in team_name_ids:
         id_team_names[team_name_ids[id]] = id
     team_id = id_team_names[team_name]
 
-
+    # get %Y-%m-%d format of 1 day ago and 1 month ago
     game_date = datetime.now()
     one_month_before_game = (game_date - timedelta(days=30)).strftime('%Y-%m-%d')
     one_day_before_game = (game_date - timedelta(days=1)).strftime('%Y-%m-%d')
-    #grab the year as a int for getting the game season later
     year = int(game_date.strftime('%Y'))
 
 
     # games endpoint url with params for start date, end date and team id...
     # this api call basically gets the last month of games before the game date...
     # we use the url as our cache key in order to make things go alot faster...
-    #save_obj_root({},'futureCache')#you can clear a cache by doing this too
+    # save_obj_root({},'futureCache')#you can clear a cache by doing this too
    
     futureCache = load_obj_root('futureCache')
 
     url = 'https://www.balldontlie.io/api/v1/games?start_date=' + one_month_before_game + '&end_date=' + one_day_before_game + '&&team_ids[]=' + str(team_id) + '&per_page=100'   
-
+    
+    # try and find the url in cache first to reduce api load...
     try:
         r = futureCache[url]
     except KeyError:
@@ -402,7 +430,8 @@ def getLastGameFutures(team_name):
         r.reverse()
         futureCache[url] = r
         save_obj_root(futureCache,'futureCache')
-    # we iterate over the games in the response data to find closest...
+
+    # we iterate over the games in the response data to find closest to today...
     closest_game = None
     min_diff = float('inf')  # Start with a very large number
     for game in r:
@@ -413,13 +442,18 @@ def getLastGameFutures(team_name):
             if diff < min_diff:
                 min_diff = diff
                 closest_game = game
+                # here we set the id of the last game which will be used to get the game data
                 lastID = closest_game['id']
                 #print('found close game date setting game id here to: '+str(lastID))
                 #print(game_date.strftime('%Y-%m-%d'),game['date'])
 
 
+
+    # this url uses the last game id we just set in order to get all the stats of the last game
     url = 'https://www.balldontlie.io/api/v1/stats?game_ids[]='+str(lastID)
 
+    # again uses future cache here to reduce api load 
+    # incase of re runs, the last game does not need to be refetched.
     try:
         r = futureCache[url]
         print(url)
@@ -430,7 +464,11 @@ def getLastGameFutures(team_name):
         futureCache[url] = r
         save_obj_root(futureCache,'futureCache')
 
+
+    # pass api response to formLastGame function to get the data we want
     data =  formLastGame(r,team_id)
+
+    # finally form the data and append all our data points
     formed_data = []
     formed_data.append(data['history_score'])
     formed_data.append(data['opponent_score'])

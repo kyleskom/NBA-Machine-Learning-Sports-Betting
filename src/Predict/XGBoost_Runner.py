@@ -11,7 +11,6 @@ from src.Utils.lg import AugmentFutureData as afd
 # from src.Utils.Dictionaries import team_index_current
 # from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 init()
-
 xgb_ml = xgb.Booster()
 xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.7%_ML-4.json')
 
