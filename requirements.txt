@@ -1,6 +1,6 @@
 colorama==0.4.6
 pandas==2.1.1
-sbrscrape==0.0.9
+sbrscrape==0.0.10
 tensorflow==2.14.0
 #tensorflow-metal==1.1.0
 xgboost==2.0.0
