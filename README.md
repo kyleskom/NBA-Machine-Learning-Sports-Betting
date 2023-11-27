@@ -72,7 +72,7 @@ Odds data will be automatically fetched from **sbrodds** if the -odds option is 
 
 If `-odds` is not given, enter the under/over and odds for today's games manually after starting the script.
 
-Optionally, you can add '-kc' as a command line argument to see the recommended fraction of your bankroll to wager based on the model's edge
+Optionally, you can add `-kc` as a command line argument to see the recommended fraction of your bankroll to wager based on the model's edge
 
 ## How to get new Data and Train Models
 ### Create dataset with the latest data for 2022-23 season
