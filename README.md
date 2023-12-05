@@ -59,6 +59,9 @@ python -m Create_Games
 cd ../Train-Models
 python -m XGBoost_Model_ML
 python -m XGBoost_Model_UO
+# note: you must update model runner to use new model.
+# help
+python main.py -h
 ```
 
 ## Contributing
