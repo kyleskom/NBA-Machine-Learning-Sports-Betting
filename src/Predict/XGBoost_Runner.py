@@ -1,4 +1,6 @@
 import copy
+import os
+import re
 
 import numpy as np
 import pandas as pd
@@ -11,17 +13,40 @@ from src.Utils import Kelly_Criterion as kc
 # from src.Utils.Dictionaries import team_index_current
 # from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 init()
-xgb_ml = xgb.Booster()
-xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.7%_ML-4.json')
-xgb_uo = xgb.Booster()
-xgb_uo.load_model('Models/XGBoost_Models/XGBoost_53.7%_UO-9.json')
+model_dir = 'Models/XGBoost_Models/'
+ml_pattern = r'XGBoost_(\d+\.\d+)%_ML-4\.json'
+uo_pattern = r'XGBoost_(\d+\.\d+)%_UO-9\.json'
+
+
+def fetch_most_accurate_model(pattern):
+    # Initialize variables to track the highest score and corresponding file
+    highest_score = 0
+    best_model_file = None
+
+    # Iterate over the files in the directory
+    for file in os.listdir(model_dir):
+        match = re.match(pattern, file)
+        if match:
+            score = float(match.group(1))
+            if score > highest_score:
+                highest_score = score
+                best_model_file = file
+
+    # Load the model with the highest score
+    if best_model_file:
+        print(f"Loaded model: {best_model_file} with score: {highest_score}")
+        model_path = os.path.join(model_dir, best_model_file)
+        return model_path
+
+    raise FileNotFoundError("No matching model found.")
 
 
 def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
     ml_predictions_array = []
 
     for row in data:
-        ml_predictions_array.append(xgb_ml.predict(xgb.DMatrix(np.array([row]))))
+        ml_predictions_array.append(
+            xgb_ml.predict(xgb.DMatrix(np.array([row]))))
 
     frame_uo = copy.deepcopy(frame_ml)
     frame_uo['OU'] = np.asarray(todays_games_uo)
@@ -31,7 +56,8 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
     ou_predictions_array = []
 
     for row in data:
-        ou_predictions_array.append(xgb_uo.predict(xgb.DMatrix(np.array([row]))))
+        ou_predictions_array.append(
+            xgb_uo.predict(xgb.DMatrix(np.array([row]))))
 
     count = 0
     for game in games:
@@ -44,13 +70,15 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
         if winner == 1:
             winner_confidence = round(winner_confidence[0][1] * 100, 1)
             if under_over == 0:
-                un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
+                un_confidence = round(
+                    ou_predictions_array[count][0][0] * 100, 1)
                 print(
                     Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
                     Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(
                         todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)" + Style.RESET_ALL)
             else:
-                un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
+                un_confidence = round(
+                    ou_predictions_array[count][0][1] * 100, 1)
                 print(
                     Fore.GREEN + home_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ' vs ' + Fore.RED + away_team + Style.RESET_ALL + ': ' +
                     Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(
@@ -58,13 +86,15 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
         else:
             winner_confidence = round(winner_confidence[0][0] * 100, 1)
             if under_over == 0:
-                un_confidence = round(ou_predictions_array[count][0][0] * 100, 1)
+                un_confidence = round(
+                    ou_predictions_array[count][0][0] * 100, 1)
                 print(
                     Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
                     Fore.MAGENTA + 'UNDER ' + Style.RESET_ALL + str(
                         todays_games_uo[count]) + Style.RESET_ALL + Fore.CYAN + f" ({un_confidence}%)" + Style.RESET_ALL)
             else:
-                un_confidence = round(ou_predictions_array[count][0][1] * 100, 1)
+                un_confidence = round(
+                    ou_predictions_array[count][0][1] * 100, 1)
                 print(
                     Fore.RED + home_team + Style.RESET_ALL + ' vs ' + Fore.GREEN + away_team + Style.RESET_ALL + Fore.CYAN + f" ({winner_confidence}%)" + Style.RESET_ALL + ': ' +
                     Fore.BLUE + 'OVER ' + Style.RESET_ALL + str(
@@ -81,16 +111,30 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
         away_team = game[1]
         ev_home = ev_away = 0
         if home_team_odds[count] and away_team_odds[count]:
-            ev_home = float(Expected_Value.expected_value(ml_predictions_array[count][0][1], int(home_team_odds[count])))
-            ev_away = float(Expected_Value.expected_value(ml_predictions_array[count][0][0], int(away_team_odds[count])))
+            ev_home = float(Expected_Value.expected_value(
+                ml_predictions_array[count][0][1], int(home_team_odds[count])))
+            ev_away = float(Expected_Value.expected_value(
+                ml_predictions_array[count][0][0], int(away_team_odds[count])))
         expected_value_colors = {'home_color': Fore.GREEN if ev_home > 0 else Fore.RED,
-                        'away_color': Fore.GREEN if ev_away > 0 else Fore.RED}
+                                 'away_color': Fore.GREEN if ev_away > 0 else Fore.RED}
         bankroll_descriptor = ' Fraction of Bankroll: '
-        bankroll_fraction_home = bankroll_descriptor + str(kc.calculate_kelly_criterion(home_team_odds[count], ml_predictions_array[count][0][1])) + '%'
-        bankroll_fraction_away = bankroll_descriptor + str(kc.calculate_kelly_criterion(away_team_odds[count], ml_predictions_array[count][0][0])) + '%'
+        bankroll_fraction_home = bankroll_descriptor + \
+            str(kc.calculate_kelly_criterion(
+                home_team_odds[count], ml_predictions_array[count][0][1])) + '%'
+        bankroll_fraction_away = bankroll_descriptor + \
+            str(kc.calculate_kelly_criterion(
+                away_team_odds[count], ml_predictions_array[count][0][0])) + '%'
 
-        print(home_team + ' EV: ' + expected_value_colors['home_color'] + str(ev_home) + Style.RESET_ALL + (bankroll_fraction_home if kelly_criterion else ''))
-        print(away_team + ' EV: ' + expected_value_colors['away_color'] + str(ev_away) + Style.RESET_ALL + (bankroll_fraction_away if kelly_criterion else ''))
+        print(home_team + ' EV: ' + expected_value_colors['home_color'] + str(
+            ev_home) + Style.RESET_ALL + (bankroll_fraction_home if kelly_criterion else ''))
+        print(away_team + ' EV: ' + expected_value_colors['away_color'] + str(
+            ev_away) + Style.RESET_ALL + (bankroll_fraction_away if kelly_criterion else ''))
         count += 1
 
     deinit()
+
+
+xgb_ml = xgb.Booster()
+xgb_ml.load_model(fetch_most_accurate_model(ml_pattern))
+xgb_uo = xgb.Booster()
+xgb_uo.load_model(fetch_most_accurate_model(uo_pattern))

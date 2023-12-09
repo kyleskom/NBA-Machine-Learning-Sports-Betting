@@ -9,7 +9,8 @@ from tqdm import tqdm
 
 dataset = "dataset_2012-24"
 con = sqlite3.connect("../../Data/dataset.sqlite")
-data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")
+data = pd.read_sql_query(
+    f"select * from \"{dataset}\"", con, index_col="index")
 con.close()
 
 margin = data['Home-Team-Win']
@@ -19,9 +20,12 @@ data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1
 data = data.values
 
 data = data.astype(float)
-acc_results = []
+highest_acc = 0
+best_model = None
+
 for x in tqdm(range(300)):
-    x_train, x_test, y_train, y_test = train_test_split(data, margin, test_size=.1)
+    x_train, x_test, y_train, y_test = train_test_split(
+        data, margin, test_size=.1)
 
     train = xgb.DMatrix(x_train, label=y_train)
     test = xgb.DMatrix(x_test, label=y_test)
@@ -43,7 +47,10 @@ for x in tqdm(range(300)):
 
     acc = round(accuracy_score(y_test, y) * 100, 1)
     print(f"{acc}%")
-    acc_results.append(acc)
-    # only save results if they are the best so far
-    if acc == max(acc_results):
-        model.save_model('../../Models/XGBoost_{}%_ML-4.json'.format(acc))
+    if acc > highest_acc:
+        highest_acc = acc
+        best_model = model
+
+if best_model is not None:
+    best_model.save_model(
+        f'../../Models/XGBoost_Models/XGBoost_{highest_acc}%_ML-4.json')
