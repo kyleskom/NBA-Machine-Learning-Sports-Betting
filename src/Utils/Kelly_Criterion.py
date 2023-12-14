@@ -10,8 +10,12 @@ def american_to_decimal(american_odds):
 
 def calculate_kelly_criterion(american_odds, model_prob):
     """
-    Calculates the fraction of the bankroll to be wagered on each bet
+    Calculates the fraction of the bankroll to be wagered on each bet using the Kelly Criterion.
     """
     decimal_odds = american_to_decimal(american_odds)
-    bankroll_fraction = round((100 * (decimal_odds * model_prob - (1 - model_prob))) / decimal_odds, 2)
-    return bankroll_fraction if bankroll_fraction > 0 else 0
+    print(decimal_odds)
+    p = model_prob
+    q = 1 - p
+    b = decimal_odds / 100
+    kelly_fraction = (p * b - q) / b
+    return round(kelly_fraction, 2) if kelly_fraction > 0 else 0
