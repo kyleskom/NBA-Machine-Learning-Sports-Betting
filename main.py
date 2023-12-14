@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import tensorflow as tf
 from colorama import Fore, Style
-
+from src.Utils.Kelly_Criterion import american_to_decimal 
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
@@ -102,7 +102,7 @@ def main():
             print(f"------------------{args.odds} odds data------------------")
             for g in odds.keys():
                 home_team, away_team = g.split(":")
-                print(f"{away_team} ({odds[g][away_team]['money_line_odds']}) @ {home_team} ({odds[g][home_team]['money_line_odds']})")
+                print(f"{away_team} ({american_to_decimal(odds[g][away_team]['money_line_odds'])}) @ {home_team} ({american_to_decimal(odds[g][home_team]['money_line_odds'])})")
     else:
         data = get_todays_games_json(todays_games_url)
         games = create_todays_games(data)
