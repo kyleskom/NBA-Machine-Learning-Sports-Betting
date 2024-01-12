@@ -49,7 +49,7 @@ def createTodaysGames(games, df, odds):
             away_team_odds.append(input(away_team + ' odds: '))
 
         # calculate days rest for both teams
-        schedule_df = pd.read_csv('Data/nba-2023-UTC.csv', parse_dates=['Date'], date_format='%d/%m/%Y %H:%M')
+        schedule_df = pd.read_csv('Data/nba-2023-UTC.csv', parse_dates=['Date'])
         home_games = schedule_df[(schedule_df['Home Team'] == home_team) | (schedule_df['Away Team'] == home_team)]
         away_games = schedule_df[(schedule_df['Home Team'] == away_team) | (schedule_df['Away Team'] == away_team)]
         previous_home_games = home_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date']
