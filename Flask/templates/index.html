@@ -1,111 +1,193 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <title>NBA Machine Learning Picks</title>
-    <style>
-      .green {color: green}
-      .red {color: red}
-      td {padding: 2px;}
-      td.numbers { width: 40px; text-align: right;}
-      table {margin-bottom: 6px;}
-      th {text-align: center;}
-    </style>
-  </head>
-  <body>
-    <main class="container">
-      <h1>NBA Machine Learning Picks ({{today}})</h1>
-      <table role="grid">
-      <thead>
-          <th>Teams</th>
-          <th>Fanduel</th>
-          <th>Draftkings</th>
-          <th>Betmgm</th>
-      </thead>
-        <tbody>
-        <tr>
-          {% for game_key in data.get('fanduel') %}
-          {% set teams = game_key.split(':') %}
-          <tr>
-            <td width="180px;">
-            <table>
-              <tbody>
-                <tr>
-                  <td>{{ teams[0] }}</td>
-                </tr>
-                <tr>
-                  <td>{{ teams[1] }}</td>
-                </tr>
-              </tbody>
-            </table>
-            </td>
-            {% for sportsbook in ['fanduel', 'draftkings', 'betmgm'] %}
-            {% set sbgame = data.get(sportsbook)[game_key] %}
-            {% if not sbgame or not sbgame.away_team or not sbgame.home_team %}
-            <td class="{{sportsbook}}"></td>
-            {% else %}
-              {% if teams[0] == sbgame.away_team %}
-              <td class="{{sportsbook}}">
-                <table>
-                  <tbody>
-                    <tr>
-                      <td class="numbers">{% if sbgame.away_team_odds|int > 0 %}+{%endif%}{{ sbgame.away_team_odds }}{% if sbgame.away_confidence %} <span class="ev-confidence">({{sbgame.away_confidence}}%)</span>{% endif %}</td>
-                      <td class="numbers">
-                        <span class="ev-value">{{ sbgame.away_team_ev }}</span>
-                      </td>
-                      <td class="numbers">{% if sbgame.ou_pick == 'OVER' %}O{%else%}U{%endif%} {{ sbgame.ou_value }}</td>
-                    </tr>
-                    <tr>
-                      <td class="numbers">{% if sbgame.home_team_odds|int > 0 %}+{%endif%}{{ sbgame.home_team_odds }}{% if sbgame.home_confidence %} <span class="ev-confidence">({{sbgame.home_confidence}}%)</span>{% endif %}</td>
-                      <td class="numbers">
-                        <span class="ev-value">{{ sbgame.home_team_ev }}</span>
-                      </td>
-                      <td class="numbers"><span class="ou-confidence">{{sbgame.ou_confidence}}%</span></td>
-                    </tr>
-                  </tbody>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {}
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-900">
+    <main class="relative isolate">
+        <section class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+            <h1 class="py-8 text-left text-4xl font-medium text-white">🏀 NBA AI Model Picks ({{ today }})</h1>
+
+            <section class="mx-auto flex bg-white/5 px-6 md:px-8 py-6 ring-1 ring-white/10 sm:rounded-3xl lg:mx-0 lg:max-w-none lg:flex-row lg:items-center xl:gap-x-20">
+                <table role="grid" class="min-w-full divide-y divide-gray-700">
+                    <thead>
+                        <tr>
+                            <th class="py-2.5 pl-4 pr-3 text-left text-base font-semibold text-white sm:pl-0">Teams</th>
+                            <th class="py-2.5 text-left text-base font-semibold text-white">Fanduel</th>
+                            <th class="py-2.5 text-left text-base font-semibold text-white">Draft Kings</th>
+                            <th class="py-2.5 text-left text-base font-semibold text-white">BetMGM</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        <tr>
+                            {% for game_key in data.get('fanduel') %}
+                            {% set teams = game_key.split(':') %}
+                        <tr class="divide-x divide-gray-700">
+                            <td class="py-1">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="py-1 font-semibold text-gray-600 text-left text-base">&nbsp;</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-base font-medium text-white sm:pl-0">{{ teams[0] }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-base font-medium text-white sm:pl-0"><span class="text-gray-600">@</span> {{ teams[1] }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                            {% for sportsbook in ['fanduel', 'draftkings', 'betmgm'] %}
+                            {% set sbgame = data.get(sportsbook)[game_key] %}
+                            {% if not sbgame or not sbgame.away_team or not sbgame.home_team %}
+                            <td class="px-3 {{ sportsbook }}"></td>
+                            {% else %}
+                            {% if teams[0] == sbgame.away_team %}
+                            <td class="px-3 {{ sportsbook }}">
+                                <table class="w-full">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="py-1 font-bold text-gray-500 text-left text-sm">ML</th>
+                                            <th scope="col" class="py-1 font-bold text-gray-500 text-left text-sm">EV</th>
+                                            <th scope="col" class="py-1 font-bold text-gray-500 text-left text-sm">O/U</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="relative isolate">
+                                            <td class="relative isolate whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                {% if sbgame.away_team_odds|int > 0 %}+{%endif%}{{ sbgame.away_team_odds }}{% if sbgame.away_confidence %}
+                                                <span class="ev-confidence">
+                                                    <span class="inline-flex mx-0.5 text-gray-600">&bull;</span>
+                                                    <span class="ev-confidence-value">{{ sbgame.away_confidence }}%</span>
+                                                </span>
+                                                <div class="absolute top-0 inset-x-0 h-0.5 overflow-hidden rounded-full bg-white/10 w-[calc(100%-1rem)]">
+                                                    <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500" style="width: {{ sbgame.away_confidence }}%"></div>
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                <span class="ev-value">{{ sbgame.away_team_ev }}</span>
+                                            </td>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">{% if sbgame.ou_pick == 'OVER' %}O{%else%}U{%endif%}
+                                                {{ sbgame.ou_value }}</td>
+                                        </tr>
+                                        <tr class="relative isolate">
+                                            <td class="relative isolate whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                {% if sbgame.home_team_odds|int > 0 %}+{%endif%}{{ sbgame.home_team_odds }}{% if sbgame.home_confidence %}
+                                                    <span class="ev-confidence">
+                                                        <span class="inline-flex mx-0.5 text-gray-600">&bull;</span>
+                                                        <span class="ev-confidence-value">{{ sbgame.home_confidence }}%</span>
+                                                    </span>
+                                                    <div class="absolute bottom-0 inset-x-0 h-0.5 overflow-hidden rounded-full bg-white/10 w-[calc(100%-1rem)]">
+                                                        <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500" style="width: {{ sbgame.home_confidence }}%"></div>
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                <span class="ev-value">{{ sbgame.home_team_ev }}</span>
+                                            </td>
+                                            <td class="relative isolate whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
+                                                <span class="ou-confidence">{{ sbgame.ou_confidence }}%</span>
+                                                <div class="absolute bottom-0 inset-x-0 h-0.5 overflow-hidden rounded-full bg-white/10">
+                                                    <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500" style="width: {{ sbgame.ou_confidence }}%"></div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                            {% endif %}
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {%endfor%}
+                    </tbody>
                 </table>
-              </td>
-              {% endif %}
-            {% endif %}
-            {% endfor %}
-          </tr>
-          {%endfor%}
-        </tbody>
-      </table>
+            </section>
+        </section>
+
+        <div class="absolute inset-x-0 -top-16 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl" aria-hidden="true">
+            <div class="aspect-[1318/752] w-[82.375rem] flex-none bg-gradient-to-r from-[#80caff] to-[#4f46e5] opacity-15" style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)"></div>
+        </div>
+        <div class="absolute inset-x-0 -bottom-24 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl" aria-hidden="true">
+            <div class="aspect-[1318/752] w-[82.375rem] flex-none rotate-180 bg-gradient-to-r from-[#80caff] to-[#4f46e5] opacity-15" style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)"></div>
+        </div>
     </main>
     <script>
-      function perc2color(perc,min,max) {
+        function perc2color(perc, min, max) {
             var base = (max - min);
-            if (base == 0) { perc = 100; }
-            else {
-                perc = (perc - min) / base * 100; 
+            if (base == 0) {
+                perc = 100;
+            } else {
+                perc = (perc - min) / base * 100;
             }
-            var r, g, b = 0;
+
+            var colorClass = "rose-600";
+
             if (perc < 50) {
-                r = 255;
-                g = Math.round(5.1 * perc);
+                colorClass = "red-500";
+            } else if (perc >= 50 && perc <= 54){
+                colorClass = "red-500";
+            } else if (perc >= 55 && perc <= 59){
+                colorClass = "orange-500";
+            } else if (perc >= 60 && perc <= 64){
+                colorClass = "blue-500";
+            } else if (perc >= 65 && perc <= 69){
+                colorClass = "indigo-500";
+            } else if (perc >= 70 && perc <= 74){
+                colorClass = "teal-500";
+            } else if (perc >= 75 && perc <= 80){
+                colorClass = "emerald-500";
+            } else {
+                colorClass = "green-500";
             }
-            else {
-                g = 255;
-                r = Math.round(510 - 5.10 * perc);
-            }
-            var h = r * 0x10000 + g * 0x100 + b * 0x1;
-            return '#' + ('000000' + h.toString(16)).slice(-6);
+            return colorClass;
         }
-      evs = document.getElementsByClassName("ev-value")
-      evconfs = document.getElementsByClassName("ev-confidence")
-      ous = document.getElementsByClassName("ou-confidence")
-      for (var i = 0; i < evs.length; i++) {
-          evs[i].style.color = perc2color(parseFloat(evs[i].textContent.replace('(','').replace(')',''))+100,0,200)
-      }
-      for (var i = 0; i < evconfs.length; i++) {
-          evconfs[i].style.color = perc2color(parseFloat(evconfs[i].textContent.replace('(','').replace(')','')),0,100)
-      }
-      for (var i = 0; i < ous.length; i++) {
-          ous[i].style.color = perc2color(parseFloat(ous[i].textContent.replace('(','').replace(')','')),0,100)
-      }
-      </script>
-  </body>
+        function parsePerc(perc){
+            return parseFloat(perc);
+        }
+
+        function evScale(val) {
+            var colorClass = "rose-600";
+            if (val < -15) {
+                colorClass = "red-500";
+            } else if (val <= 0){
+                colorClass = "orange-500";
+            } else if (val >= 0 && val <= 5){
+                colorClass = "emerald-500";
+            } else if (val >= 5.01){
+                colorClass = "green-500";
+            }
+            return colorClass;
+        }
+
+        evs = document.getElementsByClassName("ev-value")
+        evconfs = document.getElementsByClassName("ev-confidence-value")
+        ous = document.getElementsByClassName("ou-confidence")
+        for (var i = 0; i < evs.length; i++) {
+            evs[i].classList.add('text-' + evScale(evs[i].textContent))
+        }
+        for (var i = 0; i < evconfs.length; i++) {
+            evconfs[i].classList.add('text-' + perc2color(parsePerc(evconfs[i].textContent), 0, 100))
+        }
+        for (var i = 0; i < ous.length; i++) {
+            ous[i].classList.add('text-' + perc2color(parsePerc(ous[i].textContent), 0, 100))
+        }
+    </script>
+</body>
 </html>
