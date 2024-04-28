@@ -10,7 +10,7 @@ def get_date(date_string):
     year = year1 if int(month) > 8 else int(year1) + 1
     return datetime.strptime(f"{year}-{month}-{day}", '%Y-%m-%d')
 
-con = sqlite3.connect("../../Data/odds.sqlite")
+con = sqlite3.connect("../../Data/OddsData.sqlite")
 datasets = ["odds_2022-23", "odds_2021-22", "odds_2020-21", "odds_2019-20", "odds_2018-19", "odds_2017-18", "odds_2016-17", "odds_2015-16", "odds_2014-15", "odds_2013-14", "odds_2012-13", "odds_2011-12", "odds_2010-11", "odds_2009-10", "odds_2008-09", "odds_2007-08"]
 for dataset in tqdm(datasets):
     data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")

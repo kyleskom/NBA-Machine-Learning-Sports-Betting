@@ -27,11 +27,12 @@ for key, value in config['get-data'].items():
             url.format(date_pointer.month, date_pointer.day, value['start_year'], date_pointer.year, key))
         df = to_data_frame(raw_data)
 
-        df['Date'] = str(date_pointer + timedelta(days=1))
+        date_pointer = date_pointer + timedelta(days=1)
+
+        df['Date'] = str(date_pointer)
 
         df.to_sql(date_pointer.strftime("%Y-%m-%d"), con, if_exists="replace")
 
-        date_pointer = date_pointer + timedelta(days=1)
         time.sleep(random.randint(1, 3))
 
         # TODO: Add tests

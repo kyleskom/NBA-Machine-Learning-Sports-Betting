@@ -26,7 +26,7 @@ count = 0
 sportsbook = 'fanduel'
 df_data = []
 
-con = sqlite3.connect("../../Data/odds.sqlite")
+con = sqlite3.connect("../../Data/OddsData.sqlite")
 
 for season1 in tqdm(season):
     teams_last_played = {}
