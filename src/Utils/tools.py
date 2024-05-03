@@ -1,7 +1,9 @@
-from datetime import datetime
 import re
-import requests
+from datetime import datetime
+
 import pandas as pd
+import requests
+
 from .Dictionaries import team_index_current
 
 games_header = {
@@ -23,7 +25,6 @@ data_headers = {
     'Referer': 'https://www.nba.com/',
     'Connection': 'keep-alive'
 }
-
 
 
 def get_json_data(url):
@@ -71,7 +72,8 @@ def create_todays_games_from_odds(input_dict):
         games.append([home_team, away_team])
     return games
 
+
 def get_date(date_string):
-    year1,month,day = re.search(r'(\d+)-\d+-(\d\d)(\d\d)', date_string).groups()
+    year1, month, day = re.search(r'(\d+)-\d+-(\d\d)(\d\d)', date_string).groups()
     year = year1 if int(month) > 8 else int(year1) + 1
     return datetime.strptime(f"{year}-{month}-{day}", '%Y-%m-%d')

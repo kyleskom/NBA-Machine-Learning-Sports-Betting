@@ -1,0 +1,184 @@
+data_url = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom=10%2F01%2F{2}&DateTo={0}%2F{1}%2F{3}&Division=&GameScope=&GameSegment=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season={4}&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision="
+
+[get-data]
+    [get-data.2007-08]
+        start_date = "2007-10-30"
+        end_date = "2008-6-17"
+        start_year = "2007"
+        end_year = "2008"
+
+    [get-data.2008-09]
+        start_date = "2008-10-27"
+        end_date = "2009-6-14"
+        start_year = "2008"
+        end_year = "2009"
+
+    [get-data.2009-10]
+        start_date = "2009-10-26"
+        end_date = "2010-6-17"
+        start_year = "2009"
+        end_year = "2010"
+
+    [get-data.2010-11]
+        start_date = "2010-10-25"
+        end_date = "2011-6-12"
+        start_year = "2010"
+        end_year = "2011"
+
+    [get-data.2011-12]
+        start_date = "2011-12-24"
+        end_date = "2012-6-21"
+        start_year = "2011"
+        end_year = "2012"
+
+    [get-data.2012-13]
+        start_date = "2012-10-29"
+        end_date = "2013-6-20"
+        start_year = "2012"
+        end_year = "2013"
+
+    [get-data.2013-14]
+        start_date = "2013-10-28"
+        end_date = "2014-6-15"
+        start_year = "2013"
+        end_year = "2014"
+
+    [get-data.2014-15]
+        start_date = "2014-10-27"
+        end_date = "2015-6-16"
+        start_year = "2014"
+        end_year = "2015"
+
+    [get-data.2015-16]
+        start_date = "2015-10-26"
+        end_date = "2016-6-19"
+        start_year = "2015"
+        end_year = "2016"
+
+    [get-data.2016-17]
+        start_date = "2016-10-24"
+        end_date = "2017-6-12"
+        start_year = "2016"
+        end_year = "2017"
+
+    [get-data.2017-18]
+        start_date = "2017-10-16"
+        end_date = "2018-6-08"
+        start_year = "2017"
+        end_year = "2018"
+
+    [get-data.2018-19]
+        start_date = "2018-10-15"
+        end_date = "2019-6-13"
+        start_year = "2018"
+        end_year = "2019"
+
+    [get-data.2019-20]
+        start_date = "2019-10-21"
+        end_date = "2020-10-11"
+        start_year = "2019"
+        end_year = "2020"
+
+    [get-data.2020-21]
+        start_date = "2020-12-21"
+        end_date = "2021-7-20"
+        start_year = "2020"
+        end_year = "2021"
+
+    [get-data.2021-22]
+        start_date = "2021-10-18"
+        end_date = "2022-6-16"
+        start_year = "2021"
+        end_year = "2022"
+
+    [get-data.2022-23]
+        start_date = "2022-10-17"
+        end_date = "2023-6-12"
+        start_year = "2022"
+        end_year = "2023"
+
+    [get-data.2023-24]
+        start_date = "2023-10-23"
+        end_date = "2024-4-28"
+        start_year = "2023"
+        end_year = "2024"
+
+[get-odds-data]
+    [get-odds-data.2023-24]
+        start_date = "2023-10-23"
+        end_date = "2024-4-28"
+        start_year = "2023"
+        end_year = "2024"
+
+[create-games]
+    [create-games.2012-13]
+        start_date = "2012-10-29"
+        end_date = "2013-6-20"
+        start_year = "2012"
+        end_year = "2013"
+
+    [create-games.2013-14]
+        start_date = "2013-10-28"
+        end_date = "2014-6-15"
+        start_year = "2013"
+        end_year = "2014"
+
+    [create-games.2014-15]
+        start_date = "2014-10-27"
+        end_date = "2015-6-16"
+        start_year = "2014"
+        end_year = "2015"
+
+    [create-games.2015-16]
+        start_date = "2015-10-26"
+        end_date = "2016-6-19"
+        start_year = "2015"
+        end_year = "2016"
+
+    [create-games.2016-17]
+        start_date = "2016-10-24"
+        end_date = "2017-6-12"
+        start_year = "2016"
+        end_year = "2017"
+
+    [create-games.2017-18]
+        start_date = "2017-10-16"
+        end_date = "2018-6-08"
+        start_year = "2017"
+        end_year = "2018"
+
+    [create-games.2018-19]
+        start_date = "2018-10-15"
+        end_date = "2019-6-13"
+        start_year = "2018"
+        end_year = "2019"
+
+    [create-games.2019-20]
+            start_date = "2019-10-23"
+            end_date = "2020-10-11"
+            start_year = "2019"
+            end_year = "2020"
+
+    [create-games.2020-21]
+        start_date = "2020-12-21"
+        end_date = "2021-7-20"
+        start_year = "2020"
+        end_year = "2021"
+
+    [create-games.2021-22]
+        start_date = "2021-10-18"
+        end_date = "2022-6-16"
+        start_year = "2021"
+        end_year = "2022"
+
+    [create-games.2022-23]
+        start_date = "2022-10-17"
+        end_date = "2023-6-12"
+        start_year = "2022"
+        end_year = "2023"
+
+    [create-games.2023-24]
+        start_date = "2023-10-23"
+        end_date = "2024-4-28"
+        start_year = "2023"
+        end_year = "2024"
