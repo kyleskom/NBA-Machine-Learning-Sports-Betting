@@ -1,3 +1,15 @@
+
+
+import sys
+from pathlib import Path
+src = str(Path(__file__).resolve().parent.parent)
+sys.path.insert(0, src)
+
+from Utils.lg import AugmentData
+
+
+
+
 import sqlite3
 
 import numpy as np
@@ -11,6 +23,19 @@ dataset = "dataset_2012-24_new"
 con = sqlite3.connect("../../Data/dataset.sqlite")
 data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")
 con.close()
+
+
+if len(sys.argv) > 1:
+    argument = sys.argv[1]
+    if argument == "-lg":
+        data = AugmentData(data)
+else:
+    print("No specific arguments provided. Running with default configuration.")
+
+
+
+
+
 OU = data['OU-Cover']
 total = data['OU']
 data.drop(['Score', 'Home-Team-Win', 'TEAM_NAME', 'Date', 'TEAM_NAME.1', 'Date.1', 'OU-Cover', 'OU'], axis=1, inplace=True)
@@ -20,14 +45,14 @@ data = data.values
 data = data.astype(float)
 acc_results = []
 
-for x in tqdm(range(100)):
+for x in tqdm(range(300)):
     x_train, x_test, y_train, y_test = train_test_split(data, OU, test_size=.1)
 
     train = xgb.DMatrix(x_train, label=y_train)
     test = xgb.DMatrix(x_test)
 
     param = {
-        'max_depth': 20,
+        'max_depth': 5,
         'eta': 0.05,
         'objective': 'multi:softprob',
         'num_class': 3
@@ -35,6 +60,8 @@ for x in tqdm(range(100)):
     epochs = 750
 
     model = xgb.train(param, train, epochs)
+    model.set_attr(num_features=str(data.shape[1]))
+
 
     predictions = model.predict(test)
     y = []
