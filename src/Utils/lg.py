@@ -38,6 +38,7 @@ def save_obj_root(obj, name):
 # request url and returns json results
 # this method is intended to be used to call balldontlie.io api
 # this function also rate limits us to 2 second sleep per request
+''' old version of api request
 def req(url):
     print('requesting url: '+url)
     r = requests.get(url)#request url
@@ -47,14 +48,26 @@ def req(url):
     print('success')
     time.sleep(2)#lets rate limit a bit here
     return r.json()
-
-
-
+'''
+#new version of api request with key
+def req(url):
+    print('requesting url: '+url)
+    api_key = '5576ed00-d304-4c57-aa99-9269a8aef1fe'
+    headers = {
+        'Authorization': api_key
+    }
+    url = url.replace('www.', 'api.', 1)
+    url = url.replace('/api/v1', '/v1', 1)
+    r = requests.get(url,headers=headers)#request url
+    if str(r) != '<Response [200]>':#means we request too fast
+        time.sleep(5)#wait 5 seconds
+        req(url)
+    return r.json()
 
 
 # this function requires passing in a team id, and data object of the last game
 # The game data objects are requested from this endpoint:
-# 'https://www.balldontlie.io/api/v1/stats?game_ids[]='+str(lastID)
+# 'https://api.balldontlie.io/api/v1/stats?game_ids[]='+str(lastID)
 # we pass the team id so we know who is the original team and who is the opponent
 def formLastGame(data,team):
     #print('forming last game data')
@@ -163,7 +176,7 @@ def getLastGame(game_date,team_id,cache,game_objects):
     # games endpoint url with params for start date, end date and team id...
     # this api call basically gets the last month of games before the game date...
     # we use the url as our cache key in order to make things go alot faster...
-    url = 'https://www.balldontlie.io/api/v1/games?start_date=' + one_month_before_game + '&end_date=' + one_day_before_game + '&&team_ids[]=' + str(team_id) + '&per_page=100'   
+    url = 'https://api.balldontlie.io/api/v1/games?start_date=' + one_month_before_game + '&end_date=' + one_day_before_game + '&&team_ids[]=' + str(team_id) + '&per_page=100'   
     cached = False
     try:
         r = cache[url]
@@ -253,7 +266,7 @@ def getLastGame(game_date,team_id,cache,game_objects):
 def AugmentData(data):
     # can add or remove this line here, only works if its been run once before and we have cache saved
     # but makes it alot faster if re running
-    #return load_obj('res')#uncomment here to load from cache
+    return load_obj('res')#uncomment here to load from cache
 
 
     #here we add the new columns to the data frame initialized as none
@@ -395,33 +408,35 @@ def AugmentFutureData(home_team, away_team,row):
 
 
 
+def parse_date(date_str):
+    """Handle multiple date formats from the API"""
+    try:
+        # Try the original format first
+        return datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%S.%fZ')
+    except ValueError:
+        try:
+            # Try the new simple date format
+            return datetime.strptime(date_str, '%Y-%m-%d')
+        except ValueError:
+            # If neither format works, raise an error
+            raise ValueError(f"Unable to parse date: {date_str}")
+
+
 def getLastGameFutures(team_name):
     print('getting last game for: '+team_name)
 
-    # this converts the correct team names to team ids which we use in the api
     team_name_ids = load_obj_root('teamNamesById')
-    id_team_names = {}
-    for id in team_name_ids:
-        id_team_names[team_name_ids[id]] = id
+    id_team_names = {team_name_ids[id]: id for id in team_name_ids}
     team_id = id_team_names[team_name]
 
-    # get %Y-%m-%d format of 1 day ago and 1 month ago
     game_date = datetime.now()
-    one_month_before_game = (game_date - timedelta(days=30)).strftime('%Y-%m-%d')
+    one_month_before_game = (game_date - timedelta(days=180)).strftime('%Y-%m-%d')
     one_day_before_game = (game_date - timedelta(days=1)).strftime('%Y-%m-%d')
     year = int(game_date.strftime('%Y'))
 
-
-    # games endpoint url with params for start date, end date and team id...
-    # this api call basically gets the last month of games before the game date...
-    # we use the url as our cache key in order to make things go alot faster...
-    # save_obj_root({},'futureCache')#you can clear a cache by doing this too
-   
     futureCache = load_obj_root('futureCache')
-
-    url = 'https://www.balldontlie.io/api/v1/games?start_date=' + one_month_before_game + '&end_date=' + one_day_before_game + '&&team_ids[]=' + str(team_id) + '&per_page=100'   
+    url = f'https://api.balldontlie.io/api/v1/games?start_date={one_month_before_game}&end_date={one_day_before_game}&team_ids[]={team_id}&per_page=100'   
     
-    # try and find the url in cache first to reduce api load...
     try:
         r = futureCache[url]
     except KeyError:
@@ -431,44 +446,37 @@ def getLastGameFutures(team_name):
         futureCache[url] = r
         save_obj_root(futureCache,'futureCache')
 
-    # we iterate over the games in the response data to find closest to today...
     closest_game = None
-    min_diff = float('inf')  # Start with a very large number
+    min_diff = float('inf')
+    
     for game in r:
-        #print(game['id'],game['date'],game['home_team_score'],game['visitor_team_score'],game['status'])
         if game['status'] == 'Final':
-            game_datetime = datetime.strptime(game['date'], '%Y-%m-%dT%H:%M:%S.%fZ')
-            diff = abs((game_datetime - game_date).days)
-            if diff < min_diff:
-                min_diff = diff
-                closest_game = game
-                # here we set the id of the last game which will be used to get the game data
-                lastID = closest_game['id']
-                #print('found close game date setting game id here to: '+str(lastID))
-                #print(game_date.strftime('%Y-%m-%d'),game['date'])
+            try:
+                game_datetime = parse_date(game['date'])
+                diff = abs((game_datetime - game_date).days)
+                if diff < min_diff:
+                    min_diff = diff
+                    closest_game = game
+                    lastID = game['id']
+            except ValueError as e:
+                print(f"Error parsing date for game {game['id']}: {e}")
+                continue
 
+    if closest_game is None:
+        raise ValueError(f"No valid games found for team {team_name}")
 
+    url = f'https://api.balldontlie.io/api/v1/stats?game_ids[]={lastID}'
 
-    # this url uses the last game id we just set in order to get all the stats of the last game
-    url = 'https://www.balldontlie.io/api/v1/stats?game_ids[]='+str(lastID)
-
-    # again uses future cache here to reduce api load 
-    # incase of re runs, the last game does not need to be refetched.
     try:
         r = futureCache[url]
-        print(url)
-        print('found in cache')
-
+        print(f"{url} found in cache")
     except KeyError:
         r = req(url)
         futureCache[url] = r
         save_obj_root(futureCache,'futureCache')
 
+    data = formLastGame(r, team_id)
 
-    # pass api response to formLastGame function to get the data we want
-    data =  formLastGame(r,team_id)
-
-    # finally form the data and append all our data points
     formed_data = []
     formed_data.append(data['history_score'])
     formed_data.append(data['opponent_score'])
@@ -482,17 +490,6 @@ def getLastGameFutures(team_name):
             formed_data.append(player[label])
 
     return formed_data
-
-
-
-
-
-
-
-
-
-
-
 
 
 

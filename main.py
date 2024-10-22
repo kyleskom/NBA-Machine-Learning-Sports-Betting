@@ -14,11 +14,6 @@ from src.Utils.tools import create_todays_games_from_odds, get_json_data, to_dat
 
 
 
-
-
-
-
-
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2023/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
            'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \

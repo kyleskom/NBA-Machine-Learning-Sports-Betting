@@ -8,14 +8,11 @@ import time
 
 
 @lru_cache()
-def fetch_fanduel_lg(ttl_hash=None):
-    del ttl_hash
-    return fetch_game_data(sportsbook="fanduel",lg=True)
-
-@lru_cache()
 def fetch_fanduel(ttl_hash=None):
     del ttl_hash
     return fetch_game_data(sportsbook="fanduel")
+
+
 
 @lru_cache()
 def fetch_draftkings(ttl_hash=None):
@@ -79,7 +76,21 @@ def index():
     return render_template('index.html', today=date.today(), data={"fanduel": fanduel, "draftkings": draftkings, "betmgm": betmgm})
 
 
+@lru_cache()
+def fetch_fanduel_lg(ttl_hash=None):
+    del ttl_hash
+    return fetch_game_data(sportsbook="fanduel",lg=True)
+@lru_cache()
+def fetch_draftkings_lg(ttl_hash=None):
+    del ttl_hash
+    return fetch_game_data(sportsbook="draftkings",lg=True)
+@lru_cache()
+def fetch_betmgm(ttl_hash=None):
+    del ttl_hash
+    return fetch_game_data(sportsbook="betmgm",lg=True)
 @app.route("/lg")
 def lg():
     fanduel = fetch_fanduel_lg(ttl_hash=get_ttl_hash())
-    return render_template('index.html', today=date.today(), data={"fanduel": fanduel})
+    draftkings = fetch_draftkings_lg(ttl_hash=get_ttl_hash())
+    betmgm = fetch_betmgm(ttl_hash=get_ttl_hash())
+    return render_template('index.html', today=date.today(), data={"fanduel": fanduel, "draftkings": draftkings, "betmgm": betmgm})
