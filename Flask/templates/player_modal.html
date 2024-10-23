@@ -1,0 +1,247 @@
+<!-- Single player modal template -->
+<style>
+    .stats-table {
+        background-color: rgba(0,0,0,0);
+        color: white !important;
+    }
+    .table {
+        color: white !important;
+    }
+    /* Fix hover color */
+    .table-hover tbody tr:hover td {
+        color: white !important;
+        background-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    /* Make sure header stays white too */
+    .table thead th {
+        color: white !important;
+    }
+   
+    .badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .badge-healthy {
+        background-color: rgba(34, 197, 94, 0.2) !important;
+        color: rgb(34, 197, 94) !important;
+    }
+    
+    .badge-injured {
+        background-color: rgba(239, 68, 68, 0.2) !important;
+        color: rgb(239, 68, 68) !important;
+        max-width: 355px;
+        white-space: normal;
+    }
+    #player-injury {
+        margin-top: 10px;
+        max-width: 300px;
+        white-space: normal;
+    }
+    #player-name {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    }
+    .player-header {
+    margin-bottom: 30px;
+    }
+    .injury-status-text {
+    max-width: 355px;
+    white-space: normal;
+}
+.player-info {
+    font-size: 16px;
+    color: #9CA3AF;
+    line-height: 1.5;
+}
+</style>
+
+<div class="modal fade" id="player-modal" tabindex="-1" aria-labelledby="player-modal-label" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="player-modal-label" style="color:white">                <p>Player ID: <span id="player-modal-id"></span></p>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color:white">
+                 <!-- Player Header -->
+                <div class="d-flex align-items-center mb-4">
+                    <img id="player-headshot" 
+                        src="" 
+                        alt="" 
+                        class="rounded me-3" 
+                        style="margin-left:15px;margin-right:25px !important;border-radius: 10px;width:140px; height:140px; object-fit:cover; display: none;">
+
+                    <div>
+                        <h3 id="player-name" class="mb-1"></h3>
+                        <div id="player-details" class="text-gray-400"></div>
+                        <div id="player-injury" class="mt-2"></div>
+                    </div>
+                </div>
+                <!-- Loading spinner -->
+                <div id="stats-loading" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+
+                <!-- Error message -->
+                <div id="stats-error" class="text-danger" style="display: none;"></div>
+
+                <!-- Stats table -->
+                <div id="stats-table" class="table-responsive opacity-0" style="transition: opacity 0.3s ease-in-out;">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>MIN</th>
+                                <th>PTS</th>
+                                <th>REB</th>
+                                <th>AST</th>
+                                <th>STL</th>
+                                <th>BLK</th>
+                                <th>TO</th>
+                                <th>FG%</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button style="margin-left:auto !important;margin-right:auto !important;" 
+                        type="button" class="btn btn-primary center" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function formatGameDate(gameId) {
+        const date = gameId.substring(0, 8);
+        return `${date.substring(4, 6)}/${date.substring(6, 8)}/${date.substring(2, 4)}`;
+    }
+    function resetModalState() {
+        // Reset all states to initial condition
+        document.getElementById('stats-loading').style.display = 'block';
+        const statsTable = document.getElementById('stats-table');
+        statsTable.style.display = 'none';
+        statsTable.classList.add('opacity-0');
+        document.getElementById('stats-error').style.display = 'none';
+        document.getElementById('stats-body').innerHTML = '';
+
+        // Clear player information
+        document.getElementById('player-headshot').src = '';
+        document.getElementById('player-name').textContent = '';
+        document.getElementById('player-details').textContent = '';
+        document.getElementById('player-injury').innerHTML = '';
+        // Reset and hide player headshot
+        const playerHeadshot = document.getElementById('player-headshot');
+        playerHeadshot.style.display = 'none';
+        playerHeadshot.src = '';
+        }
+    document.getElementById('player-modal').addEventListener('shown.bs.modal', function() {
+        const playerId = document.getElementById('player-modal-id').textContent;
+        console.log("Player modal opened for ID:", playerId);
+        
+        // Reset modal state before loading new data
+        resetModalState();
+        
+        // Fetch player stats
+        fetch(`/player-stats/${playerId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Got player stats:", data);
+                if (data.success) {
+                    // Get headshot element
+                    const playerHeadshot = document.getElementById('player-headshot');
+                    
+                    // Set the source and show image only when loaded
+                    playerHeadshot.onload = function() {
+                        playerHeadshot.style.display = 'block';
+                    };
+                    playerHeadshot.src = data.player.headshot;
+                    
+                    // Add error handler to show fallback if image fails
+                    playerHeadshot.onerror = function() {
+                        this.src = 'https://cdn.nba.com/headshots/nba/latest/1040x760/fallback.png';
+                        this.style.display = 'block';
+                    };
+                    // Update player info
+                    document.getElementById('player-headshot').src = data.player.headshot;
+                    document.getElementById('player-name').textContent = data.player.name;
+                    document.getElementById('player-details').innerHTML = `
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <span class="px-3 py-1 bg-gray-700 rounded-full text-sm font-medium">
+                            #${data.player.number || 'N/A'}
+                        </span>
+                        <span class="px-3 py-1 bg-gray-700 rounded-full text-sm font-medium">
+                            ${data.player.position || 'N/A'}
+                        </span>
+                        <span class="px-3 py-1 bg-gray-700 rounded-full text-sm font-medium">
+                            ${data.player.team || 'N/A'}
+                        </span>
+                    </div>
+                   
+                `;
+                    
+                                    
+                    // Show injury status if not healthy
+                    const injuryEl = document.getElementById('player-injury');
+                    if (data.player.injury && data.player.injury.designation) {
+                        let injuryStatus = data.player.injury.designation;
+                        if (data.player.injury.description) {
+                            injuryStatus += ` - ${data.player.injury.description}`;
+                        }
+                        injuryEl.innerHTML = `
+                            <div class="injury-status-text">
+                                <span class="badge badge-injured">${injuryStatus}</span>
+                            </div>
+                        `;
+                    } else {
+                        injuryEl.innerHTML = `<span class="badge badge-healthy">Healthy</span>`;
+                    }
+                    // Your existing games table population code...
+                    if (data.games && data.games.length > 0) {
+                    const statsBody = document.getElementById('stats-body');
+                    statsBody.innerHTML = data.games.map(game => `
+                        <tr>
+                            <td>${formatGameDate(game.gameID)}</td>
+                            <td>${game.mins}</td>
+                            <td>${game.pts}</td>
+                            <td>${game.reb}</td>
+                            <td>${game.ast}</td>
+                            <td>${game.stl}</td>
+                            <td>${game.blk}</td>
+                            <td>${game.TOV}</td>
+                            <td>${game.fgp}%</td>
+                        </tr>
+                    `).join('');
+                    
+                    // Show table with fade
+                    const statsTable = document.getElementById('stats-table');
+                    statsTable.style.display = 'block';
+                    setTimeout(() => {
+                        statsTable.classList.remove('opacity-0');
+                    }, 50);
+                } else {
+                    throw new Error('No game data available');
+                }
+            }})
+            .catch(error => {
+                console.error("Error loading player stats:", error);
+                document.getElementById('stats-error').textContent = error.message;
+                document.getElementById('stats-error').style.display = 'block';
+            })
+            .finally(() => {
+                document.getElementById('stats-loading').style.display = 'none';
+            });
+    });
+
+    // Reset everything when modal is hidden
+    document.getElementById('player-modal').addEventListener('hidden.bs.modal', function() {
+        resetModalState();
+    });
+</script>

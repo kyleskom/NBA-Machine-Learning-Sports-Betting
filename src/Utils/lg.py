@@ -430,7 +430,7 @@ def getLastGameFutures(team_name):
     team_id = id_team_names[team_name]
 
     game_date = datetime.now()
-    one_month_before_game = (game_date - timedelta(days=180)).strftime('%Y-%m-%d')
+    one_month_before_game = (game_date - timedelta(days=360)).strftime('%Y-%m-%d')
     one_day_before_game = (game_date - timedelta(days=1)).strftime('%Y-%m-%d')
     year = int(game_date.strftime('%Y'))
 
