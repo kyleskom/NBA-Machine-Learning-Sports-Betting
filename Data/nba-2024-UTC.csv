@@ -1,40 +1,40 @@
 Match Number,Round Number,Date,Location,Home Team,Away Team,Result
-1,1,22/10/2024 23:30,TD Garden,Boston Celtics,New York Knicks,132 - 109
-2,1,23/10/2024 02:00,Crypto.com Arena,Los Angeles Lakers,Minnesota Timberwolves,110 - 103
-3,1,23/10/2024 23:00,Little Caesars Arena,Detroit Pistons,Indiana Pacers,109 - 115
-4,1,23/10/2024 23:30,State Farm Arena,Atlanta Hawks,Brooklyn Nets,120 - 116
-5,1,23/10/2024 23:30,Kaseya Center,Miami Heat,Orlando Magic,97 - 116
-6,1,23/10/2024 23:30,Wells Fargo Center,Philadelphia 76ers,Milwaukee Bucks,109 - 124
-7,1,23/10/2024 23:30,Scotiabank Arena,Toronto Raptors,Cleveland Cavaliers,106 - 136
-8,1,24/10/2024 00:00,Toyota Center,Houston Rockets,Charlotte Hornets,105 - 110
-9,1,24/10/2024 00:00,Smoothie King Center,New Orleans Pelicans,Chicago Bulls,123 - 111
-10,1,24/10/2024 01:00,Delta Center,Utah Jazz,Memphis Grizzlies,124 - 126
-11,1,24/10/2024 02:00,Intuit Dome,LA Clippers,Phoenix Suns,113 - 116
-12,1,24/10/2024 02:00,Moda Center,Portland Trail Blazers,Golden State Warriors,104 - 140
-13,1,24/10/2024 23:00,Capital One Arena,Washington Wizards,Boston Celtics,102 - 122
-14,1,24/10/2024 23:30,American Airlines Center,Dallas Mavericks,San Antonio Spurs,120 - 109
-15,1,25/10/2024 02:00,Ball Arena,Denver Nuggets,Oklahoma City Thunder,87 - 102
-16,1,25/10/2024 02:00,Golden 1 Center,Sacramento Kings,Minnesota Timberwolves,115 - 117
-17,1,25/10/2024 23:00,Kia Center,Orlando Magic,Brooklyn Nets,116 - 101
-18,1,25/10/2024 23:00,Scotiabank Arena,Toronto Raptors,Philadelphia 76ers,115 - 107
-19,1,25/10/2024 23:30,State Farm Arena,Atlanta Hawks,Charlotte Hornets,125 - 120
-20,1,25/10/2024 23:30,Rocket Mortgage FieldHouse,Cleveland Cavaliers,Detroit Pistons,113 - 101
-21,1,25/10/2024 23:30,Madison Square Garden,New York Knicks,Indiana Pacers,123 - 98
-22,1,26/10/2024 00:00,Toyota Center,Houston Rockets,Memphis Grizzlies,128 - 108
-23,1,26/10/2024 00:00,Fiserv Forum,Milwaukee Bucks,Chicago Bulls,122 - 133
-24,1,26/10/2024 01:30,Delta Center,Utah Jazz,Golden State Warriors,86 - 127
-25,1,26/10/2024 02:00,Crypto.com Arena,Los Angeles Lakers,Phoenix Suns,123 - 116
-26,1,26/10/2024 02:00,Moda Center,Portland Trail Blazers,New Orleans Pelicans,103 - 105
-27,1,26/10/2024 21:00,Ball Arena,Denver Nuggets,LA Clippers,104 - 109
-28,1,26/10/2024 23:00,Spectrum Center,Charlotte Hornets,Miami Heat,106 - 114
-29,1,26/10/2024 23:00,Little Caesars Arena,Detroit Pistons,Boston Celtics,118 - 124
-30,1,26/10/2024 23:00,Capital One Arena,Washington Wizards,Cleveland Cavaliers,116 - 135
-31,1,27/10/2024 00:00,United Center,Chicago Bulls,Oklahoma City Thunder,95 - 114
-32,1,27/10/2024 00:00,FedExForum,Memphis Grizzlies,Orlando Magic,124 - 111
-33,1,27/10/2024 00:00,Target Center,Minnesota Timberwolves,Toronto Raptors,112 - 101
-34,1,27/10/2024 00:30,Frost Bank Center,San Antonio Spurs,Houston Rockets,109 - 106
-35,1,27/10/2024 02:00,Footprint Center,Phoenix Suns,Dallas Mavericks,114 - 102
-36,1,27/10/2024 02:30,Crypto.com Arena,Los Angeles Lakers,Sacramento Kings,131 - 127
+1,1,22/10/2024 23:30,TD Garden,Boston Celtics,New York Knicks,
+2,1,23/10/2024 02:00,Crypto.com Arena,Los Angeles Lakers,Minnesota Timberwolves,
+3,1,23/10/2024 23:00,Little Caesars Arena,Detroit Pistons,Indiana Pacers,
+4,1,23/10/2024 23:30,State Farm Arena,Atlanta Hawks,Brooklyn Nets,
+5,1,23/10/2024 23:30,Kaseya Center,Miami Heat,Orlando Magic,
+6,1,23/10/2024 23:30,Wells Fargo Center,Philadelphia 76ers,Milwaukee Bucks,
+7,1,23/10/2024 23:30,Scotiabank Arena,Toronto Raptors,Cleveland Cavaliers,
+8,1,24/10/2024 00:00,Toyota Center,Houston Rockets,Charlotte Hornets,
+9,1,24/10/2024 00:00,Smoothie King Center,New Orleans Pelicans,Chicago Bulls,
+10,1,24/10/2024 01:00,Delta Center,Utah Jazz,Memphis Grizzlies,
+11,1,24/10/2024 02:00,Intuit Dome,LA Clippers,Phoenix Suns,
+12,1,24/10/2024 02:00,Moda Center,Portland Trail Blazers,Golden State Warriors,
+13,1,24/10/2024 23:00,Capital One Arena,Washington Wizards,Boston Celtics,
+14,1,24/10/2024 23:30,American Airlines Center,Dallas Mavericks,San Antonio Spurs,
+15,1,25/10/2024 02:00,Ball Arena,Denver Nuggets,Oklahoma City Thunder,
+16,1,25/10/2024 02:00,Golden 1 Center,Sacramento Kings,Minnesota Timberwolves,
+17,1,25/10/2024 23:00,Kia Center,Orlando Magic,Brooklyn Nets,
+18,1,25/10/2024 23:00,Scotiabank Arena,Toronto Raptors,Philadelphia 76ers,
+19,1,25/10/2024 23:30,State Farm Arena,Atlanta Hawks,Charlotte Hornets,
+20,1,25/10/2024 23:30,Rocket Mortgage FieldHouse,Cleveland Cavaliers,Detroit Pistons,
+21,1,25/10/2024 23:30,Madison Square Garden,New York Knicks,Indiana Pacers,
+22,1,26/10/2024 00:00,Toyota Center,Houston Rockets,Memphis Grizzlies,
+23,1,26/10/2024 00:00,Fiserv Forum,Milwaukee Bucks,Chicago Bulls,
+24,1,26/10/2024 01:30,Delta Center,Utah Jazz,Golden State Warriors,
+25,1,26/10/2024 02:00,Crypto.com Arena,Los Angeles Lakers,Phoenix Suns,
+26,1,26/10/2024 02:00,Moda Center,Portland Trail Blazers,New Orleans Pelicans,
+27,1,26/10/2024 21:00,Ball Arena,Denver Nuggets,LA Clippers,
+28,1,26/10/2024 23:00,Spectrum Center,Charlotte Hornets,Miami Heat,
+29,1,26/10/2024 23:00,Little Caesars Arena,Detroit Pistons,Boston Celtics,
+30,1,26/10/2024 23:00,Capital One Arena,Washington Wizards,Cleveland Cavaliers,
+31,1,27/10/2024 00:00,United Center,Chicago Bulls,Oklahoma City Thunder,
+32,1,27/10/2024 00:00,FedExForum,Memphis Grizzlies,Orlando Magic,
+33,1,27/10/2024 00:00,Target Center,Minnesota Timberwolves,Toronto Raptors,
+34,1,27/10/2024 00:30,Frost Bank Center,San Antonio Spurs,Houston Rockets,
+35,1,27/10/2024 02:00,Footprint Center,Phoenix Suns,Dallas Mavericks,
+36,1,27/10/2024 02:30,Crypto.com Arena,Los Angeles Lakers,Sacramento Kings,
 37,1,27/10/2024 19:30,Gainbridge Fieldhouse,Indiana Pacers,Philadelphia 76ers,
 38,1,27/10/2024 22:00,Barclays Center,Brooklyn Nets,Milwaukee Bucks,
 39,1,27/10/2024 22:00,Moda Center,Portland Trail Blazers,New Orleans Pelicans,
