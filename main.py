@@ -10,14 +10,14 @@ from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
 from src.Utils.tools import create_todays_games_from_odds, get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
-todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2023/scores/00_todays_scores.json'
+todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2024/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
            'Conference=&DateFrom=&DateTo=&Division=&GameScope=&' \
            'GameSegment=&LastNGames=0&LeagueID=00&Location=&' \
            'MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&' \
            'PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&' \
            'PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&' \
-           'Season=2023-24&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
+           'Season=2024-25&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&' \
            'StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision='
 
 
@@ -49,7 +49,7 @@ def createTodaysGames(games, df, odds):
             away_team_odds.append(input(away_team + ' odds: '))
 
         # calculate days rest for both teams
-        schedule_df = pd.read_csv('Data/nba-2023-UTC.csv', parse_dates=['Date'], date_format='%d/%m/%Y %H:%M')
+        schedule_df = pd.read_csv('Data/nba-2024-UTC.csv', parse_dates=['Date'], date_format='%d/%m/%Y %H:%M')
         home_games = schedule_df[(schedule_df['Home Team'] == home_team) | (schedule_df['Away Team'] == home_team)]
         away_games = schedule_df[(schedule_df['Home Team'] == away_team) | (schedule_df['Away Team'] == away_team)]
         previous_home_games = home_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date']
