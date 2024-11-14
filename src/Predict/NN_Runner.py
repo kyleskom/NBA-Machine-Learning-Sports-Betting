@@ -3,14 +3,14 @@ import copy
 import numpy as np
 import tensorflow as tf
 from colorama import Fore, Style, init, deinit
-from keras.models import load_model
+from keras.layers import TFSMLayer
 
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
 
 init()
-model = load_model('Models/NN_Models/Trained-Model-ML-1699315388.285516')
-ou_model = load_model("Models/NN_Models/Trained-Model-OU-1699315414.2268295")
+model = TFSMLayer('Models/NN_Models/Trained-Model-ML-1699315388.285516', call_endpoint='serving_default')
+ou_model = TFSMLayer('Models/NN_Models/Trained-Model-OU-1699315414.2268295', call_endpoint='serving_default')
 
 
 def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
