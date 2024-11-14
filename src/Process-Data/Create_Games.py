@@ -66,7 +66,7 @@ for key, value in config['create-games'].items():
             elif season == '2013-14':
                 home_team_series = team_df.iloc[team_index_13.get(home_team)]
                 away_team_series = team_df.iloc[team_index_13.get(away_team)]
-            elif season == '2022-23' or season == '2023-24':
+            elif season == '2022-23' or season == '2023-24' or season == '2024-25':
                 home_team_series = team_df.iloc[team_index_current.get(home_team)]
                 away_team_series = team_df.iloc[team_index_current.get(away_team)]
             else:
@@ -97,5 +97,5 @@ for field in frame.columns.values:
         continue
     frame[field] = frame[field].astype(float)
 con = sqlite3.connect("../../Data/dataset.sqlite")
-frame.to_sql("dataset_2012-24_new", con, if_exists="replace")
+frame.to_sql("dataset_2012-25_new", con, if_exists="replace")
 con.close()
