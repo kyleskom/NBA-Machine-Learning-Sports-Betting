@@ -34,9 +34,7 @@ for key, value in config['create-games'].items():
 
         for row in odds_df.itertuples():
             home_team = row[2]
-            print(home_team)
             away_team = row[3]
-            print(away_team)
 
             date = row[1]
 
