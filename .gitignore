@@ -105,3 +105,13 @@ venv.bak/
 
 .idea
 .DS_Store
+
+# virtual environment
+venv
+/venv
+.venv
+
+# NBA API Package test
+NBA_API_Package
+/NBA_API_Package
+.NBA_API_Package
