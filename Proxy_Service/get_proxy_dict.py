@@ -1,15 +1,37 @@
-import os
-from dotenv import load_dotenv
+import boto3
+import json
+from botocore.exceptions import ClientError
 
 
 # get proxy details
 def _get_proxy_dict():
-    load_dotenv(dotenv_path="/home/ubuntu/NBA-App/NBA-Machine-Learning-Sports-Betting/environment.env")
-    PROXY_USERNAME = os.getenv('PROXY_USERNAME')
-    PROXY_CITY_CODE = os.getenv('PROXY_CITY_CODE')
-    PROXY_PASSWORD = os.getenv('PROXY_PASSWORD')
-    PROXY_URL = os.getenv('PROXY_URL')
-    PROXY_PORT = os.getenv('PROXY_PORT')
+    secret_name = "proxy-details"
+    region_name = "us-east-1"
+
+    # Create a Secrets Manager client
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        print(f'Client error: {e}')
+        raise e
+
+    secret = get_secret_value_response['SecretString']
+    secret_dict = json.loads(secret)
+
+    PROXY_USERNAME = secret_dict.get("PROXY_USERNAME")
+    PROXY_CITY_CODE = secret_dict.get("PROXY_CITY_CODE")
+    PROXY_PASSWORD = secret_dict.get("PROXY_PASSWORD")
+    PROXY_URL = secret_dict.get("PROXY_URL")
+    PROXY_PORT = secret_dict.get("PROXY_PORT")
+
     proxy = f'https://customer-{PROXY_USERNAME}-{PROXY_CITY_CODE}:{PROXY_PASSWORD}@{PROXY_URL}:{PROXY_PORT}'
 
     proxy_dict = {
