@@ -105,3 +105,8 @@ venv.bak/
 
 .idea
 .DS_Store
+
+# virtual environment
+venv
+/venv
+.venv
