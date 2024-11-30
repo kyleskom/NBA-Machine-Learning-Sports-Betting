@@ -110,3 +110,8 @@ venv.bak/
 venv
 /venv
 .venv
+
+# NBA API Package test
+NBA_API_Package
+/NBA_API_Package
+.NBA_API_Package

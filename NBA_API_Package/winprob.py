@@ -1,7 +1,7 @@
 from nba_api.stats.endpoints import winprobabilitypbp
+from Proxy_Service.load_proxy import _get_proxy
 
-# proxies
-proxies = 'https://107.152.39.106:8888'
+proxy = _get_proxy()
 
 # headers
 custom_headers = {
@@ -16,6 +16,6 @@ custom_headers = {
 }
 
 # basic request
-win_prob = winprobabilitypbp.WinProbabilityPBP(game_id='0022400307', timeout=30, proxy=proxies)
+win_prob = winprobabilitypbp.WinProbabilityPBP(game_id='0022400307', timeout=30, proxy=proxy)
 
 print(win_prob.get_json())

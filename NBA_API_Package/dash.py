@@ -1,6 +1,7 @@
 from nba_api.stats.endpoints import leaguedashteamstats
+from Proxy_Service.load_proxy import _get_proxy
 
-LAST_N_GAMES = '1'
+proxy = _get_proxy()
 
 # headers
 custom_headers = {
@@ -17,9 +18,9 @@ custom_headers = {
 
 # basic request
 league_dash = leaguedashteamstats.LeagueDashTeamStats(
-    headers=custom_headers, 
+    headers=custom_headers,
     timeout=120,
-    last_n_games=LAST_N_GAMES, 
+    proxy=proxy
     )
 
 print(league_dash.get_json())

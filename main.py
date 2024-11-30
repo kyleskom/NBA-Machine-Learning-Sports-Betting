@@ -95,7 +95,7 @@ def main():
             return
         if (games[0][0] + ':' + games[0][1]) not in list(odds.keys()):
             print(games[0][0] + ':' + games[0][1])
-            print(Fore.RED,"--------------Games list not up to date for todays games!!! Scraping disabled until list is updated.--------------")
+            print(Fore.RED, "--------------Games list not up to date for todays games!!! Scraping disabled until list is updated.--------------")
             print(Style.RESET_ALL)
             odds = None
         else:

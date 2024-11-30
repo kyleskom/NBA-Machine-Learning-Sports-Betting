@@ -6,6 +6,8 @@ import requests
 
 from .Dictionaries import team_index_current
 
+from Proxy_Service.get_proxy_dict import _get_proxy_dict
+
 games_header = {
     'user-agent': 'Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
                   'Chrome/57.0.2987.133 Safari/537.36',
@@ -28,7 +30,7 @@ data_headers = {
 
 
 def get_json_data(url):
-    raw_data = requests.get(url, headers=data_headers)
+    raw_data = requests.get(url, headers=data_headers, proxies=_get_proxy_dict())
     try:
         json = raw_data.json()
     except Exception as e:
