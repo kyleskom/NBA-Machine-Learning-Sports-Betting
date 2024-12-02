@@ -87,8 +87,11 @@ def createTodaysGames(games, df, odds):
 
 def main():
     odds = None
+    date = datetime.today().strftime("%Y-%m-%d")
+    if args.date:
+        date = args.date
     if args.odds:
-        odds = SbrOddsProvider(sportsbook=args.odds).get_odds()
+        odds = SbrOddsProvider(sportsbook=args.odds, date=date).get_odds()
         games = create_todays_games_from_odds(odds)
         if len(games) == 0:
             print("No games found.")
@@ -135,5 +138,6 @@ if __name__ == "__main__":
     parser.add_argument('-A', action='store_true', help='Run all Models')
     parser.add_argument('-odds', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
     parser.add_argument('-kc', action='store_true', help='Calculates percentage of bankroll to bet based on model edge')
+    parser.add_argument('-date', help='Date to get data from')
     args = parser.parse_args()
     main()
