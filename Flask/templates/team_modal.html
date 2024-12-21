@@ -1,0 +1,259 @@
+<style>
+    .team-name:hover{
+        cursor: pointer
+    }
+    .team-name:hover{
+        text-decoration: underline;
+        transition: all ease-in-out 0.2s;
+    }
+    .modal-open {
+        overflow-y: scroll !important;
+        padding-right: 0px !important;
+    }
+    
+    /* Clean up modal backdrop */
+    .modal-backdrop {
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+    
+    /* Simplify modal styling */
+    .modal {
+        overflow-y: auto;
+        z-index: 1060 !important;
+    }
+    
+    .modal-dialog {
+        max-width: 65% !important;
+        margin: 10vh auto auto auto;
+        margin-bottom:10vh
+    }
+    
+    .modal-content {
+        cursor: pointer;
+        background-color: rgba(31, 41, 55, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        color: white !important;
+        backdrop-filter: blur(14px);
+        min-height: 50vh !important;
+
+    }
+    
+    /* Header and footer styling */
+    .modal-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1rem 1.5rem;
+    }
+    
+    .modal-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 1rem 1.5rem;
+    }
+    
+    /* Player card styles */
+    .player-card {
+        height: 100%;
+        transition: transform 0.2s;
+        border-radius: 10px;
+
+        
+    }
+    .player-card:hover {
+        transform: translateY(-2px);
+        background-color: rgba(159, 159, 159, 0.2);
+        transition: all ease-in-out 0.4s;
+    }
+    
+    .player-headshot {
+        border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Badge styling */
+    .injury-badge {
+        font-size: 0.875rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+    }
+    
+    .injury-healthy {
+        background-color: rgba(34, 197, 94, 0.2);
+        color: rgb(34, 197, 94);
+    }
+    
+    .injury-injured {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: rgb(239, 68, 68);
+    }
+    
+    /* Grid layout */
+    .player-grid {
+        margin: 0 -0.5rem;
+    }
+    
+    .player-grid > [class*="col-"] {
+        padding: 0.5rem;
+    }
+    
+    /* Close button */
+    .btn-close-white {
+        opacity: 0.8;
+    }
+    
+    .btn-close-white:hover {
+        opacity: 1;
+    }
+    
+    /* Primary button */
+    .btn-primary {
+        background-color: rgb(165, 165, 165);
+        border: none;
+        padding: 0.5rem 2rem;
+        border-radius: 10px;
+    }
+    
+    .btn-primary:hover {
+        background-color: rgb(132, 132, 132);
+
+    }
+</style>
+{% for game_key in data.get('fanduel') %}
+{% set teams = game_key.split(':') %}
+{% for team in teams %}
+<div class="modal fade" id="modal-{{ team|replace(' ', '-')|lower }}" tabindex="-1" 
+    aria-labelledby="modal-{{ team|replace(' ', '-')|lower }}-label" aria-hidden="true" data-bs-backdrop="true">
+    <div class="modal-dialog">
+        <div class="modal-content section">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-{{ team|replace(' ', '-')|lower }}-label" style="color:white">
+                    {{ team }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="color:white">
+                <div id="team-data-{{ team|replace(' ', '-')|lower }}" class="player-roster row">
+                    <div class="loading-spinner text-center py-4 mt-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="player-list" style="display: none;">
+                        <!-- Players will be inserted here dynamically -->
+                    </div>
+                    <div class="error-message text-danger text-center py-4" style="display: none;">
+                        Failed to load team data
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button style="margin-left:auto !important; margin-right: auto !important;" type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endfor %}
+
+<script>
+    const teamDataCache = new Map();
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        function createPlayerCard(player) {
+            const isHealthy = player.injury === 'Healthy';
+            return `
+                <div class="col-12 col-lg-6 mb-3">
+                    <div class="player-card rounded-lg p-4 h-100" onclick="showPlayerModal('${player.playerId}')">
+                        <div class="flex items-start">
+                            <img src="${player.headshot}" 
+                                 alt="${player.name}" 
+                                 class="player-headshot w-24 h-24 rounded-lg object-cover mr-4"
+                                 onerror="this.src='https://cdn.nba.com/headshots/nba/latest/1040x760/fallback.png'">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold mb-2">${player.name}</h3>
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    <span class="px-3 py-1 bg-gray-700 rounded-full text-sm font-medium">
+                                        #${player.jerseyNum || 'N/A'}
+                                    </span>
+                                    <span class="px-3 py-1 bg-gray-700 rounded-full text-sm font-medium">
+                                        ${player.position || 'N/A'}
+                                    </span>
+                                    <span class="injury-badge ${isHealthy ? 'injury-healthy' : 'injury-injured'}">
+                                        ${isHealthy ? 'Healthy' : 'Injured'}
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div class="text-sm">
+                                        <span class="text-gray-400">Height:</span> ${player.height || 'N/A'}
+                                    </div>
+                                    <div class="text-sm">
+                                        <span class="text-gray-400">Weight:</span> ${player.weight || 'N/A'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.showPlayerModal = function(playerId) {
+            const teamModal = bootstrap.Modal.getInstance(document.querySelector('.modal.show'));
+            if (teamModal) {
+                teamModal.hide();
+            }
+            
+            setTimeout(() => {
+                document.getElementById('player-modal-id').textContent = playerId;
+                const playerModal = new bootstrap.Modal(document.getElementById('player-modal'));
+                playerModal.show();
+            }, 150);
+        };
+
+        // Add modal shown event listeners
+        document.querySelectorAll('.modal').forEach(function(modalElement) {
+            modalElement.addEventListener('shown.bs.modal', function() {
+                const teamName = this.querySelector('.modal-title').textContent.trim();
+                const teamDataContainer = this.querySelector('.player-roster');
+                const loadingSpinner = teamDataContainer.querySelector('.loading-spinner');
+                const playerList = teamDataContainer.querySelector('.player-list');
+                const errorMessage = teamDataContainer.querySelector('.error-message');
+                
+                if (teamDataCache.has(teamName)) {
+                    playerList.innerHTML = `<div class="row player-grid">${teamDataCache.get(teamName)}</div>`;
+                    playerList.style.display = 'block';
+                    loadingSpinner.style.display = 'none';
+                    return;
+                }
+                
+                loadingSpinner.style.display = 'block';
+                playerList.style.display = 'none';
+                errorMessage.style.display = 'none';
+                
+                fetch(`/team-data/${encodeURIComponent(teamName)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.players) {
+                            const playerCards = data.players
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .map(player => createPlayerCard(player))
+                                .join('');
+                            playerList.innerHTML = `<div class="row player-grid">${playerCards}</div>`;
+                            playerList.style.display = 'block';
+                            teamDataCache.set(teamName, playerCards);
+                        } else {
+                            throw new Error(data.error || 'Failed to load team data');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching team data:', error);
+                        errorMessage.textContent = error.message;
+                        errorMessage.style.display = 'block';
+                    })
+                    .finally(() => {
+                        loadingSpinner.style.display = 'none';
+                    });
+            });
+        });
+    });
+</script>
