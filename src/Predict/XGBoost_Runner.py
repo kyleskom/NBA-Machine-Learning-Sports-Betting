@@ -6,33 +6,46 @@ import xgboost as xgb
 from colorama import Fore, Style, init, deinit
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
-
+from src.Utils.lg import AugmentFutureData as afd
 
 # from src.Utils.Dictionaries import team_index_current
 # from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 init()
 xgb_ml = xgb.Booster()
 xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.7%_ML-4.json')
+
 xgb_uo = xgb.Booster()
 xgb_uo.load_model('Models/XGBoost_Models/XGBoost_53.7%_UO-9.json')
 
 
-def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
+xgb_ml_num_features = xgb_ml.attributes().get('num_features', 'Unknown')
+xgb_uo_num_features = xgb_uo.attributes().get('num_features', 'Unknown')
+
+def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion,lg):
     ml_predictions_array = []
-
+    c = 0
     for row in data:
+        home_team = games[c][0]
+        away_team = games[c][1]
+        if lg and xgb_ml_num_features != 'Unknown' and int(xgb_ml_num_features) >=250:#call augment future data if -lg flag is passed
+            row = afd(home_team, away_team,row)#AugmentFutureData fetches last game and adds to row...
         ml_predictions_array.append(xgb_ml.predict(xgb.DMatrix(np.array([row]))))
-
+        c += 1
     frame_uo = copy.deepcopy(frame_ml)
     frame_uo['OU'] = np.asarray(todays_games_uo)
     data = frame_uo.values
     data = data.astype(float)
 
     ou_predictions_array = []
-
+    c = 0
     for row in data:
+        home_team = games[c][0]
+        away_team = games[c][1]
+        if lg and xgb_uo_num_features != 'Unknown' and int(xgb_uo_num_features) >=250:#call augment future data if -lg flag is passed
+            row = afd(home_team, away_team,row)#AugmentFutureData fetches last game and adds to row...
         ou_predictions_array.append(xgb_uo.predict(xgb.DMatrix(np.array([row]))))
-
+        c += 1
+    
     count = 0
     for game in games:
         home_team = game[0]
@@ -92,5 +105,4 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
         print(home_team + ' EV: ' + expected_value_colors['home_color'] + str(ev_home) + Style.RESET_ALL + (bankroll_fraction_home if kelly_criterion else ''))
         print(away_team + ' EV: ' + expected_value_colors['away_color'] + str(ev_away) + Style.RESET_ALL + (bankroll_fraction_away if kelly_criterion else ''))
         count += 1
-
     deinit()
