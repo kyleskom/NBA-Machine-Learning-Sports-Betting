@@ -74,6 +74,7 @@ def index():
 
 
 
+
 @lru_cache()
 def fetch_fanduel_lg(ttl_hash=None):
     del ttl_hash
@@ -93,6 +94,7 @@ def lg():
     draftkings = fetch_draftkings_lg(ttl_hash=get_ttl_hash())
     betmgm = fetch_betmgm(ttl_hash=get_ttl_hash())
     return render_template('index.html', today=date.today(), data={"fanduel": fanduel, "draftkings": draftkings, "betmgm": betmgm})
+
 
 def get_player_data(team_abv):
     """Fetch player data for a given team abbreviation"""
