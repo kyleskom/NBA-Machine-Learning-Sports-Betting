@@ -9,6 +9,7 @@ from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
 from src.Utils.tools import create_todays_games_from_odds, get_json_data, to_data_frame, get_todays_games_json, create_todays_games
+from src.Inference.inference import retreive_model_inference_result
 
 todays_games_url = 'https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2024/scores/00_todays_scores.json'
 data_url = 'https://stats.nba.com/stats/leaguedashteamstats?' \
@@ -126,14 +127,3 @@ def main():
         print("------------Neural Network Model Predictions-----------")
         NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc)
         print("-------------------------------------------------------")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Model to Run')
-    parser.add_argument('-xgb', action='store_true', help='Run with XGBoost Model')
-    parser.add_argument('-nn', action='store_true', help='Run with Neural Network Model')
-    parser.add_argument('-A', action='store_true', help='Run all Models')
-    parser.add_argument('-odds', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
-    parser.add_argument('-kc', action='store_true', help='Calculates percentage of bankroll to bet based on model edge')
-    args = parser.parse_args()
-    main()
