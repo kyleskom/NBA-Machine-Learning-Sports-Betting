@@ -6,7 +6,7 @@ import tensorflow as tf
 from colorama import Fore, Style
 
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
-from src.Predict import NN_Runner, XGBoost_Runner
+from src.Predict import NN_Runner, XGBoost_Runner, Logistic_Regression_Runner
 from src.Utils.Dictionaries import team_index_current
 from src.Utils.tools import create_todays_games_from_odds, get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
@@ -49,7 +49,7 @@ def createTodaysGames(games, df, odds):
             away_team_odds.append(input(away_team + ' odds: '))
 
         # calculate days rest for both teams
-        schedule_df = pd.read_csv('Data/nba-2024-UTC.csv', parse_dates=['Date'], date_format='%d/%m/%Y %H:%M')
+        schedule_df = pd.read_csv('C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Data/nba-2024-UTC.csv', parse_dates=['Date'], date_format='%d/%m/%Y %H:%M')
         home_games = schedule_df[(schedule_df['Home Team'] == home_team) | (schedule_df['Away Team'] == home_team)]
         away_games = schedule_df[(schedule_df['Home Team'] == away_team) | (schedule_df['Away Team'] == away_team)]
         previous_home_games = home_games.loc[schedule_df['Date'] <= datetime.today()].sort_values('Date',ascending=False).head(1)['Date']
@@ -87,25 +87,25 @@ def createTodaysGames(games, df, odds):
 
 def main():
     odds = None
-    if args.odds:
-        odds = SbrOddsProvider(sportsbook=args.odds).get_odds()
+    odds = None
+    if "bet365":
+        odds = SbrOddsProvider(sportsbook="bet365").get_odds()
         games = create_todays_games_from_odds(odds)
         if len(games) == 0:
             print("No games found.")
             return
         if (games[0][0] + ':' + games[0][1]) not in list(odds.keys()):
             print(games[0][0] + ':' + games[0][1])
-            print(Fore.RED,"--------------Games list not up to date for todays games!!! Scraping disabled until list is updated.--------------")
+            print(Fore.RED,
+                  "--------------Games list not up to date for todays games!!! Scraping disabled until list is updated.--------------")
             print(Style.RESET_ALL)
             odds = None
         else:
-            print(f"------------------{args.odds} odds data------------------")
+            print(f"------------------bet365 odds data------------------")
             for g in odds.keys():
                 home_team, away_team = g.split(":")
-                print(f"{away_team} ({odds[g][away_team]['money_line_odds']}) @ {home_team} ({odds[g][home_team]['money_line_odds']})")
-    else:
-        data = get_todays_games_json(todays_games_url)
-        games = create_todays_games(data)
+                print(
+                    f"{away_team} ({odds[g][away_team]['money_line_odds']}) @ {home_team} ({odds[g][home_team]['money_line_odds']})")
     data = get_json_data(data_url)
     df = to_data_frame(data)
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = createTodaysGames(games, df, odds)
@@ -118,13 +118,20 @@ def main():
         print("---------------XGBoost Model Predictions---------------")
         XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc)
         print("-------------------------------------------------------")
-    if args.A:
+    if args.lr:
+        print("----------Logistic Regression Model Predictions----------")
+        Logistic_Regression_Runner.lr_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc)
+        print("-----------------------------------------------------------")
+    if True:
         print("---------------XGBoost Model Predictions---------------")
-        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc)
+        XGBoost_Runner.xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, True)
         print("-------------------------------------------------------")
+        print("----------Logistic Regression Model Predictions----------")
+        Logistic_Regression_Runner.lr_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, True)
+        print("-----------------------------------------------------------")
         data = tf.keras.utils.normalize(data, axis=1)
         print("------------Neural Network Model Predictions-----------")
-        NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc)
+        NN_Runner.nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, True)
         print("-------------------------------------------------------")
 
 
@@ -132,6 +139,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Model to Run')
     parser.add_argument('-xgb', action='store_true', help='Run with XGBoost Model')
     parser.add_argument('-nn', action='store_true', help='Run with Neural Network Model')
+    parser.add_argument('-lr', action='store_true', help='Run with Logistic Regression Model')
     parser.add_argument('-A', action='store_true', help='Run all Models')
     parser.add_argument('-odds', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
     parser.add_argument('-kc', action='store_true', help='Calculates percentage of bankroll to bet based on model edge')

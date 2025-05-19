@@ -1,0 +1,47 @@
+------------------bet365 odds data------------------
+New York Knicks (160) @ Boston Celtics (-190)
+Golden State Warriors (400) @ Minnesota Timberwolves (-550)
+---------------XGBoost Model Predictions---------------
+C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models\XGBoost_64.1%_ML-4.json
+C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models\XGBoost_51.7%_UO-9.json
+Boston Celtics (63.2%) vs New York Knicks: OVER 207.5 (70.0%)
+Minnesota Timberwolves (62.2%) vs Golden State Warriors: OVER 203 (66.6%)
+------------Expected Value & Kelly Criterion-----------
+Boston Celtics EV: -3.58 Fraction of Bankroll: 0%
+New York Knicks EV: -4.24 Fraction of Bankroll: 0%
+Minnesota Timberwolves EV: -26.49 Fraction of Bankroll: 0%
+Golden State Warriors EV: 88.98 Fraction of Bankroll: 22.25%
+-------------------------------------------------------
+----------Logistic Regression Model Predictions----------
+C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models\Logistic_Regression_ML_1747244965.042206
+Boston Celtics vs New York Knicks (54.9%)
+Minnesota Timberwolves vs Golden State Warriors (64.9%)
+------------Expected Value & Kelly Criterion-----------
+Boston Celtics EV: -31.2 Fraction of Bankroll: 0%
+New York Knicks EV: 42.8 Fraction of Bankroll: 26.75%
+Minnesota Timberwolves EV: -58.51 Fraction of Bankroll: 0%
+Golden State Warriors EV: 224.46 Fraction of Bankroll: 56.12%
+-----------------------------------------------------------
+------------Neural Network Model Predictions-----------
+C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models\Trained-Model-ML-1747243830.3527763
+C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models\Trained-Model-OU-1747244965.046202
+
+1/1 [==============================] - ETA: 0s
+1/1 [==============================] - 0s 78ms/step
+
+1/1 [==============================] - ETA: 0s
+1/1 [==============================] - 0s 31ms/step
+
+1/1 [==============================] - ETA: 0s
+1/1 [==============================] - 0s 47ms/step
+
+1/1 [==============================] - ETA: 0s
+1/1 [==============================] - 0s 16ms/step
+Boston Celtics (62.5%) vs New York Knicks: OVER 207.5 (50.8%)
+Minnesota Timberwolves (56.5%) vs Golden State Warriors: OVER 203 (53.5%)
+------------Expected Value & Kelly Criterion-----------
+Boston Celtics EV: -4.6 Fraction of Bankroll: 0%
+New York Knicks EV: -2.5 Fraction of Bankroll: 0%
+Minnesota Timberwolves EV: -33.27 Fraction of Bankroll: 0%
+Golden State Warriors EV: 117.67 Fraction of Bankroll: 29.42%
+-------------------------------------------------------

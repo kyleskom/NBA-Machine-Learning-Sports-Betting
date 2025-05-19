@@ -3,6 +3,8 @@ import copy
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+import glob
+import os
 from colorama import Fore, Style, init, deinit
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
@@ -11,13 +13,32 @@ from src.Utils import Kelly_Criterion as kc
 # from src.Utils.Dictionaries import team_index_current
 # from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 init()
-xgb_ml = xgb.Booster()
-xgb_ml.load_model('Models/XGBoost_Models/XGBoost_68.7%_ML-4.json')
-xgb_uo = xgb.Booster()
-xgb_uo.load_model('Models/XGBoost_Models/XGBoost_53.7%_UO-9.json')
+xgb_ml = None
+xgb_uo = None
+
+
+def _load_models():
+    global xgb_ml, xgb_uo
+    if xgb_ml is None:
+        ml_model_files = glob.glob("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models/XGBoost_*_ML-*.json")
+        if not ml_model_files:
+            raise FileNotFoundError("No XGBoost ML model files found in Models directory")
+        latest_ml = max(ml_model_files, key=os.path.getctime)
+        print(latest_ml)
+        xgb_ml = xgb.Booster()
+        xgb_ml.load_model(latest_ml)
+    if xgb_uo is None:
+        uo_model_files = glob.glob("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models/XGBoost_*_UO-*.json")
+        if not uo_model_files:
+            raise FileNotFoundError("No XGBoost OU model files found in Models directory")
+        latest_uo = max(uo_model_files, key=os.path.getctime)
+        print(latest_uo)
+        xgb_uo = xgb.Booster()
+        xgb_uo.load_model(latest_uo)
 
 
 def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
+    _load_models()
     ml_predictions_array = []
 
     for row in data:

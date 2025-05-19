@@ -10,11 +10,11 @@ import toml
 sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 from src.Utils.tools import get_json_data, to_data_frame
 
-config = toml.load("../../config.toml")
+config = toml.load("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/config.toml")
 
 url = config['data_url']
 
-con = sqlite3.connect("../../Data/TeamData.sqlite")
+con = sqlite3.connect("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Data/TeamData.sqlite")
 
 for key, value in config['get-data'].items():
     date_pointer = datetime.strptime(value['start_date'], "%Y-%m-%d").date()

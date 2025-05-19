@@ -10,7 +10,7 @@ sys.path.insert(1, os.path.join(sys.path[0], '../..'))
 from src.Utils.Dictionaries import team_index_07, team_index_08, team_index_12, team_index_13, team_index_14, \
     team_index_current
 
-config = toml.load("../../config.toml")
+config = toml.load("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/config.toml")
 
 df = pd.DataFrame
 scores = []
@@ -20,8 +20,8 @@ OU_Cover = []
 games = []
 days_rest_away = []
 days_rest_home = []
-teams_con = sqlite3.connect("../../Data/TeamData.sqlite")
-odds_con = sqlite3.connect("../../Data/OddsData.sqlite")
+teams_con = sqlite3.connect("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Data/TeamData.sqlite")
+odds_con = sqlite3.connect("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Data/OddsData.sqlite")
 
 for key, value in config['create-games'].items():
     print(key)
@@ -96,6 +96,6 @@ for field in frame.columns.values:
     if 'TEAM_' in field or 'Date' in field or field not in frame:
         continue
     frame[field] = frame[field].astype(float)
-con = sqlite3.connect("../../Data/dataset.sqlite")
+con = sqlite3.connect("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Data/dataset.sqlite")
 frame.to_sql("dataset_2012-24_new", con, if_exists="replace")
 con.close()

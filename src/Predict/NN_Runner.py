@@ -5,6 +5,8 @@ from colorama import Fore, Style, init, deinit
 from keras.models import load_model
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
+import glob
+import os
 
 init()
 
@@ -14,9 +16,19 @@ _ou_model = None
 def _load_models():
     global _model, _ou_model
     if _model is None:
-        _model = load_model('Models/NN_Models/Trained-Model-ML-1699315388.285516')
+        model_dirs = glob.glob("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models/Trained-Model-ML-*")
+        if not model_dirs:
+            raise FileNotFoundError("No neural network ML model directories found in Models directory")
+        latest_model_dir = max(model_dirs, key=os.path.getctime)
+        print(latest_model_dir)
+        _model = load_model(latest_model_dir)
     if _ou_model is None:
-        _ou_model = load_model("Models/NN_Models/Trained-Model-OU-1699315414.2268295")
+        ou_model_dirs = glob.glob("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models/Trained-Model-OU-*")
+        if not ou_model_dirs:
+            raise FileNotFoundError("No neural network OU model directories found in Models directory")
+        latest_ou_model_dir = max(ou_model_dirs, key=os.path.getctime)
+        print(latest_ou_model_dir)
+        _ou_model = load_model(latest_ou_model_dir)
 
 def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
     _load_models()

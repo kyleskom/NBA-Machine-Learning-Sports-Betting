@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 dataset = "dataset_2012-24_new"
-con = sqlite3.connect("../../Data/dataset.sqlite")
+con = sqlite3.connect("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Data/dataset.sqlite")
 data = pd.read_sql_query(f"select * from \"{dataset}\"", con, index_col="index")
 con.close()
 OU = data['OU-Cover']
@@ -47,4 +47,6 @@ for x in tqdm(range(100)):
     acc_results.append(acc)
     # only save results if they are the best so far
     if acc == max(acc_results):
-        model.save_model('../../Models/XGBoost_{}%_UO-9.json'.format(acc))
+        name = 'C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Models/XGBoost_{}%_UO-9.json'.format(acc)
+        model.save_model(name)
+        print(name)

@@ -4,9 +4,9 @@ from datetime import datetime
 import pandas as pd
 import toml
 
-config = toml.load("config.toml")
+config = toml.load("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/config.toml")
 
-odds_con = sqlite3.connect("Data/OddsData.sqlite")
+odds_con = sqlite3.connect("C:/Users/antho/cursorProjects/NBA-Machine-Learning-Sports-Betting/Data/OddsData.sqlite")
 
 date_format = "%Y-%m-%d"
 
