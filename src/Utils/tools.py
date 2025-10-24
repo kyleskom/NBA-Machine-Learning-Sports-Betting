@@ -17,13 +17,17 @@ games_header = {
 }
 
 data_headers = {
-    'Accept': 'application/json, text/plain, */*',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Host': 'stats.nba.com',
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Referer': 'https://www.nba.com/',
-    'Connection': 'keep-alive'
+    "Accept": "*/*",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Connection": "keep-alive",
+    "Origin": "https://www.nba.com",
+    "Priority": "u=3, i",
+    "Referer": "https://www.nba.com/",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-site",
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15"
 }
 
 
