@@ -129,4 +129,20 @@ if __name__ == "__main__":
     parser.add_argument('-odds', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
     parser.add_argument('-kc', action='store_true', help='Calculates percentage of bankroll to bet based on model edge')
     args = parser.parse_args()
+    valid_sources = ["fanduel", "draftkings", "betmgm", "pointsbet", "caesars", "wynn", "bet_rivers_ny"]
+    # Implement user input if argument -odds is not include
+    if args.odds is None:
+        prompt = (
+            "Which sportsbook would you like to fetch odds from?\n"
+            f"  Options: {', '.join(valid_sources)}\n"
+        )
+        choice = input(prompt).strip().lower()
+
+        if choice == "":
+            args.odds = None
+        elif choice in valid_sources:
+            args.odds = choice
+        else:
+            print(f"“{choice}” isn’t a known sportsbook. Defaulting to fanduel.")
+            args.odds = "fanduel"
     main()
