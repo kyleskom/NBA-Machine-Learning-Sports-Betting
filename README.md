@@ -1,51 +1,58 @@
-# NBA Sports Betting Using Machine Learning 🏀
+# NBA Sports Betting Using Machine Learning
 <img src="https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting/blob/master/Screenshots/output.png" width="1010" height="292" />
 
-A machine learning AI used to predict the winners and under/overs of NBA games. Takes all team data from the 2007-08 season to current season, matched with odds of those games, using a neural network to predict winning bets for today's games. Achieves ~69% accuracy on money lines and ~55% on under/overs. Outputs expected value for teams money lines to provide better insight. The fraction of your bankroll to bet based on the Kelly Criterion is also outputted. Note that a popular, less risky approach is to bet 50% of the stake recommended by the Kelly Criterion.
-## Packages Used
+## Overview
+This project predicts NBA game winners and totals (over/under) using team stats and sportsbook odds. It pulls team data from 2007-08 through the current season, builds matchup features, and runs trained models to estimate win probabilities and totals outcomes. It also outputs expected value and optional Kelly Criterion stake sizing.
 
-Use Python 3.11. In particular the packages/libraries used are...
+## Features
+- Moneyline and totals predictions (XGBoost and Neural Net models).
+- Expected value calculation and optional Kelly Criterion sizing.
+- Odds ingest from supported sportsbooks or manual input.
+- Data processing pipeline and model training scripts.
+- Flask web app for browsing outputs.
 
-* Tensorflow - Machine learning library
-* XGBoost - Gradient boosting framework
-* Numpy - Package for scientific computing in Python
-* Pandas - Data manipulation and analysis
-* Colorama - Color text output
-* Tqdm - Progress bars
-* Requests - Http library
-* Scikit_learn - Machine learning library
+## How it works
+1. **Collect stats and odds**: `Get_Data` pulls daily team stats from NBA endpoints and stores them in SQLite. `Get_Odds_Data` pulls sportsbook odds and scores from SBR and stores them in a separate SQLite DB.
+2. **Build game features**: `Create_Games` merges team stats, odds, scores, and days-rest into a training dataset.
+3. **Train models**: XGBoost/NN scripts in `src/Train-Models` fit moneyline and totals models.
+4. **Predict today**: `main.py` fetches today’s schedule, builds matchup features, loads trained models, and prints predictions, expected value, and optional Kelly Criterion sizing.
 
-## Usage
+## Requirements
+- Python 3.11
+- Packages: Tensorflow, XGBoost, NumPy, Pandas, Colorama, Tqdm, Requests, Scikit-learn
 
-<img src="https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting/blob/master/Screenshots/Expected_value.png" width="1010" height="424" />
-
-Make sure all packages above are installed.
-
+Install dependencies:
 ```bash
-$ git clone https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting.git
-$ cd NBA-Machine-Learning-Sports-Betting
-$ pip3 install -r requirements.txt
-$ python3 main.py -xgb -odds=fanduel
+pip3 install -r requirements.txt
 ```
 
-Odds data will be automatically fetched from sbrodds if the -odds option is provided with a sportsbook.  Options include: fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny
+## Quick start
+```bash
+python3 main.py -xgb -odds=fanduel
+```
 
-If `-odds` is not given, enter the under/over and odds for today's games manually after starting the script.
+Odds will be fetched automatically when `-odds` is provided. Supported books:
+`fanduel`, `draftkings`, `betmgm`, `pointsbet`, `caesars`, `wynn`, `bet_rivers_ny`
 
-Optionally, you can add '-kc' as a command line argument to see the recommended fraction of your bankroll to wager based on the model's edge
+If `-odds` is omitted, the script will prompt for manual odds and totals.
 
-## Flask Web App
+Optional flags:
+- `-nn` run neural network model
+- `-xgb` run XGBoost model
+- `-A` run all models
+- `-kc` show Kelly Criterion bankroll fraction
+
+## Flask web app
 <img src="https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting/blob/master/Screenshots/Flask-App.png" width="922" height="580" />
 
-This repo also includes a small Flask application to help view the data from this tool in the browser.  To run it:
-```
+```bash
 cd Flask
 flask --debug run
 ```
 
-## Getting new data and training models
-```
-# Create dataset with the latest data for 2023-24 season
+## Data pipeline and training
+```bash
+# Create/update datasets
 cd src/Process-Data
 python -m Get_Data
 python -m Get_Odds_Data
@@ -57,6 +64,31 @@ python -m XGBoost_Model_ML
 python -m XGBoost_Model_UO
 ```
 
-## Contributing
+### Backfilling missing data
+Get_Data normally fetches only new dates in the current season. To fill missing dates:
+```bash
+cd src/Process-Data
+python -m Get_Data --backfill
+```
 
-All contributions welcomed and encouraged.
+To backfill a single season:
+```bash
+cd src/Process-Data
+python -m Get_Data --backfill --season 2025-26
+```
+
+### Backfilling odds data
+Get_Odds_Data normally fetches only new dates in the current season. To fill missing odds dates:
+```bash
+cd src/Process-Data
+python -m Get_Odds_Data --backfill
+```
+
+To backfill a single season:
+```bash
+cd src/Process-Data
+python -m Get_Odds_Data --backfill --season 2025-26
+```
+
+## Contributing
+Contributions are welcome. If you change model behavior or data pipelines, add a note in the README and update any related scripts or docs.

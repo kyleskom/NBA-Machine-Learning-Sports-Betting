@@ -103,12 +103,36 @@ data_url = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom
         start_year = "2023"
         end_year = "2024"
 
+    [get-data.2024-25]
+        start_date = "2024-10-22"
+        end_date = "2025-6-22"
+        start_year = "2024"
+        end_year = "2025"
+
+    [get-data.2025-26]
+        start_date = "2025-10-21"
+        end_date = "2026-6-21"
+        start_year = "2025"
+        end_year = "2026"
+
 [get-odds-data]
     [get-odds-data.2023-24]
         start_date = "2023-10-23"
         end_date = "2024-4-28"
         start_year = "2023"
         end_year = "2024"
+
+    [get-odds-data.2024-25]
+        start_date = "2024-10-22"
+        end_date = "2025-6-22"
+        start_year = "2024"
+        end_year = "2025"
+
+    [get-odds-data.2025-26]
+        start_date = "2025-10-21"
+        end_date = "2026-6-21"
+        start_year = "2025"
+        end_year = "2026"
 
 [create-games]
     [create-games.2012-13]
@@ -182,3 +206,15 @@ data_url = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom
         end_date = "2024-4-28"
         start_year = "2023"
         end_year = "2024"
+
+    [create-games.2024-25]
+        start_date = "2024-10-22"
+        end_date = "2025-6-22"
+        start_year = "2024"
+        end_year = "2025"
+
+    [create-games.2025-26]
+        start_date = "2025-10-21"
+        end_date = "2026-6-21"
+        start_year = "2025"
+        end_year = "2026"
