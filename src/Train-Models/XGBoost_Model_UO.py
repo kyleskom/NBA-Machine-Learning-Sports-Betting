@@ -14,17 +14,17 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models" / "XGBoost_Models"
 
-DEFAULT_DATASET = "dataset_2012-26_new"
+DEFAULT_DATASET = "dataset_2012-26"
 TARGET_COLUMN = "OU-Cover"
 DATE_COLUMN = "Date"
 DROP_COLUMNS = [
+    "index",
     "Score",
     "Home-Team-Win",
     "TEAM_NAME",
-    "TEAM_ID",
     "Date",
+    "index.1",
     "TEAM_NAME.1",
-    "TEAM_ID.1",
     "Date.1",
     "OU-Cover",
 ]
@@ -42,8 +42,10 @@ def prepare_data(df):
         data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN], errors="coerce")
         data = data.sort_values(DATE_COLUMN)
     y = data[TARGET_COLUMN].astype(int).to_numpy()
-    X = data.drop(columns=DROP_COLUMNS, errors="ignore").astype(float).to_numpy()
-    return X, y
+    X_df = data.drop(columns=DROP_COLUMNS, errors="ignore")
+    feature_columns = list(X_df.columns)
+    X = X_df.astype(float).to_numpy()
+    return X, y, feature_columns
 
 
 def split_train_test(X, y, test_size=0.1):
@@ -60,6 +62,7 @@ def split_train_calib(X, y, calib_size=0.1):
         raise ValueError("Empty dataset.")
     calib_start = int(n * (1 - calib_size))
     return X[:calib_start], y[:calib_start], X[calib_start:], y[calib_start:]
+
 
 
 def compute_sample_weights(y, num_classes):
@@ -79,8 +82,12 @@ def sample_params(rng, seed):
         "eta": float(eta),
         "subsample": float(rng.uniform(0.5, 1.0)),
         "colsample_bytree": float(rng.uniform(0.5, 1.0)),
+        "colsample_bylevel": float(rng.uniform(0.5, 1.0)),
+        "colsample_bynode": float(rng.uniform(0.5, 1.0)),
         "min_child_weight": int(rng.integers(1, 21)),
         "gamma": float(rng.uniform(0.0, 10.0)),
+        "max_delta_step": int(rng.integers(0, 11)),
+        "max_bin": int(rng.integers(128, 1025)),
         "lambda": float(10 ** rng.uniform(np.log10(0.1), np.log10(10.0))),
         "alpha": float(10 ** rng.uniform(np.log10(0.01), np.log10(5.0))),
         "objective": "multi:softprob",
@@ -116,6 +123,9 @@ class BoosterWrapper:
     def __init__(self, booster, num_class):
         self.booster = booster
         self.classes_ = np.arange(num_class)
+
+    def fit(self, X, y):
+        return self
 
     def predict_proba(self, X):
         return self.booster.predict(xgb.DMatrix(X))
@@ -153,7 +163,10 @@ def main():
         print(f"No rows found for dataset {args.dataset}.")
         return
 
-    X, y = prepare_data(df)
+    X, y, feature_columns = prepare_data(df)
+    class_counts = np.bincount(y, minlength=NUM_CLASSES)
+    print(f"Training rows: {len(X)} features: {X.shape[1]} classes: {class_counts.tolist()}")
+    print(f"Training feature names ({len(feature_columns)}): {', '.join(feature_columns)}")
     X_train_val, y_train_val, X_test, y_test = split_train_test(X, y)
 
     rng = np.random.default_rng(args.seed)
@@ -212,13 +225,17 @@ def main():
 
     params = best["params"]
     model_name = (
-        f"XGBoost_{accuracy * 100:.1f}%_UO-9"
+        f"XGBoost_{accuracy * 100:.1f}%_UO"
         f"_md{params['max_depth']}"
         f"_eta{format_param(params['eta'])}"
         f"_sub{format_param(params['subsample'])}"
         f"_col{format_param(params['colsample_bytree'])}"
+        f"_cbl{format_param(params['colsample_bylevel'])}"
+        f"_cbn{format_param(params['colsample_bynode'])}"
         f"_mcw{params['min_child_weight']}"
         f"_g{format_param(params['gamma'])}"
+        f"_mds{params['max_delta_step']}"
+        f"_mb{params['max_bin']}"
         f"_l{format_param(params['lambda'])}"
         f"_a{format_param(params['alpha'])}"
         f"_nb{best['num_boost_round']}.json"

@@ -150,6 +150,14 @@ def main(args):
         args.nn = True
 
     normalized_data = tf.keras.utils.normalize(data, axis=1) if args.nn else None
+    if args.xgb:
+        print(f"XGBoost input shape: {data.shape}")
+        print(f"XGBoost input columns ({len(frame_ml.columns)}): {', '.join(frame_ml.columns)}")
+        frame_uo = frame_ml.copy()
+        frame_uo["OU"] = todays_games_uo
+        print(f"XGBoost OU input columns ({len(frame_uo.columns)}): {', '.join(frame_uo.columns)}")
+    if args.nn:
+        print(f"NN input shape: {normalized_data.shape}")
     run_models(
         data,
         normalized_data,

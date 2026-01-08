@@ -20,7 +20,7 @@ CONFIG_PATH = BASE_DIR / "config.toml"
 ODDS_DB_PATH = BASE_DIR / "Data" / "OddsData.sqlite"
 TEAMS_DB_PATH = BASE_DIR / "Data" / "TeamData.sqlite"
 OUTPUT_DB_PATH = BASE_DIR / "Data" / "dataset.sqlite"
-OUTPUT_TABLE = "dataset_2012-26_new"
+OUTPUT_TABLE = "dataset_2012-26"
 
 TEAM_INDEX_BY_SEASON = {
     "2007-08": team_index_07,

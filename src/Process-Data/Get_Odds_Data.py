@@ -177,7 +177,7 @@ def collect_odds_for_dates(dates, sportsbook, teams_last_played):
 def backfill_season(con, season_key, value, sportsbook, today):
     start_date = datetime.strptime(value["start_date"], "%Y-%m-%d").date()
     end_date = datetime.strptime(value["end_date"], "%Y-%m-%d").date()
-    fetch_end = min(today, end_date)
+    fetch_end = min(today - timedelta(days=1), end_date)
 
     existing_by_date = get_existing_games_by_date(con, season_key, start_date, fetch_end)
     teams_last_played = {}

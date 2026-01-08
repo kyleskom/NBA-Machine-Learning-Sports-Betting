@@ -69,7 +69,7 @@ def fetch_data(url, date_pointer, start_year, season_key):
 def backfill_season(con, url, season_key, value, existing_dates, today):
     start_date = datetime.strptime(value["start_date"], "%Y-%m-%d").date()
     end_date = datetime.strptime(value["end_date"], "%Y-%m-%d").date()
-    fetch_end = min(today, end_date)
+    fetch_end = min(today - timedelta(days=1), end_date)
     missing_dates = [
         date_pointer
         for date_pointer in iter_dates(start_date, fetch_end)
