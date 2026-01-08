@@ -60,8 +60,8 @@ python -m Create_Games
 
 # Train models
 cd ../Train-Models
-python -m XGBoost_Model_ML
-python -m XGBoost_Model_UO
+python -m XGBoost_Model_ML --dataset dataset_2012-26_new --trials 100 --splits 5 --calibration sigmoid
+python -m XGBoost_Model_UO --dataset dataset_2012-26_new --trials 100 --splits 5 --calibration sigmoid
 ```
 
 ### Backfilling missing data

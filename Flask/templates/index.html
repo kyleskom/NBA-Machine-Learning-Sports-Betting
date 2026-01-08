@@ -1,205 +1,276 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Add Bootstrap CSS and JS -->
+    <title>NBA Edge Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
- 
-    <title>NBA Machine Learning Picks</title>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {}
-                }
-            }
-        }
-    </script>
-   
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-<body class="bg-gray-900">
-    <main class="relative isolate">
-        <section class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <h1 class="py-8 text-left text-4xl font-medium text-white">🏀 NBA AI Model Picks ({{ today }})</h1>
+<body>
+    {% set fanduel_games = data.get('fanduel') or {} %}
+    {% set games_count = fanduel_games|length %}
+    <div class="page">
+        <div class="backdrop">
+            <div class="glow glow-1"></div>
+            <div class="glow glow-2"></div>
+            <div class="grid-overlay"></div>
+        </div>
 
-            <section class="mx-auto flex bg-white/5 px-6 md:px-8 py-6 ring-1 ring-white/10 sm:rounded-3xl lg:mx-0 lg:max-w-none lg:flex-row lg:items-center xl:gap-x-20">
-                <table role="grid" class="min-w-full divide-y divide-gray-700">
-                    <thead>
-                        <tr>
-                            <th class="py-2.5 pl-4 pr-3 text-left text-base font-semibold text-white sm:pl-0">Teams</th>
-                            <th class="py-2.5 text-left text-base font-semibold text-white">Fanduel</th>
-                            <th class="py-2.5 text-left text-base font-semibold text-white">Draft Kings</th>
-                            <th class="py-2.5 text-left text-base font-semibold text-white">BetMGM</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-700" style="z-index: 9;">
-                        <tr>
-                            {% for game_key in data.get('fanduel') %}
-                            {% set teams = game_key.split(':') %}
-                        <tr class="divide-x divide-gray-700">
-                            <td class="py-1">
-                                <table class="w-full">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" class="py-1 font-semibold text-gray-600 text-left text-base">&nbsp;</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-base font-medium text-white sm:pl-0">
-                                                <span class="team-name" data-bs-toggle="modal" data-bs-target="#modal-{{ teams[0]|replace(' ', '-')|lower }}">{{ teams[0] }}</span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-base font-medium text-white sm:pl-0">
-                                                <span class="text-gray-600">@</span> 
-                                                <span class="team-name" data-bs-toggle="modal" data-bs-target="#modal-{{ teams[1]|replace(' ', '-')|lower }}">{{ teams[1] }}</span>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </td>
-                            {% for sportsbook in ['fanduel', 'draftkings', 'betmgm'] %}
-                            {% set sbgame = data.get(sportsbook)[game_key] %}
-                            {% if not sbgame or not sbgame.away_team or not sbgame.home_team %}
-                            <td class="px-3 {{ sportsbook }}"></td>
-                            {% else %}
-                            {% if teams[0] == sbgame.away_team %}
-                            <td class="px-3 {{ sportsbook }}">
-                                <table class="w-full">
-                                    <thead>
-                                        <tr>
-                                            <th scope="col" class="py-1 font-bold text-gray-500 text-left text-sm">ML</th>
-                                            <th scope="col" class="py-1 font-bold text-gray-500 text-left text-sm">EV</th>
-                                            <th scope="col" class="py-1 font-bold text-gray-500 text-left text-sm">O/U</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr class="relative isolate">
-                                            <td class="relative isolate whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
-                                                {% if sbgame.away_team_odds|int > 0 %}+{%endif%}{{ sbgame.away_team_odds }}{% if sbgame.away_confidence %}
-                                                <span class="ev-confidence">
-                                                    <span class="inline-flex mx-0.5 text-gray-600">&bull;</span>
-                                                    <span class="ev-confidence-value">{{ sbgame.away_confidence }}%</span>
-                                                </span>
-                                                <div class="absolute top-0 inset-x-0 h-0.5 overflow-hidden rounded-full bg-white/10 w-[calc(100%-1rem)]">
-                                                    <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500" style="width: {{ sbgame.away_confidence }}%"></div>
-                                                </div>
-                                                {% endif %}
-                                            </td>
-                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
-                                                <span class="ev-value">{{ sbgame.away_team_ev }}</span>
-                                            </td>
-                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">{% if sbgame.ou_pick == 'OVER' %}O{%else%}U{%endif%}
-                                                {{ sbgame.ou_value }}</td>
-                                        </tr>
-                                        <tr class="relative isolate">
-                                            <td class="relative isolate whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
-                                                {% if sbgame.home_team_odds|int > 0 %}+{%endif%}{{ sbgame.home_team_odds }}{% if sbgame.home_confidence %}
-                                                    <span class="ev-confidence">
-                                                        <span class="inline-flex mx-0.5 text-gray-600">&bull;</span>
-                                                        <span class="ev-confidence-value">{{ sbgame.home_confidence }}%</span>
-                                                    </span>
-                                                    <div class="absolute bottom-0 inset-x-0 h-0.5 overflow-hidden rounded-full bg-white/10 w-[calc(100%-1rem)]">
-                                                        <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500" style="width: {{ sbgame.home_confidence }}%"></div>
-                                                    </div>
-                                                {% endif %}
-                                            </td>
-                                            <td class="whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
-                                                <span class="ev-value">{{ sbgame.home_team_ev }}</span>
-                                            </td>
-                                            <td class="relative isolate whitespace-nowrap py-1 pl-4 pr-3 text-sm font-medium text-white sm:pl-0">
-                                                <span class="ou-confidence">{{ sbgame.ou_confidence }}%</span>
-                                                <div class="absolute bottom-0 inset-x-0 h-0.5 overflow-hidden rounded-full bg-white/10">
-                                                    <div class="h-full rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500" style="width: {{ sbgame.ou_confidence }}%"></div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </td>
-                            {% endif %}
-                            {% endif %}
-                            {% endfor %}
-                        </tr>
-                        {%endfor%}
-                    </tbody>
-                </table>
+        <header class="site-header">
+            <nav class="nav">
+                <div class="brand">
+                    <div class="brand-mark">NBA</div>
+                    <div class="brand-text">
+                        Edge Lab
+                        <small>Machine Learning Picks</small>
+                    </div>
+                </div>
+                <div class="nav-links">
+                    <a href="#picks">Today's Board</a>
+                    <a href="#stack">Model Stack</a>
+                    <a href="#insights">Market Pulse</a>
+                </div>
+                <div class="nav-actions">
+                    <a class="btn btn-ghost" href="#picks">View Picks</a>
+                    <a class="btn btn-primary" href="#stack">How It Works</a>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div class="hero-copy reveal">
+                    <div class="eyebrow">NBA Machine Learning</div>
+                    <h1>Sharper NBA edges, distilled from every possession.</h1>
+                    <p>
+                        Model-driven win probabilities and totals picks, enriched with sportsbook odds,
+                        expected value, and bankroll guidance. Updated daily for today's slate.
+                    </p>
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="#picks">Explore Today's Board</a>
+                        <a class="btn btn-ghost" href="#insights">See Market Pulse</a>
+                    </div>
+                    <div class="hero-metrics">
+                        <div class="metric-card">
+                            <span>Today's slate</span>
+                            <strong>{{ games_count }} matchups</strong>
+                        </div>
+                        <div class="metric-card">
+                            <span>Sportsbooks</span>
+                            <strong>FanDuel / DK / MGM</strong>
+                        </div>
+                        <div class="metric-card">
+                            <span>Model focus</span>
+                            <strong>Moneyline + Totals</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-panel reveal" data-delay="120">
+                    <div>
+                        <div class="eyebrow">Slate snapshot</div>
+                        <h3 class="panel-title">{{ today }} / Live model board</h3>
+                        <p>Confidence-weighted projections with EV overlays and totals lean.</p>
+                    </div>
+                    <div class="pulse-grid">
+                        <div class="pulse-item">
+                            <span class="eyebrow">ML Accuracy</span>
+                            <strong>~69%</strong>
+                        </div>
+                        <div class="pulse-item">
+                            <span class="eyebrow">Totals Accuracy</span>
+                            <strong>~55%</strong>
+                        </div>
+                        <div class="pulse-item">
+                            <span class="eyebrow">Kelly Enabled</span>
+                            <strong>Optional</strong>
+                        </div>
+                    </div>
+                    <div class="chip">Updated {{ today }}</div>
+                </div>
             </section>
-        </section>
-        
-        <div class="absolute inset-x-0 -top-16 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl" aria-hidden="true">
-            <div class="aspect-[1318/752] w-[82.375rem] flex-none bg-gradient-to-r from-[#80caff] to-[#4f46e5] opacity-15" style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)"></div>
-        </div>
-        <div class="absolute inset-x-0 -bottom-24 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl" aria-hidden="true">
-            <div class="aspect-[1318/752] w-[82.375rem] flex-none rotate-180 bg-gradient-to-r from-[#80caff] to-[#4f46e5] opacity-15" style="clip-path: polygon(73.6% 51.7%, 91.7% 11.8%, 100% 46.4%, 97.4% 82.2%, 92.5% 84.9%, 75.7% 64%, 55.3% 47.5%, 46.5% 49.4%, 45% 62.9%, 50.3% 87.2%, 21.3% 64.1%, 0.1% 100%, 5.4% 51.1%, 21.4% 63.9%, 58.9% 0.2%, 73.6% 51.7%)"></div>
-        </div>
 
-    </main>
-    <script>
-        function perc2color(perc, min, max) {
-            var base = (max - min);
-            if (base == 0) {
-                perc = 100;
-            } else {
-                perc = (perc - min) / base * 100;
-            }
+            <section id="insights" class="section">
+                <div class="section-header">
+                    <div>
+                        <div class="eyebrow">Market pulse</div>
+                        <h2>Translate market odds into model-ready signals.</h2>
+                        <p>We blend season-long team stats with live odds to surface value and totals lean.</p>
+                    </div>
+                    <div class="chip">Signal + Context</div>
+                </div>
+                <div class="insights-grid">
+                    <div class="insight-card reveal">
+                        <h4>EV Overlay</h4>
+                        <p>Every side includes expected value so you can separate noise from true edge.</p>
+                    </div>
+                    <div class="insight-card reveal" data-delay="80">
+                        <h4>Rest-Aware Features</h4>
+                        <p>Days of rest and schedule effects are baked into matchup features.</p>
+                    </div>
+                    <div class="insight-card reveal" data-delay="160">
+                        <h4>Odds Consistency</h4>
+                        <p>Compare three books side-by-side and spot pricing gaps instantly.</p>
+                    </div>
+                    <div class="insight-card reveal" data-delay="240">
+                        <h4>Totals Confidence</h4>
+                        <p>Over/under picks include probability confidence to gauge conviction.</p>
+                    </div>
+                </div>
+            </section>
 
-            var colorClass = "rose-600";
+            <section id="picks" class="section">
+                <div class="section-header">
+                    <div>
+                        <div class="eyebrow">Today's Board</div>
+                        <h2>Model picks for every matchup.</h2>
+                        <p>Click any team name to see roster details and player form.</p>
+                    </div>
+                    <div class="chip">{{ today }}</div>
+                </div>
 
-            if (perc < 50) {
-                colorClass = "red-500";
-            } else if (perc >= 50 && perc <= 54){
-                colorClass = "red-500";
-            } else if (perc >= 55 && perc <= 59){
-                colorClass = "orange-500";
-            } else if (perc >= 60 && perc <= 64){
-                colorClass = "blue-500";
-            } else if (perc >= 65 && perc <= 69){
-                colorClass = "indigo-500";
-            } else if (perc >= 70 && perc <= 74){
-                colorClass = "teal-500";
-            } else if (perc >= 75 && perc <= 80){
-                colorClass = "emerald-500";
-            } else {
-                colorClass = "green-500";
-            }
-            return colorClass;
-        }
-        function parsePerc(perc){
-            return parseFloat(perc);
-        }
+                <div class="picks-grid">
+                    {% for game_key, fd_game in fanduel_games.items() %}
+                    {% set teams = game_key.split(':') %}
+                    {% set away_team = teams[0] %}
+                    {% set home_team = teams[1] %}
+                    {% set lean_team = away_team %}
+                    {% set lean_conf = 0 %}
+                    {% if fd_game and fd_game.away_confidence %}
+                        {% set lean_conf = fd_game.away_confidence|default('0')|float %}
+                    {% endif %}
+                    {% if fd_game and fd_game.home_confidence and (fd_game.home_confidence|float) > lean_conf %}
+                        {% set lean_team = fd_game.home_team %}
+                        {% set lean_conf = fd_game.home_confidence|float %}
+                    {% endif %}
+                    <article class="game-card reveal" data-delay="{{ loop.index0 * 60 }}">
+                        <div class="game-header">
+                            <div class="matchup">
+                                <div class="team-stack">
+                                    <span class="team-name" data-bs-toggle="modal" data-bs-target="#modal-{{ away_team|replace(' ', '-')|lower }}">{{ away_team }}</span>
+                                    <span class="team-name" data-bs-toggle="modal" data-bs-target="#modal-{{ home_team|replace(' ', '-')|lower }}">{{ home_team }}</span>
+                                </div>
+                                <span class="at">@</span>
+                            </div>
+                            <div class="lean">
+                                <span>Model lean</span>
+                                <strong>{{ lean_team }}</strong>
+                                <div class="player-meta">{{ lean_conf|round(1) }}% confidence</div>
+                            </div>
+                        </div>
+                        <div class="books-grid">
+                            {% for sportsbook in ['fanduel', 'draftkings', 'betmgm'] %}
+                            {% set book_data = data.get(sportsbook) or {} %}
+                            {% set sbgame = book_data.get(game_key) %}
+                            <div class="book-card">
+                                <div class="book-head">
+                                    <span class="book-name">{{ sportsbook }}</span>
+                                    {% if sbgame %}
+                                        {% if sbgame.ou_pick %}
+                                            <span class="ou-chip {% if sbgame.ou_pick == 'UNDER' %}under{% endif %}">{{ sbgame.ou_pick }} {{ sbgame.ou_value }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                {% if sbgame %}
+                                    {% set away_conf = sbgame.away_confidence|default('0')|float %}
+                                    {% set home_conf = sbgame.home_confidence|default('0')|float %}
+                                    {% set away_ev = sbgame.away_team_ev|default('0')|float %}
+                                    {% set home_ev = sbgame.home_team_ev|default('0')|float %}
+                                    <div class="book-lines">
+                                        <div>
+                                            <div class="line-row">
+                                                <span>{{ sbgame.away_team }}</span>
+                                                <span class="odds">
+                                                    {% if sbgame.away_team_odds %}
+                                                        {% if sbgame.away_team_odds|int > 0 %}+{% endif %}{{ sbgame.away_team_odds }}
+                                                    {% else %}
+                                                        --
+                                                    {% endif %}
+                                                </span>
+                                                <span class="confidence">
+                                                    {% if sbgame.away_confidence %}{{ sbgame.away_confidence }}%{% else %}--{% endif %}
+                                                </span>
+                                                <span class="ev {% if away_ev > 0 %}positive{% else %}negative{% endif %}">
+                                                    {{ sbgame.away_team_ev if sbgame.away_team_ev else '--' }}
+                                                </span>
+                                            </div>
+                                            <div class="confidence-bar" style="--bar: {{ away_conf }}%;">
+                                                <span></span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div class="line-row">
+                                                <span>{{ sbgame.home_team }}</span>
+                                                <span class="odds">
+                                                    {% if sbgame.home_team_odds %}
+                                                        {% if sbgame.home_team_odds|int > 0 %}+{% endif %}{{ sbgame.home_team_odds }}
+                                                    {% else %}
+                                                        --
+                                                    {% endif %}
+                                                </span>
+                                                <span class="confidence">
+                                                    {% if sbgame.home_confidence %}{{ sbgame.home_confidence }}%{% else %}--{% endif %}
+                                                </span>
+                                                <span class="ev {% if home_ev > 0 %}positive{% else %}negative{% endif %}">
+                                                    {{ sbgame.home_team_ev if sbgame.home_team_ev else '--' }}
+                                                </span>
+                                            </div>
+                                            <div class="confidence-bar" style="--bar: {{ home_conf }}%;">
+                                                <span></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="empty-book">No odds for this matchup.</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
 
-        function evScale(val) {
-            var colorClass = "rose-600";
-            if (val < -15) {
-                colorClass = "red-500";
-            } else if (val <= 0){
-                colorClass = "orange-500";
-            } else if (val >= 0 && val <= 5){
-                colorClass = "emerald-500";
-            } else if (val >= 5.01){
-                colorClass = "green-500";
-            }
-            return colorClass;
-        }
+            <section id="stack" class="section">
+                <div class="section-header">
+                    <div>
+                        <div class="eyebrow">Model stack</div>
+                        <h2>From raw stats to ready-to-bet predictions.</h2>
+                        <p>A compact pipeline that goes from daily NBA data to live picks.</p>
+                    </div>
+                    <div class="chip">XGBoost + Neural Net</div>
+                </div>
+                <div class="feature-grid">
+                    <div class="feature-card reveal">
+                        <h3>Ingest</h3>
+                        <p>Daily team stats and sportsbook odds flow into SQLite datasets.</p>
+                    </div>
+                    <div class="feature-card reveal" data-delay="90">
+                        <h3>Feature build</h3>
+                        <p>Matchups combine team baselines, days of rest, and totals data.</p>
+                    </div>
+                    <div class="feature-card reveal" data-delay="180">
+                        <h3>Train</h3>
+                        <p>XGBoost and neural nets learn win probabilities and totals leans.</p>
+                    </div>
+                    <div class="feature-card reveal" data-delay="270">
+                        <h3>Deploy</h3>
+                        <p>Live odds run through models to surface EV and Kelly sizing.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
 
-        evs = document.getElementsByClassName("ev-value")
-        evconfs = document.getElementsByClassName("ev-confidence-value")
-        ous = document.getElementsByClassName("ou-confidence")
-        for (var i = 0; i < evs.length; i++) {
-            evs[i].classList.add('text-' + evScale(evs[i].textContent))
-        }
-        for (var i = 0; i < evconfs.length; i++) {
-            evconfs[i].classList.add('text-' + perc2color(parsePerc(evconfs[i].textContent), 0, 100))
-        }
-        for (var i = 0; i < ous.length; i++) {
-            ous[i].classList.add('text-' + perc2color(parsePerc(ous[i].textContent), 0, 100))
-        }
-    </script>
+        <footer class="footer">
+            Built for sharper NBA decisions. Data + models update daily.
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
     {% include 'team_modal.html' %}
     {% include 'player_modal.html' %}
 </body>

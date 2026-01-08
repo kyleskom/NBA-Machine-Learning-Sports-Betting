@@ -206,7 +206,7 @@ def backfill_season(con, season_key, value, sportsbook, today):
 
     if new_rows:
         df = pd.DataFrame(new_rows)
-        df.to_sql(season_key, con, if_exists="append", index=False)
+        df.to_sql(f"odds_{season_key}", con, if_exists="append", index=False)
 
 
 def main(sportsbook="fanduel", backfill=False, season=None, today=None, db_path=DB_PATH):
