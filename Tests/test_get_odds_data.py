@@ -171,7 +171,7 @@ class TestGetOddsData(unittest.TestCase):
                         "2025-26",
                         config_value,
                         "fanduel",
-                        date(2025, 10, 2),
+                        date(2025, 10, 3),
                     )
                 df = pd.read_sql_query('SELECT * FROM "2025-26"', con)
         self.assertEqual(len(df.index), 2)
