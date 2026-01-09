@@ -42,10 +42,8 @@ def prepare_data(df):
         data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN], errors="coerce")
         data = data.sort_values(DATE_COLUMN)
     y = data[TARGET_COLUMN].astype(int).to_numpy()
-    X_df = data.drop(columns=DROP_COLUMNS, errors="ignore")
-    feature_columns = list(X_df.columns)
-    X = X_df.astype(float).to_numpy()
-    return X, y, feature_columns
+    X = data.drop(columns=DROP_COLUMNS, errors="ignore").astype(float).to_numpy()
+    return X, y
 
 
 def split_train_test(X, y, test_size=0.1):
@@ -163,10 +161,7 @@ def main():
         print(f"No rows found for dataset {args.dataset}.")
         return
 
-    X, y, feature_columns = prepare_data(df)
-    class_counts = np.bincount(y, minlength=NUM_CLASSES)
-    print(f"Training rows: {len(X)} features: {X.shape[1]} classes: {class_counts.tolist()}")
-    print(f"Training feature names ({len(feature_columns)}): {', '.join(feature_columns)}")
+    X, y = prepare_data(df)
     X_train_val, y_train_val, X_test, y_test = split_train_test(X, y)
 
     rng = np.random.default_rng(args.seed)
