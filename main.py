@@ -1,5 +1,9 @@
 import argparse
+import os
 from datetime import datetime, timedelta
+
+# Load the Keras-2 NN models via tf-keras; must precede the tensorflow import.
+os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
 
 import pandas as pd
 import tensorflow as tf
