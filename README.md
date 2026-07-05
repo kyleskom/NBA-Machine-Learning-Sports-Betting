@@ -18,13 +18,18 @@ This project predicts NBA game winners and totals (over/under) using team stats 
 4. **Predict today**: `main.py` fetches today’s schedule, builds matchup features, loads trained models, and prints predictions, expected value, and optional Kelly Criterion sizing.
 
 ## Requirements
-- Python 3.11
-- Packages: Tensorflow, XGBoost, NumPy, Pandas, Colorama, Tqdm, Requests, Scikit-learn
+- Python 3.12+ (tested on 3.12)
+- Packages: TensorFlow, tf-keras, XGBoost, NumPy, Pandas, Colorama, Tqdm, Scikit-learn (see `requirements.txt`)
+- macOS only: XGBoost needs OpenMP: `brew install libomp`
 
 Install dependencies:
 ```bash
 pip3 install -r requirements.txt
 ```
+
+> The shipped NN models were trained with Keras 2. TensorFlow >= 2.16 ships
+> Keras 3, so the entry points set `TF_USE_LEGACY_KERAS=1` to load them through
+> the `tf-keras` backend.
 
 ## Quick start
 ```bash

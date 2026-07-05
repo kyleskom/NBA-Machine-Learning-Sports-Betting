@@ -1,7 +1,11 @@
 import argparse
+import os
 import sqlite3
 import time
 from pathlib import Path
+
+# tf-keras backend: keeps optimizers.legacy and the saved-model format on Keras 2.
+os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
 
 import numpy as np
 import pandas as pd

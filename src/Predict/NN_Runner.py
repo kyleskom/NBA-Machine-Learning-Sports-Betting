@@ -1,13 +1,17 @@
 import copy
+import os
 import re
 from pathlib import Path
+
+# Keras-2 models: force the tf-keras backend before tensorflow is imported.
+os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
 
 import numpy as np
 import tensorflow as tf
 from colorama import Fore, Style, init, deinit
-from keras.models import load_model
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
+from src.Utils.model_loader import load_legacy_model
 
 init()
 
@@ -54,10 +58,10 @@ def _load_models():
     global _model, _ou_model
     if _model is None:
         ml_path = _select_best_model("Trained-Model-ML-", ML_PATTERN)
-        _model = load_model(str(ml_path), compile=False)
+        _model = load_legacy_model(ml_path)
     if _ou_model is None:
         ou_path = _select_best_model("Trained-Model-OU-", OU_PATTERN)
-        _ou_model = load_model(str(ou_path), compile=False)
+        _ou_model = load_legacy_model(ou_path)
 
 
 def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):

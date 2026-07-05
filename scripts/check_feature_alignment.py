@@ -12,12 +12,15 @@ try:
 except ImportError:
     xgb = None
 
-try:
-    from keras.models import load_model
-except ImportError:
-    load_model = None
-
 BASE_DIR = Path(__file__).resolve().parents[1]
+
+# Make the ``src`` package importable when run as a standalone script, then reuse
+# the shared Keras-2 compatibility loader for the pretrained NN models.
+sys.path.insert(0, str(BASE_DIR))
+try:
+    from src.Utils.model_loader import load_legacy_model
+except ImportError:
+    load_legacy_model = None
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models"
 
@@ -93,10 +96,10 @@ def describe_model_input(model_path, label):
     if model_path is None:
         print(f"{label} model: not found")
         return None
-    if load_model is None:
+    if load_legacy_model is None:
         print(f"{label} model: keras not installed")
         return None
-    model = load_model(str(model_path), compile=False)
+    model = load_legacy_model(model_path)
     input_features = model.input_shape[-1]
     print(f"{label} model input features: {input_features} ({model_path})")
     return input_features

@@ -1,6 +1,10 @@
 import argparse
+import os
 import sqlite3
 from pathlib import Path
+
+# Same tf-keras backend as the ML script; keeps optimizers.legacy working.
+os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
 
 import numpy as np
 import pandas as pd
