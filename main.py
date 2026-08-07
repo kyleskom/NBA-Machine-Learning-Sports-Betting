@@ -5,6 +5,7 @@ import pandas as pd
 import tensorflow as tf
 from colorama import Fore, Style
 
+from src.DataProviders.LumifyOddsProvider import LumifyOddsProvider
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
@@ -129,10 +130,18 @@ def run_models(data, normalized_data, todays_games_uo, frame_ml, games, home_tea
         print("-------------------------------------------------------")
 
 
+def _resolve_odds_provider(odds_arg: str):
+    """Return odds from Lumify when requested; otherwise scrape SBR."""
+    if odds_arg == "lumify" or odds_arg.startswith("lumify:"):
+        book = odds_arg.split(":", 1)[1] if ":" in odds_arg else "fanduel"
+        return LumifyOddsProvider(sportsbook=book).get_odds()
+    return SbrOddsProvider(sportsbook=odds_arg).get_odds()
+
+
 def main(args):
     odds = None
     if args.odds:
-        odds = SbrOddsProvider(sportsbook=args.odds).get_odds()
+        odds = _resolve_odds_provider(args.odds)
     games, odds = resolve_games(odds, args.odds)
     if games is None:
         return
@@ -167,7 +176,13 @@ if __name__ == "__main__":
     parser.add_argument('-xgb', action='store_true', help='Run with XGBoost Model')
     parser.add_argument('-nn', action='store_true', help='Run with Neural Network Model')
     parser.add_argument('-A', action='store_true', help='Run all Models')
-    parser.add_argument('-odds', help='Sportsbook to fetch from. (fanduel, draftkings, betmgm, pointsbet, caesars, wynn, bet_rivers_ny')
+    parser.add_argument(
+        '-odds',
+        help=(
+            'Sportsbook to fetch from via SBR (fanduel, draftkings, betmgm, pointsbet, '
+            'caesars, wynn, bet_rivers_ny), or lumify / lumify:BOOK with LUMIFY_API_KEY'
+        ),
+    )
     parser.add_argument('-kc', action='store_true', help='Calculates percentage of bankroll to bet based on model edge')
     args = parser.parse_args()
     main(args)
