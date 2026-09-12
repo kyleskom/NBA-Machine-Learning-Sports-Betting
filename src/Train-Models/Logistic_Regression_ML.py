@@ -14,7 +14,7 @@ from sklearn.preprocessing import StandardScaler
 BASE_DIR = Path(__file__).resolve().parents[2]
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 
-DEFAULT_DATASET = "dataset_2012-26_new"
+DEFAULT_DATASET = "dataset_2012-26_player_v1"
 TARGET_COLUMN = "Home-Team-Win"
 DATE_COLUMN = "Date"
 DROP_COLUMNS = [

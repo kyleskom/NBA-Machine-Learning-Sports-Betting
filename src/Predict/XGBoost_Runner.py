@@ -8,6 +8,7 @@ import xgboost as xgb
 from colorama import Fore, Style, init, deinit
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
+from src.Utils import PlayerContext
 
 
 init()
@@ -20,6 +21,8 @@ xgb_ml = None
 xgb_uo = None
 xgb_ml_calibrator = None
 xgb_uo_calibrator = None
+xgb_ml_features = None
+xgb_uo_features = None
 
 
 def _select_model_path(kind):
@@ -46,23 +49,45 @@ def _load_calibrator(model_path):
 
 
 def _load_models():
-    global xgb_ml, xgb_uo, xgb_ml_calibrator, xgb_uo_calibrator
+    global xgb_ml, xgb_uo, xgb_ml_calibrator, xgb_uo_calibrator, xgb_ml_features, xgb_uo_features
     if xgb_ml is None:
         ml_path = _select_model_path("ML")
         xgb_ml = xgb.Booster()
         xgb_ml.load_model(str(ml_path))
         xgb_ml_calibrator = _load_calibrator(ml_path)
+        xgb_ml_features = PlayerContext.load_feature_columns(ml_path)
     if xgb_uo is None:
         uo_path = _select_model_path("UO")
         xgb_uo = xgb.Booster()
         xgb_uo.load_model(str(uo_path))
         xgb_uo_calibrator = _load_calibrator(uo_path)
+        xgb_uo_features = PlayerContext.load_feature_columns(uo_path)
 
 
 def _predict_probs(model, data, calibrator=None):
     if calibrator is not None:
         return calibrator.predict_proba(data)
     return model.predict(xgb.DMatrix(data))
+
+
+def _prepare_model_data(model, frame, feature_columns, fallback_data=None, label="model"):
+    if feature_columns:
+        return PlayerContext.align_frame_to_columns(frame, feature_columns).values
+
+    expected = model.num_features()
+    if fallback_data is not None and fallback_data.shape[1] == expected:
+        return fallback_data
+
+    values = frame.values.astype(float)
+    if values.shape[1] == expected:
+        return values
+    if values.shape[1] > expected:
+        print(f"{label}: no feature sidecar found; using first {expected} legacy columns.")
+        return values[:, :expected]
+    raise ValueError(
+        f"{label}: live frame has {values.shape[1]} features but model expects {expected}. "
+        "Retrain the model or restore its feature sidecar."
+    )
 
 
 def _format_game_line(home_team, away_team, winner_is_home, winner_confidence, under_over, ou_value, ou_confidence):
@@ -146,10 +171,23 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
     frame_uo["OU"] = np.asarray(todays_games_uo, dtype=float)
 
     try:
-        ml_predictions_array = _predict_probs(xgb_ml, data, xgb_ml_calibrator)
+        ml_data = _prepare_model_data(
+            xgb_ml,
+            frame_ml,
+            xgb_ml_features,
+            fallback_data=data,
+            label="XGBoost ML",
+        )
+        uo_data = _prepare_model_data(
+            xgb_uo,
+            frame_uo,
+            xgb_uo_features,
+            label="XGBoost OU",
+        )
+        ml_predictions_array = _predict_probs(xgb_ml, ml_data, xgb_ml_calibrator)
         ou_predictions_array = _predict_probs(
             xgb_uo,
-            frame_uo.values.astype(float),
+            uo_data,
             xgb_uo_calibrator,
         )
 

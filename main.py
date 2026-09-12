@@ -3,11 +3,13 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import tensorflow as tf
+import toml
 from colorama import Fore, Style
 
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
+from src.Utils import PlayerContext
 from src.Utils.tools import (
     create_todays_games_from_odds,
     get_json_data,
@@ -19,13 +21,24 @@ from src.Utils.tools import (
 TODAYS_GAMES_URL = "https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2025/scores/00_todays_scores.json"
 DATA_URL = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom=&DateTo=&Division=&GameScope=&GameSegment=&Height=&ISTRound=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=2025-26&SeasonSegment=&SeasonType=Regular%20Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision="
 SCHEDULE_PATH = "Data/nba-2025-UTC.csv"
+CONFIG_PATH = "config.toml"
 
 
-def create_todays_games_data(games, df, odds, schedule_df, today):
+def create_todays_games_data(games, df, odds, schedule_df, today, config=None, include_player_features=True):
     match_data = []
+    player_rows = []
     todays_games_uo = []
     home_team_odds = []
     away_team_odds = []
+    player_feature_cols = []
+    player_defaults = {}
+    player_lookup = {"exact": {}, "history": {}}
+
+    if config is None:
+        config = toml.load(CONFIG_PATH)
+    if include_player_features:
+        player_feature_cols, player_defaults, player_lookup = PlayerContext.load_player_context(config)
+    today_str = today.date().isoformat() if hasattr(today, "date") else str(today)
 
     for game in games:
         home_team, away_team = game
@@ -67,15 +80,39 @@ def create_todays_games_data(games, df, odds, schedule_df, today):
             away_days_off = timedelta(days=7)
         home_team_series = df.iloc[team_index_current.get(home_team)]
         away_team_series = df.iloc[team_index_current.get(away_team)]
-        stats = pd.concat([home_team_series, away_team_series])
+        stats = pd.concat([
+            home_team_series,
+            away_team_series.rename(index={col: f"{col}.1" for col in df.columns.values}),
+        ])
         stats['Days-Rest-Home'] = home_days_off.days
         stats['Days-Rest-Away'] = away_days_off.days
         match_data.append(stats)
+        if include_player_features:
+            player_rows.append(
+                PlayerContext.build_player_feature_row(
+                    player_lookup,
+                    today_str,
+                    home_team,
+                    away_team,
+                    player_feature_cols,
+                    player_defaults,
+                    allow_asof=True,
+                )
+            )
+
+    if not match_data:
+        return None, [], pd.DataFrame(), [], []
 
     games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
     games_data_frame = games_data_frame.T
+    if include_player_features:
+        player_frame = pd.DataFrame(player_rows or [dict(player_defaults) for _ in range(len(games_data_frame.index))])
+        games_data_frame = pd.concat(
+            [games_data_frame.reset_index(drop=True), player_frame.reset_index(drop=True)],
+            axis=1,
+        )
 
-    frame_ml = games_data_frame.drop(columns=['TEAM_ID', 'TEAM_NAME'])
+    frame_ml = games_data_frame.drop(columns=['TEAM_ID', 'TEAM_NAME', 'TEAM_ID.1', 'TEAM_NAME.1'], errors="ignore")
     data = frame_ml.values
     data = data.astype(float)
 
@@ -141,9 +178,13 @@ def main(args):
     df = to_data_frame(stats_json)
     schedule_df = load_schedule()
     today = datetime.today()
+    config = toml.load(CONFIG_PATH)
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = create_todays_games_data(
-        games, df, odds, schedule_df, today
+        games, df, odds, schedule_df, today, config=config
     )
+    if data is None:
+        print("No valid games found to predict.")
+        return
 
     if args.A:
         args.xgb = True

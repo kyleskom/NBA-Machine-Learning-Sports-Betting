@@ -8,6 +8,7 @@ from colorama import Fore, Style, init, deinit
 from keras.models import load_model
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
+from src.Utils import PlayerContext
 
 init()
 
@@ -19,6 +20,8 @@ OU_PATTERN = re.compile(r"Trained-Model-OU-(\d+(?:\.\d+)?)")
 
 _model = None
 _ou_model = None
+_model_features = None
+_ou_model_features = None
 
 
 def _list_model_candidates(prefix):
@@ -51,28 +54,47 @@ def _select_best_model(prefix, pattern):
 
 
 def _load_models():
-    global _model, _ou_model
+    global _model, _ou_model, _model_features, _ou_model_features
     if _model is None:
         ml_path = _select_best_model("Trained-Model-ML-", ML_PATTERN)
         _model = load_model(str(ml_path), compile=False)
+        _model_features = PlayerContext.load_feature_columns(ml_path)
     if _ou_model is None:
         ou_path = _select_best_model("Trained-Model-OU-", OU_PATTERN)
         _ou_model = load_model(str(ou_path), compile=False)
+        _ou_model_features = PlayerContext.load_feature_columns(ou_path)
+
+
+def _prepare_nn_data(model, frame, feature_columns, label):
+    if feature_columns:
+        values = PlayerContext.align_frame_to_columns(frame, feature_columns).values
+        return tf.keras.utils.normalize(values, axis=1)
+
+    expected = model.input_shape[-1]
+    values = frame.values.astype(float)
+    if values.shape[1] > expected:
+        print(f"{label}: no feature sidecar found; using first {expected} legacy columns.")
+        values = values[:, :expected]
+    elif values.shape[1] < expected:
+        raise ValueError(
+            f"{label}: live frame has {values.shape[1]} features but model expects {expected}. "
+            "Retrain the model or restore its feature sidecar."
+        )
+    return tf.keras.utils.normalize(values, axis=1)
 
 
 def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
     _load_models()
 
     ml_predictions_array = []
+    ml_data = _prepare_nn_data(_model, frame_ml, _model_features, "NN ML")
 
-    for row in data:
+    for row in ml_data:
         ml_predictions_array.append(_model.predict(np.array([row])))
 
     frame_uo = copy.deepcopy(frame_ml)
     frame_uo['OU'] = np.asarray(todays_games_uo)
-    data = frame_uo.values
-    data = data.astype(float)
-    data = tf.keras.utils.normalize(data, axis=1)
+    data = _prepare_nn_data(_ou_model, frame_uo, _ou_model_features, "NN OU")
 
     ou_predictions_array = []
 

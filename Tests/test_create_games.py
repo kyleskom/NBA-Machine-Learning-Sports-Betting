@@ -96,16 +96,19 @@ class TestCreateGames(unittest.TestCase):
             original_output_path = create_games.OUTPUT_DB_PATH
             original_output_table = create_games.OUTPUT_TABLE
             original_team_map = create_games.TEAM_INDEX_BY_SEASON
+            original_player_path = create_games.PLAYER_DB_PATH
 
             try:
                 create_games.CONFIG_PATH = Path(tmpdir) / "config.toml"
                 create_games.ODDS_DB_PATH = odds_path
                 create_games.TEAMS_DB_PATH = teams_path
                 create_games.OUTPUT_DB_PATH = out_path
+                create_games.PLAYER_DB_PATH = Path(tmpdir) / "missing_player.sqlite"
                 create_games.OUTPUT_TABLE = "dataset_test"
                 create_games.TEAM_INDEX_BY_SEASON = {"2023-24": {"Team A": 0, "Team B": 1}}
 
-                create_games.toml.dump(config, create_games.CONFIG_PATH.open("w"))
+                with create_games.CONFIG_PATH.open("w") as handle:
+                    create_games.toml.dump(config, handle)
                 create_games.main()
 
                 with sqlite3.connect(out_path) as con:
@@ -117,7 +120,160 @@ class TestCreateGames(unittest.TestCase):
                 create_games.OUTPUT_DB_PATH = original_output_path
                 create_games.OUTPUT_TABLE = original_output_table
                 create_games.TEAM_INDEX_BY_SEASON = original_team_map
+                create_games.PLAYER_DB_PATH = original_player_path
 
         self.assertEqual(len(df.index), 1)
         self.assertIn("Score", df.columns)
         self.assertIn("OU-Cover", df.columns)
+        self.assertIn("H_INJ_COVERAGE", df.columns)
+        self.assertIn("H_LINEUP_COVERAGE", df.columns)
+        self.assertEqual(float(df.iloc[0]["H_INJ_COVERAGE"]), 0.0)
+        self.assertEqual(float(df.iloc[0]["H_LINEUP_EXPECTED_STARTERS"]), 5.0)
+
+    def test_main_joins_player_features(self):
+        config = {
+            "create-games": {
+                "2023-24": {
+                    "start_date": "2023-10-23",
+                    "end_date": "2024-04-28",
+                }
+            },
+            "player-features": {
+                "rolling_windows": [7],
+                "defaults": {
+                    "default_inj_avail_min_wt": 1.0,
+                    "default_inj_coverage": 0.0,
+                },
+            },
+        }
+        odds_rows = [
+            {
+                "Date": "2025-01-02",
+                "Home": "Team A",
+                "Away": "Team B",
+                "OU": 210.5,
+                "Points": 205.0,
+                "Win_Margin": 5,
+                "Days_Rest_Home": 2,
+                "Days_Rest_Away": 4,
+            }
+        ]
+        team_df = pd.DataFrame(
+            {
+                "TEAM_ID": list(range(30)),
+                "TEAM_NAME": [f"Team {i}" for i in range(30)],
+                "STAT_A": list(range(30)),
+            }
+        )
+        player_rows = [
+            {
+                "Date": "2025-01-02",
+                "TEAM_NAME": "Team A",
+                "PLR_MIN_SUM": 240.0,
+                "PLR_PTS_SUM": 120.0,
+                "PLR_REB_SUM": 50.0,
+                "PLR_AST_SUM": 27.0,
+                "PLR_USG_WEIGHTED_SUM": 36.0,
+                "PLR_MIN_ROLL7": 238.0,
+                "PLR_PTS_ROLL7": 118.0,
+                "PLR_REB_ROLL7": 48.0,
+                "PLR_AST_ROLL7": 26.0,
+                "PLR_USG_WEIGHTED_ROLL7": 35.0,
+                "INJ_OUT_MIN_WT": 14.0,
+                "INJ_Q_MIN_WT": 5.0,
+                "INJ_DOUBTFUL_MIN_WT": 3.0,
+                "INJ_AVAIL_MIN_WT": 0.91,
+                "INJ_COVERAGE": 1.0,
+                "LINEUP_EXPECTED_STARTERS": 5.0,
+                "LINEUP_CONFIRMED_STARTERS": 4.0,
+                "LINEUP_PROJECTED_STARTERS": 1.0,
+                "LINEUP_COVERAGE": 1.0,
+                "LINEUP_EST_MIN": 156.0,
+                "LINEUP_EST_PTS": 80.0,
+                "LINEUP_EST_REB": 30.0,
+                "LINEUP_EST_AST": 18.0,
+                "LINEUP_EST_USG_WEIGHTED": 24.0,
+            },
+            {
+                "Date": "2025-01-02",
+                "TEAM_NAME": "Team B",
+                "PLR_MIN_SUM": 240.0,
+                "PLR_PTS_SUM": 112.0,
+                "PLR_REB_SUM": 46.0,
+                "PLR_AST_SUM": 24.0,
+                "PLR_USG_WEIGHTED_SUM": 34.0,
+                "PLR_MIN_ROLL7": 239.0,
+                "PLR_PTS_ROLL7": 111.0,
+                "PLR_REB_ROLL7": 45.0,
+                "PLR_AST_ROLL7": 23.0,
+                "PLR_USG_WEIGHTED_ROLL7": 33.0,
+                "INJ_OUT_MIN_WT": 8.0,
+                "INJ_Q_MIN_WT": 2.0,
+                "INJ_DOUBTFUL_MIN_WT": 0.0,
+                "INJ_AVAIL_MIN_WT": 0.96,
+                "INJ_COVERAGE": 1.0,
+                "LINEUP_EXPECTED_STARTERS": 5.0,
+                "LINEUP_CONFIRMED_STARTERS": 5.0,
+                "LINEUP_PROJECTED_STARTERS": 0.0,
+                "LINEUP_COVERAGE": 1.0,
+                "LINEUP_EST_MIN": 150.0,
+                "LINEUP_EST_PTS": 74.0,
+                "LINEUP_EST_REB": 29.0,
+                "LINEUP_EST_AST": 17.0,
+                "LINEUP_EST_USG_WEIGHTED": 23.0,
+            },
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            odds_path = Path(tmpdir) / "odds.sqlite"
+            teams_path = Path(tmpdir) / "teams.sqlite"
+            player_path = Path(tmpdir) / "player.sqlite"
+            out_path = Path(tmpdir) / "out.sqlite"
+
+            with sqlite3.connect(odds_path) as con:
+                pd.DataFrame(odds_rows).to_sql("2023-24", con, if_exists="replace", index=False)
+            with sqlite3.connect(teams_path) as con:
+                team_df.to_sql("2025-01-02", con, if_exists="replace", index=False)
+            with sqlite3.connect(player_path) as con:
+                pd.DataFrame(player_rows).to_sql(
+                    create_games.PLAYER_FEATURES_TABLE,
+                    con,
+                    if_exists="replace",
+                    index=False,
+                )
+
+            original_config_path = create_games.CONFIG_PATH
+            original_odds_path = create_games.ODDS_DB_PATH
+            original_teams_path = create_games.TEAMS_DB_PATH
+            original_player_path = create_games.PLAYER_DB_PATH
+            original_output_path = create_games.OUTPUT_DB_PATH
+            original_team_map = create_games.TEAM_INDEX_BY_SEASON
+
+            try:
+                create_games.CONFIG_PATH = Path(tmpdir) / "config.toml"
+                create_games.ODDS_DB_PATH = odds_path
+                create_games.TEAMS_DB_PATH = teams_path
+                create_games.PLAYER_DB_PATH = player_path
+                create_games.OUTPUT_DB_PATH = out_path
+                create_games.TEAM_INDEX_BY_SEASON = {"2023-24": {"Team A": 0, "Team B": 1}}
+
+                with create_games.CONFIG_PATH.open("w") as handle:
+                    create_games.toml.dump(config, handle)
+                create_games.main(output_table="dataset_test")
+
+                with sqlite3.connect(out_path) as con:
+                    df = pd.read_sql_query('SELECT * FROM "dataset_test"', con)
+            finally:
+                create_games.CONFIG_PATH = original_config_path
+                create_games.ODDS_DB_PATH = original_odds_path
+                create_games.TEAMS_DB_PATH = original_teams_path
+                create_games.PLAYER_DB_PATH = original_player_path
+                create_games.OUTPUT_DB_PATH = original_output_path
+                create_games.TEAM_INDEX_BY_SEASON = original_team_map
+
+        self.assertEqual(float(df.iloc[0]["H_PLR_PTS_SUM"]), 120.0)
+        self.assertEqual(float(df.iloc[0]["A_PLR_PTS_SUM"]), 112.0)
+        self.assertEqual(float(df.iloc[0]["H_INJ_COVERAGE"]), 1.0)
+        self.assertEqual(float(df.iloc[0]["A_INJ_COVERAGE"]), 1.0)
+        self.assertEqual(float(df.iloc[0]["H_LINEUP_CONFIRMED_STARTERS"]), 4.0)
+        self.assertEqual(float(df.iloc[0]["A_LINEUP_EST_MIN"]), 150.0)
