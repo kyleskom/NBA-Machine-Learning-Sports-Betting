@@ -13,9 +13,10 @@ This project predicts NBA game winners and totals (over/under) using team stats 
 
 ## How it works
 1. **Collect stats and odds**: `Get_Data` pulls daily team stats from NBA endpoints and stores them in SQLite. `Get_Odds_Data` pulls sportsbook odds and scores from SBR and stores them in a separate SQLite DB.
-2. **Build game features**: `Create_Games` merges team stats, odds, scores, and days-rest into a training dataset.
-3. **Train models**: XGBoost/NN scripts in `src/Train-Models` fit moneyline and totals models.
-4. **Predict today**: `main.py` fetches today’s schedule, builds matchup features, loads trained models, and prints predictions, expected value, and optional Kelly Criterion sizing.
+2. **Collect player + injury + lineup signals**: `Get_Player_Data` pulls daily player stats, optional injury feeds, optional starting-lineup feeds/CSV rows, and builds derived team-level features in `Data/PlayerData.sqlite`.
+3. **Build game features**: `Create_Games` merges team stats, odds, scores, days-rest, and home/away player, injury, and lineup aggregates into a training dataset.
+4. **Train models**: XGBoost/NN scripts in `src/Train-Models` fit moneyline and totals models.
+5. **Predict today**: `main.py` fetches today’s schedule, builds matchup features, loads trained models, and prints predictions, expected value, and optional Kelly Criterion sizing.
 
 ## Requirements
 - Python 3.11
@@ -56,22 +57,31 @@ flask --debug run
 cd src/Process-Data
 python -m Get_Data
 python -m Get_Odds_Data
+python -m Get_Player_Data --backfill --rebuild-derived
 python -m Create_Games
 
 # Train models
 cd ../Train-Models
-python -m XGBoost_Model_ML --dataset dataset_2012-26 --trials 100 --splits 5 --calibration sigmoid
-python -m XGBoost_Model_UO --dataset dataset_2012-26 --trials 100 --splits 5 --calibration sigmoid
+python -m XGBoost_Model_ML --dataset dataset_2012-26_player_v1 --trials 100 --splits 5 --calibration sigmoid
+python -m XGBoost_Model_UO --dataset dataset_2012-26_player_v1 --trials 100 --splits 5 --calibration sigmoid
 python -m NN_Model_ML
 python -m NN_Model_UO
-python -m Logistic_Regression_ML --dataset dataset_2012-26_new --trials 50 --splits 5 --calibration sigmoid
-python -m Logistic_Regression_UO --dataset dataset_2012-26_new --trials 50 --splits 5 --calibration sigmoid
+python -m Logistic_Regression_ML --dataset dataset_2012-26_player_v1 --trials 50 --splits 5 --calibration sigmoid
+python -m Logistic_Regression_UO --dataset dataset_2012-26_player_v1 --trials 50 --splits 5 --calibration sigmoid
 ```
 
+`Create_Games` now writes `dataset_2012-26_player_v1` by default.
+Use `python -m Create_Games --output-table <name>` to override.
+
+Configure optional feeds in `config.toml`:
+- `[player-injuries] primary_url` / `secondary_url`
+- `[player-lineups] primary_url` / `secondary_url` / `csv_path`
+
+If lineup data is missing, derived features fall back to recent-minutes starter estimates and set lineup coverage to `0.0`. Newly trained XGBoost and NN models save a `<model>_features.json` sidecar so live prediction frames can be aligned by column name.
+
 ### Neural network notes
-- The current NN training scripts are the original versions with hard-coded dataset and model paths.
-- They train on `dataset_2012-24_new` and save into `Models/` with timestamped names.
-- If you want configurable flags or feature/scaler sidecars, switch back to the newer NN scripts.
+- The NN training scripts default to `dataset_2012-26_player_v1`.
+- They save models into `Models/` with timestamped names plus feature sidecars for prediction-time alignment.
 
 ### Backfilling missing data
 Get_Data normally fetches only new dates in the current season. To fill missing dates:

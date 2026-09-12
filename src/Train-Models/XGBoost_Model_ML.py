@@ -1,5 +1,7 @@
 import argparse
+import os
 import sqlite3
+import sys
 from pathlib import Path
 
 import joblib
@@ -11,10 +13,13 @@ from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import TimeSeriesSplit
 
 BASE_DIR = Path(__file__).resolve().parents[2]
+sys.path.insert(1, os.fspath(BASE_DIR))
+from src.Utils import PlayerContext  # noqa: E402
+
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models" / "XGBoost_Models"
 
-DEFAULT_DATASET = "dataset_2012-26"
+DEFAULT_DATASET = "dataset_2012-26_player_v1"
 TARGET_COLUMN = "Home-Team-Win"
 DATE_COLUMN = "Date"
 DROP_COLUMNS = [
@@ -43,8 +48,10 @@ def prepare_data(df):
         data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN], errors="coerce")
         data = data.sort_values(DATE_COLUMN)
     y = data[TARGET_COLUMN].astype(int).to_numpy()
-    X = data.drop(columns=DROP_COLUMNS, errors="ignore").astype(float).to_numpy()
-    return X, y
+    feature_frame = data.drop(columns=DROP_COLUMNS, errors="ignore")
+    feature_columns = list(feature_frame.columns)
+    X = feature_frame.astype(float).to_numpy()
+    return X, y, feature_columns
 
 
 def split_train_test(X, y, test_size=0.1):
@@ -162,7 +169,7 @@ def main():
         print(f"No rows found for dataset {args.dataset}.")
         return
 
-    X, y = prepare_data(df)
+    X, y, feature_columns = prepare_data(df)
     X_train_val, y_train_val, X_test, y_test = split_train_test(X, y)
 
     rng = np.random.default_rng(args.seed)
@@ -239,6 +246,8 @@ def main():
     model_path = MODEL_DIR / model_name
     best_model.save_model(str(model_path))
     print(f"Saved model: {model_path}")
+    feature_path = PlayerContext.save_feature_columns(model_path, feature_columns)
+    print(f"Saved feature columns: {feature_path}")
 
     if calibrator is not None:
         calibration_path = MODEL_DIR / f"{model_path.stem}_calibration.pkl"

@@ -1,5 +1,7 @@
 import argparse
+import os
 import sqlite3
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -7,10 +9,13 @@ import pandas as pd
 import tensorflow as tf
 
 BASE_DIR = Path(__file__).resolve().parents[2]
+sys.path.insert(1, os.fspath(BASE_DIR))
+from src.Utils import PlayerContext  # noqa: E402
+
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models"
 
-DEFAULT_DATASET = "dataset_2012-24_new"
+DEFAULT_DATASET = "dataset_2012-26_player_v1"
 TARGET_COLUMN = "OU-Cover"
 DATE_COLUMN = "Date"
 DROP_COLUMNS = [
@@ -42,11 +47,12 @@ def prepare_data(df):
     ou_values = data["OU"].to_numpy()
     X = data.drop(columns=DROP_COLUMNS, errors="ignore")
     X["OU"] = ou_values
+    feature_columns = list(X.columns)
     X = X.replace([np.inf, -np.inf], np.nan)
     X = X.fillna(X.median(numeric_only=True)).fillna(0)
     X = X.to_numpy(dtype=float)
     X = tf.keras.utils.normalize(X, axis=1)
-    return X, y
+    return X, y, feature_columns
 
 
 def split_time_series(X, y, val_size=0.1, test_size=0.1):
@@ -118,7 +124,7 @@ def main():
         print(f"No rows found for dataset {args.dataset}.")
         return
 
-    X, y = prepare_data(df)
+    X, y, feature_columns = prepare_data(df)
     X_train, X_val, X_test, y_train, y_val, y_test = split_time_series(
         X, y, val_size=args.val_size, test_size=args.test_size
     )
@@ -189,6 +195,8 @@ def main():
     best_model.save(model_path)
     temp_path.unlink(missing_ok=True)
     print(f"Saved model: {model_path}")
+    feature_path = PlayerContext.save_feature_columns(model_path, feature_columns)
+    print(f"Saved feature columns: {feature_path}")
 
 
 if __name__ == "__main__":
