@@ -26,7 +26,7 @@ xgb_uo_features = None
 
 
 def _select_model_path(kind):
-    candidates = list(MODEL_DIR.glob(f"*{kind}*.json"))
+    candidates = [p for p in MODEL_DIR.glob(f"*{kind}*.json") if not p.stem.endswith("_features") and PlayerContext.feature_sidecar_path(p).exists()]
     if not candidates:
         raise FileNotFoundError(f"No XGBoost {kind} model found in {MODEL_DIR}")
 
@@ -44,8 +44,8 @@ def _load_calibrator(model_path):
         return None
     try:
         return joblib.load(calibration_path)
-    except Exception:
-        return None
+    except Exception as exc:
+        raise ValueError(f"Calibration failed to load for {model_path.name}; retrain") from exc
 
 
 def _load_models():
@@ -74,20 +74,7 @@ def _prepare_model_data(model, frame, feature_columns, fallback_data=None, label
     if feature_columns:
         return PlayerContext.align_frame_to_columns(frame, feature_columns).values
 
-    expected = model.num_features()
-    if fallback_data is not None and fallback_data.shape[1] == expected:
-        return fallback_data
-
-    values = frame.values.astype(float)
-    if values.shape[1] == expected:
-        return values
-    if values.shape[1] > expected:
-        print(f"{label}: no feature sidecar found; using first {expected} legacy columns.")
-        return values[:, :expected]
-    raise ValueError(
-        f"{label}: live frame has {values.shape[1]} features but model expects {expected}. "
-        "Retrain the model or restore its feature sidecar."
-    )
+    raise ValueError(f"{label}: feature manifest required. Retrain with player-v2 data.")
 
 
 def _format_game_line(home_team, away_team, winner_is_home, winner_confidence, under_over, ou_value, ou_confidence):
@@ -95,7 +82,7 @@ def _format_game_line(home_team, away_team, winner_is_home, winner_confidence, u
     loser_team = away_team if winner_is_home else home_team
     winner_color = Fore.GREEN if winner_is_home else Fore.RED
     loser_color = Fore.RED if winner_is_home else Fore.GREEN
-    ou_label = "UNDER" if under_over == 0 else "OVER"
+    ou_label = {0: "UNDER", 1: "OVER", 2: "PUSH"}[under_over]
     ou_color = Fore.MAGENTA if under_over == 0 else Fore.BLUE
     return (
         f"{winner_color}{winner_team}{Style.RESET_ALL}"
@@ -140,10 +127,10 @@ def _print_expected_value(
         }
         bankroll_descriptor = " Fraction of Bankroll: "
         bankroll_fraction_home = bankroll_descriptor + str(
-            kc.calculate_kelly_criterion(home_team_odds[idx], ml_predictions_array[idx][1])
+            kc.calculate_kelly_criterion(home_team_odds[idx], ml_predictions_array[idx][1]) if home_team_odds[idx] else 0
         ) + "%"
         bankroll_fraction_away = bankroll_descriptor + str(
-            kc.calculate_kelly_criterion(away_team_odds[idx], ml_predictions_array[idx][0])
+            kc.calculate_kelly_criterion(away_team_odds[idx], ml_predictions_array[idx][0]) if away_team_odds[idx] else 0
         ) + "%"
 
         print(

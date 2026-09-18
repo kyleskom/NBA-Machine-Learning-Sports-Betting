@@ -1,5 +1,4 @@
 data_url = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom=10%2F01%2F{2}&DateTo={0}%2F{1}%2F{3}&Division=&GameScope=&GameSegment=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season={4}&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision="
-player_data_url = "https://stats.nba.com/stats/leaguedashplayerstats?College=&Conference=&Country=&DateFrom=10%2F01%2F{2}&DateTo={0}%2F{1}%2F{3}&Division=&DraftPick=&DraftYear=&GameScope=&GameSegment=&Height=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=&PaceAdjust=N&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season={4}&SeasonSegment=&SeasonType=Regular+Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision=&Weight="
 
 [get-data]
     [get-data.2007-08]
@@ -336,16 +335,27 @@ player_data_url = "https://stats.nba.com/stats/leaguedashplayerstats?College=&Co
         end_year = "2026"
 
 [player-injuries]
+    adapter = "nba_official_pdf"
+    pdf_url_template = "https://ak-static.cms.nba.com/referee/injury/Injury-Report_{date}_{time}.pdf"
+    report_times = ["05_00AM", "11_00AM", "01_30PM", "05_00PM"]
+    timeout_seconds = 20
+    json_path = ""
     primary_url = ""
     secondary_url = ""
 
 [player-lineups]
+    adapter = "nba_daily_lineups"
+    daily_lineups_url_template = "https://stats.nba.com/js/data/leaders/00_daily_lineups_{date_compact}.json"
+    timeout_seconds = 20
+    attempts = 2
     primary_url = ""
     secondary_url = ""
-    csv_path = ""
+    json_path = ""
 
 [player-features]
     rolling_windows = [7, 14, 30]
+    stats_max_age_days = 45
+    report_max_age_hours = 24
 
     [player-features.defaults]
         neutral_player_minutes = 16.0
@@ -363,3 +373,24 @@ player_data_url = "https://stats.nba.com/stats/leaguedashplayerstats?College=&Co
             probable = 0.25
             active = 0.0
             unknown = 0.5
+
+[player-ingestion]
+    provider = "archive"
+    game_logs_url = "https://stats.nba.com/stats/leaguegamelog"
+    archive_url_template = "https://github.com/sportsdataverse/sportsdataverse-data/releases/download/espn_nba_player_boxscores/player_box_{year}.csv"
+    timeout_seconds = 45
+    attempts = 3
+
+[player-rosters]
+    adapter = "nba_daily_lineups"
+    daily_lineups_url_template = "https://stats.nba.com/js/data/leaders/00_daily_lineups_{date_compact}.json"
+    timeout_seconds = 20
+    attempts = 2
+    primary_url = ""
+    secondary_url = ""
+    json_path = ""
+
+[bet-eligibility]
+    # Do not issue wagers when player availability cannot be verified.
+    require_complete_availability = true
+    require_confirmed_lineups = true

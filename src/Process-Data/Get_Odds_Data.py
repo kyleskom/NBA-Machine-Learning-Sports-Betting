@@ -19,6 +19,8 @@ DB_PATH = BASE_DIR / "Data" / "OddsData.sqlite"
 MIN_DELAY_SECONDS = 1
 MAX_DELAY_SECONDS = 3
 
+from src.Storage.normalized import canonical_path_for, connect as connect_canonical, save_odds_rows
+
 
 def load_config():
     return toml.load(CONFIG_PATH)
@@ -174,7 +176,7 @@ def collect_odds_for_dates(dates, sportsbook, teams_last_played):
     return df_data
 
 
-def backfill_season(con, season_key, value, sportsbook, today):
+def backfill_season(con, season_key, value, sportsbook, today, canonical_con=None):
     start_date = datetime.strptime(value["start_date"], "%Y-%m-%d").date()
     end_date = datetime.strptime(value["end_date"], "%Y-%m-%d").date()
     fetch_end = min(today - timedelta(days=1), end_date)
@@ -207,14 +209,17 @@ def backfill_season(con, season_key, value, sportsbook, today):
     if new_rows:
         df = pd.DataFrame(new_rows)
         df.to_sql(season_key, con, if_exists="append", index=False)
+        if canonical_con is not None:
+            save_odds_rows(canonical_con, new_rows, season_key, sportsbook)
 
 
-def main(sportsbook="fanduel", backfill=False, season=None, today=None, db_path=DB_PATH):
+def main(sportsbook="fanduel", backfill=False, season=None, today=None, db_path=DB_PATH, canonical_path=None):
     config = load_config()
     if today is None:
         today = datetime.today().date()
 
-    with sqlite3.connect(db_path) as con:
+    canonical_path = canonical_path or canonical_path_for(db_path)
+    with sqlite3.connect(db_path) as con, connect_canonical(canonical_path) as canonical_con:
         if backfill:
             season_items = config["get-odds-data"].items()
             if season:
@@ -225,7 +230,7 @@ def main(sportsbook="fanduel", backfill=False, season=None, today=None, db_path=
                     print("Season not found in config:", season)
                     return
             for season_key, value in season_items:
-                backfill_season(con, season_key, value, sportsbook, today)
+                backfill_season(con, season_key, value, sportsbook, today, canonical_con)
             return
 
         season_key, value, start_date, end_date = select_current_season(config, today)
@@ -246,6 +251,7 @@ def main(sportsbook="fanduel", backfill=False, season=None, today=None, db_path=
         if df_data:
             df = pd.DataFrame(df_data)
             df.to_sql(season_key, con, if_exists="append", index=False)
+            save_odds_rows(canonical_con, df_data, season_key, sportsbook)
 
 
 if __name__ == "__main__":

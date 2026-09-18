@@ -19,7 +19,7 @@ from src.Utils import PlayerContext  # noqa: E402
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models" / "XGBoost_Models"
 
-DEFAULT_DATASET = "dataset_2012-26_player_v1"
+DEFAULT_DATASET = "dataset_2012-26_player_v2"
 TARGET_COLUMN = "Home-Team-Win"
 DATE_COLUMN = "Date"
 DROP_COLUMNS = [
@@ -98,7 +98,7 @@ def sample_params(rng, seed):
         "alpha": float(10 ** rng.uniform(np.log10(0.01), np.log10(5.0))),
         "objective": "multi:softprob",
         "num_class": NUM_CLASSES,
-        "eval_metric": ["mlogloss", "merror"],
+        "eval_metric": "mlogloss",
         "seed": seed,
         "tree_method": "hist",
     }
@@ -117,7 +117,7 @@ def train_model(X_train, y_train, X_val, y_val, params, num_boost_round):
         early_stopping_rounds=60,
         verbose_eval=False,
     )
-    return model
+    return model[:model.best_iteration + 1]
 
 
 def format_param(value, precision=3):
@@ -125,16 +125,7 @@ def format_param(value, precision=3):
     return formatted.replace(".", "p")
 
 
-class BoosterWrapper:
-    def __init__(self, booster, num_class):
-        self.booster = booster
-        self.classes_ = np.arange(num_class)
-
-    def fit(self, X, y):
-        return self
-
-    def predict_proba(self, X):
-        return self.booster.predict(xgb.DMatrix(X))
+from src.Utils.Calibration import BoosterWrapper
 
 
 def walk_forward_cv_loss(X, y, params, num_boost_round, n_splits):
@@ -197,11 +188,12 @@ def main():
         return
 
     X_train, y_train, X_calib, y_calib = split_train_calib(X_train_val, y_train_val)
+    X_fit, y_fit, X_stop, y_stop = split_train_calib(X_train, y_train)
     best_model = train_model(
-        X_train,
-        y_train,
-        X_calib,
-        y_calib,
+        X_fit,
+        y_fit,
+        X_stop,
+        y_stop,
         best["params"],
         best["num_boost_round"],
     )

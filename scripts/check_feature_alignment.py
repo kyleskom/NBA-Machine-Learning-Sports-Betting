@@ -25,6 +25,8 @@ DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models"
 
 DROP_COLUMNS_ML = [
+    "index",
+    "index.1",
     "Score",
     "Home-Team-Win",
     "TEAM_NAME",
@@ -37,6 +39,8 @@ DROP_COLUMNS_ML = [
     "OU-Cover",
 ]
 DROP_COLUMNS_UO = [
+    "index",
+    "index.1",
     "Score",
     "Home-Team-Win",
     "TEAM_NAME",
@@ -94,7 +98,7 @@ def load_live_frames():
 
 
 def find_latest_model(pattern):
-    candidates = list(MODEL_DIR.rglob(pattern))
+    candidates = [path for path in MODEL_DIR.rglob(pattern) if not path.stem.endswith("_features")]
     if not candidates:
         return None
     return max(candidates, key=lambda path: path.stat().st_mtime)
@@ -148,7 +152,7 @@ def compare_columns(label, train_cols, infer_cols):
 
 def main():
     parser = argparse.ArgumentParser(description="Compare training vs inference feature sizes.")
-    parser.add_argument("--dataset", default="dataset_2012-26_player_v1", help="Dataset table name.")
+    parser.add_argument("--dataset", default="dataset_2012-26_player_v2", help="Dataset table name.")
     parser.add_argument("--frame-ml", help="CSV path to inference frame_ml.")
     parser.add_argument("--frame-uo", help="CSV path to inference frame_uo.")
     parser.add_argument("--use-live", action="store_true", help="Build inference frames from live data.")

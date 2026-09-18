@@ -1,5 +1,11 @@
 import argparse
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+from pathlib import Path
+from urllib.parse import urlsplit, parse_qs, urlencode, urlunsplit
+from src.Players.identity import team_id
+from src.Players.store import connect as connect_players
+from src.Players.reports import refresh_reports
 
 import pandas as pd
 import tensorflow as tf
@@ -21,7 +27,7 @@ from src.Utils.tools import (
 TODAYS_GAMES_URL = "https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2025/scores/00_todays_scores.json"
 DATA_URL = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom=&DateTo=&Division=&GameScope=&GameSegment=&Height=&ISTRound=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=2025-26&SeasonSegment=&SeasonType=Regular%20Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision="
 SCHEDULE_PATH = "Data/nba-2025-UTC.csv"
-CONFIG_PATH = "config.toml"
+CONFIG_PATH = Path(__file__).resolve().parent / "config.toml"
 
 
 def create_todays_games_data(games, df, odds, schedule_df, today, config=None, include_player_features=True):
@@ -38,7 +44,9 @@ def create_todays_games_data(games, df, odds, schedule_df, today, config=None, i
         config = toml.load(CONFIG_PATH)
     if include_player_features:
         player_feature_cols, player_defaults, player_lookup = PlayerContext.load_player_context(config)
-    today_str = today.date().isoformat() if hasattr(today, "date") else str(today)
+    current = pd.Timestamp(today)
+    current = current.tz_localize("America/New_York") if current.tzinfo is None else current
+    today_str = current.tz_convert("America/New_York").date().isoformat()
 
     for game in games:
         home_team, away_team = game
@@ -63,23 +71,25 @@ def create_todays_games_data(games, df, odds, schedule_df, today, config=None, i
             (schedule_df['Home Team'] == away_team) | (schedule_df['Away Team'] == away_team)
         ]
         previous_home_games = home_games.loc[
-            home_games['Date'] <= today
+            home_games['Date'].dt.tz_convert('America/New_York').dt.date < current.tz_convert('America/New_York').date()
         ].sort_values('Date', ascending=False).head(1)['Date']
         previous_away_games = away_games.loc[
-            away_games['Date'] <= today
+            away_games['Date'].dt.tz_convert('America/New_York').dt.date < current.tz_convert('America/New_York').date()
         ].sort_values('Date', ascending=False).head(1)['Date']
         if len(previous_home_games) > 0:
             last_home_date = previous_home_games.iloc[0]
-            home_days_off = timedelta(days=1) + today - last_home_date
+            home_days_off = timedelta(days=(current.tz_convert("America/New_York").date() - last_home_date.tz_convert("America/New_York").date()).days)
         else:
             home_days_off = timedelta(days=7)
         if len(previous_away_games) > 0:
             last_away_date = previous_away_games.iloc[0]
-            away_days_off = timedelta(days=1) + today - last_away_date
+            away_days_off = timedelta(days=(current.tz_convert("America/New_York").date() - last_away_date.tz_convert("America/New_York").date()).days)
         else:
             away_days_off = timedelta(days=7)
-        home_team_series = df.iloc[team_index_current.get(home_team)]
-        away_team_series = df.iloc[team_index_current.get(away_team)]
+        home_team_series = df.loc[df.TEAM_ID.astype(int) == team_id(home_team)].squeeze(axis=0)
+        away_team_series = df.loc[df.TEAM_ID.astype(int) == team_id(away_team)].squeeze(axis=0)
+        if not isinstance(home_team_series, pd.Series) or not isinstance(away_team_series, pd.Series):
+            raise ValueError("Missing or duplicate live team statistics")
         stats = pd.concat([
             home_team_series,
             away_team_series.rename(index={col: f"{col}.1" for col in df.columns.values}),
@@ -97,6 +107,7 @@ def create_todays_games_data(games, df, odds, schedule_df, today, config=None, i
                     player_feature_cols,
                     player_defaults,
                     allow_asof=True,
+                    as_of=current,
                 )
             )
 
@@ -112,7 +123,7 @@ def create_todays_games_data(games, df, odds, schedule_df, today, config=None, i
             axis=1,
         )
 
-    frame_ml = games_data_frame.drop(columns=['TEAM_ID', 'TEAM_NAME', 'TEAM_ID.1', 'TEAM_NAME.1'], errors="ignore")
+    frame_ml = games_data_frame.drop(columns=['TEAM_ID', 'TEAM_NAME', 'TEAM_ID.1', 'TEAM_NAME.1', 'Date', 'Date.1', 'index', 'index.1'], errors="ignore")
     data = frame_ml.values
     data = data.astype(float)
 
@@ -120,7 +131,9 @@ def create_todays_games_data(games, df, odds, schedule_df, today, config=None, i
 
 
 def load_schedule():
-    return pd.read_csv(SCHEDULE_PATH, parse_dates=['Date'], date_format='%d/%m/%Y %H:%M')
+    frame = pd.read_csv(Path(__file__).resolve().parent / SCHEDULE_PATH)
+    frame['Date'] = pd.to_datetime(frame['Date'], format='%d/%m/%Y %H:%M', utc=True)
+    return frame
 
 
 def resolve_games(odds, sportsbook):
@@ -174,14 +187,33 @@ def main(args):
     if games is None:
         return
 
-    stats_json = get_json_data(DATA_URL)
+    today = datetime.now(ZoneInfo("America/New_York"))
+    config = toml.load(CONFIG_PATH)
+    with connect_players() as con:
+        print("Player reports:", refresh_reports(con, config, today.date().isoformat()))
+    # Match training: exclude all current-day team results.
+    parts = urlsplit(DATA_URL)
+    query = parse_qs(parts.query, keep_blank_values=True)
+    query["DateTo"] = [(today.date()-timedelta(days=1)).strftime("%m/%d/%Y")]
+    stats_json = get_json_data(urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query, doseq=True), parts.fragment)))
     df = to_data_frame(stats_json)
     schedule_df = load_schedule()
-    today = datetime.today()
-    config = toml.load(CONFIG_PATH)
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = create_todays_games_data(
         games, df, odds, schedule_df, today, config=config
     )
+    if data is not None:
+        coverage = frame_ml[["H_PLR_GAME_COVERAGE", "A_PLR_GAME_COVERAGE"]].min().min()
+        if coverage < 1:
+            raise ValueError("Player histories missing/stale for this slate. Refresh player game logs before prediction.")
+        eligibility = config.get('bet-eligibility', {})
+        if eligibility.get('require_complete_availability', True):
+            required = ["H_INJ_COVERAGE", "A_INJ_COVERAGE", "H_PLR_ROSTER_CONFIRMED", "A_PLR_ROSTER_CONFIRMED"]
+            if eligibility.get('require_confirmed_lineups', True):
+                required += ["H_LINEUP_COVERAGE", "A_LINEUP_COVERAGE"]
+            unavailable = [column for column in required if frame_ml[column].min() < 1]
+            if unavailable:
+                print("No bet: live player availability is incomplete (" + ", ".join(unavailable) + ").")
+                return
     if data is None:
         print("No valid games found to predict.")
         return

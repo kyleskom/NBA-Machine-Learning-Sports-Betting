@@ -2,6 +2,14 @@
 
 Reviewed September 12, 2026, against the current working tree, including existing uncommitted work.
 
+## Implementation update — September 13, 2026
+
+The player-data foundation requested after this review is now implemented. `PlayerData.sqlite` contains 466,181 player-game rows across all 14 configured training seasons (2012–13 through 2025–26), covering 18,066 games and all 30 franchises. The archive audit found no duplicate player/game keys, no games with other than two teams, no null core box-score values, and no team-minute totals outside 240 plus 25 per overtime after documented source reconciliation.
+
+The v2 point-in-time player builder uses only games strictly before each target date, resets form at season boundaries, projects team rotations to 240 minutes, and applies only availability reports published before the prediction cutoff. Training and live inference share this builder and an exact versioned feature sidecar. The generated `dataset_2012-26_player_v2` contains 16,981 games and 90 home/away player-context columns with 99.94% player-history coverage; the 12 uncovered rows are the first games after the 2020 shutdown and are explicitly marked missing/stale.
+
+Completed supporting repairs include stable franchise identity, retry/timeout handling, exact season replacement, immutable report snapshots, strict report completeness, calibration wrapper serialization, feature-sidecar filtering, named feature alignment, totals push display, and safe missing-odds handling. Player-aware XGBoost candidates were retrained against v2 and validated in a fresh process: moneyline used 196 features and returned 64.39% accuracy / 0.6197 log loss on its chronological test block; totals used 197 features and returned 50.38% accuracy / 0.7320 log loss. These are baseline diagnostics, not profitability evidence. Live official NBA injury-PDF, daily-lineup, and game-day roster adapters are now configured, timestamped, and refreshed before prediction; forward snapshots will accumulate during the season, while historical pregame availability remains unavailable. Controlled market-aligned evaluation remains part of W06/W07; old artifacts without a v2 feature sidecar are deliberately rejected.
+
 ## Assessment
 
 The intended product is a daily NBA betting decision system: estimate probabilities, compare them with available prices, select worthwhile bets, manage exposure, and learn from settled results. The repository currently provides a prediction prototype with odds display and moneyline EV/Kelly calculations. It does not yet establish a reproducible, tradable edge.
@@ -135,9 +143,9 @@ Priority: P0 = correctness prerequisite; P1 = core capability; P2 = measured imp
 
 - [ ] W01.1 Preserve existing models/datasets as unvalidated reference artifacts; stop presenting their filename accuracy as established betting performance.
 - [ ] W01.2 Replace discovery by glob/filename accuracy with a manifest containing model path, ordered feature schema, class map, preprocessing, calibrator, training cutoff, dataset hash, code/dependency versions, and evaluation report.
-- [ ] W01.3 Move calibration wrappers into an importable module; verify fresh-process serialization. Fail clearly if a required calibrator cannot load.
-- [ ] W01.4 Remove positional feature truncation and silent zero-fill of required inputs. Preserve the offered totals line by name. Allow optional missing values only under a model's explicit missingness policy.
-- [ ] W01.5 Correct push handling, odds validation, and Kelly calculation when odds are absent. Keep full precision until display.
+- [x] W01.3 Move calibration wrappers into an importable module; verify fresh-process serialization. Fail clearly if a required calibrator cannot load.
+- [x] W01.4 Remove positional feature truncation and silent zero-fill of required inputs. Preserve the offered totals line by name. Allow optional missing values only under a model's explicit missingness policy.
+- [x] W01.5 Correct push handling, odds validation, and Kelly calculation when odds are absent. Keep full precision until display.
 - [ ] W01.6 Return structured results with immutable game/home/away IDs for both CLI and Flask. Correct away-winner reversal and replace static accuracy claims with verified reports.
 
 **Code affected:** `src/Predict/`, `src/Utils/PlayerContext.py`, EV/Kelly utilities, `main.py`, `Flask/app.py`, and new shared model-bundle/result modules.
@@ -173,7 +181,9 @@ Build adapters around a normalized contract so a provider can be replaced. NBA p
 | W03.7 | Shot-zone and tracking summaries | Rim/paint/midrange/three-point attempts, shot quality or contest context if available, potential assists, drives, transition events | Matchup and creation metrics; optional tier with coverage/missingness flags |
 | W03.8 | Full schedule and venue history | Actual game times, venue coordinates/timezone, neutral-site flag, overtime periods | Travel, rest, fatigue, and schedule density; reconcile postponements |
 
-**Availability collection:** official NBA injury reports change throughout the day, so one daily fetch is insufficient. Use the [official report source](https://official.nba.com/nba-injury-report-2025-26-season/) or a provider with verified timestamped history. Proposed decision snapshots are morning, 60 minutes before tipoff, and a later pregame refresh, subject to source limits and available reports. Archive published updates when feasible. This is a collection plan, not a scheduler created in this task.
+**Implemented W03.1 foundation:** the archive/NBA adapters, normalized player-game schema, complete basic-log backfill, point-in-time rolling form, inferred current roster, projected rotations, minute caps, injury scenarios, report cutoffs, provider conflict checks, and coverage flags are operational. Advanced impact estimates, dated transaction rosters, historical availability reports, play-by-play, tracking data, and a learned participation/minutes model remain planned.
+
+**Availability collection:** official NBA injury reports change throughout the day, so one daily fetch is insufficient. The configured official PDF adapter checks the NBA's scheduled report times, while the NBA daily-lineup feed supplies current starters and game-day roster entries. `main.py` refreshes these sources before prediction, and `Get_Player_Data --reports-only` can be run after every report/update; each revision is stored with its publication and fetch times. Historical pregame availability is still missing. A scheduler and point-in-time historical provider remain future work.
 
 - [ ] W03.9 Replace constant questionable/doubtful weights with a calibrated participation model using only pregame reports/history. Sparse groups need pooled estimates. A missing report is unknown, not healthy.
 - [ ] W03.10 Build a conditional minutes model for active players; combine it with participation probabilities and injury scenarios. Project the whole regulation rotation to 240 team minutes, cap individual regulation minutes at 48, and model overtime separately if needed. Starter status alone does not determine minutes.

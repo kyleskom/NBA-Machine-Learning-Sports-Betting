@@ -2,278 +2,75 @@ import importlib.util
 import sqlite3
 import tempfile
 import unittest
-from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
 import pandas as pd
+import toml
+from src.Players.store import initialize,save_logs
+from src.Players.identity import team_id
+from test_get_player_data import logs
 
-CREATE_GAMES_PATH = Path(__file__).resolve().parents[1] / "src" / "Process-Data" / "Create_Games.py"
-SPEC = importlib.util.spec_from_file_location("create_games", CREATE_GAMES_PATH)
-create_games = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(create_games)
+spec=importlib.util.spec_from_file_location('create_games',Path(__file__).resolve().parents[1]/'src/Process-Data/Create_Games.py')
+m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 
 
 class TestCreateGames(unittest.TestCase):
+    def test_pregame_team_table_and_id_mapping(self):
+        with sqlite3.connect(':memory:') as con:
+            for day,pts in [('2025-01-02',100),('2025-01-03',999)]:
+                pd.DataFrame([{'TEAM_ID':team_id('BOS'),'TEAM_NAME':'Boston Celtics','PTS':pts},
+                              {'TEAM_ID':team_id('ATL'),'TEAM_NAME':'Atlanta Hawks','PTS':pts+1}]).to_sql(day,con,index=False)
+            frame=m.fetch_team_table(con,'2025-01-03')
+            features=m.build_game_features(frame,'ATL','BOS')
+            self.assertEqual(features['PTS'],101)
+            self.assertEqual(features['PTS.1'],100)
+            self.assertIsNone(m.fetch_team_table(con,'2025-01-01'))
 
-    def test_normalize_date(self):
-        self.assertEqual(create_games.normalize_date("2025-01-02"), "2025-01-02")
-        self.assertEqual(create_games.normalize_date(datetime(2025, 1, 2, 12, 0, 0)), "2025-01-02")
+    def test_build_dataset_integrates_player_histories(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            paths={name:root/(name+'.sqlite') for name in ['odds','teams','players','output']}
+            config={'create-games':{'2024-25':{}},'player-features':{'rolling_windows':[7]}}
+            (root/'config.toml').write_text(toml.dumps(config))
+            with sqlite3.connect(paths['players']) as con:
+                initialize(con);save_logs(con,logs())
+            with sqlite3.connect(paths['teams']) as con:
+                pd.DataFrame([{'TEAM_ID':team_id(t),'TEAM_NAME':name,'PTS':100,'Date':'2025-01-02'} for t,name in [('BOS','Boston Celtics'),('ATL','Atlanta Hawks')]]).to_sql('2025-01-02',con,index=False)
+            with sqlite3.connect(paths['odds']) as con:
+                pd.DataFrame([{'Date':'2025-01-03','Home':'Atlanta Hawks','Away':'Boston Celtics','Points':220,'OU':219.5,'Win_Margin':5,'Days_Rest_Home':1,'Days_Rest_Away':2}]).to_sql('2024-25',con,index=False)
+            with patch.multiple(m,CONFIG_PATH=root/'config.toml',ODDS_DB_PATH=paths['odds'],TEAMS_DB_PATH=paths['teams'],PLAYER_DB_PATH=paths['players'],OUTPUT_DB_PATH=paths['output']):
+                m.main('integration')
+            with sqlite3.connect(paths['output']) as con:
+                frame=pd.read_sql_query('select * from integration',con)
+            self.assertEqual(frame.iloc[0]['H_PLR_HISTORY_GAMES'],2)
+            self.assertEqual(frame.iloc[0]['A_PLR_HISTORY_GAMES'],1)
+            self.assertEqual(frame.iloc[0]['Date'],'2025-01-03')
+            self.assertEqual(frame.iloc[0]['OU-Cover'],1)
 
-    def test_get_team_index_map(self):
-        self.assertIs(create_games.get_team_index_map("2023-24"), create_games.team_index_current)
-        self.assertIs(create_games.get_team_index_map("2015-16"), create_games.team_index_14)
-        self.assertIs(create_games.get_team_index_map("bad-key"), create_games.team_index_current)
+    def test_missing_player_database_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);(root/'config.toml').write_text('[create-games]\n')
+            with patch.multiple(m,CONFIG_PATH=root/'config.toml',ODDS_DB_PATH=root/'odds',TEAMS_DB_PATH=root/'teams',PLAYER_DB_PATH=root/'missing'):
+                with self.assertRaisesRegex(ValueError,'No player game logs'):
+                    m.main()
 
-    def test_select_odds_table(self):
-        with sqlite3.connect(":memory:") as con:
-            con.execute('CREATE TABLE "odds_2024-25_new" (Date TEXT)')
-            con.execute('CREATE TABLE "2023-24" (Date TEXT)')
-            self.assertEqual(create_games.select_odds_table(con, "2024-25"), "odds_2024-25_new")
-            self.assertEqual(create_games.select_odds_table(con, "2023-24"), "2023-24")
-            self.assertIsNone(create_games.select_odds_table(con, "2022-23"))
+    def test_existing_dataset_can_be_upgraded_from_v2_reference(self):
+        with tempfile.TemporaryDirectory() as d:
+            path=Path(d)/'dataset.sqlite'
+            legacy=pd.DataFrame([{'Date':'2025-01-03','TEAM_NAME':'Atlanta Hawks',
+                                  'TEAM_NAME.1':'Boston Celtics','Score':220}])
+            reference=legacy.assign(H_PLR_GAME_COVERAGE=1.0,A_PLR_GAME_COVERAGE=1.0)
+            with sqlite3.connect(path) as con:
+                legacy.to_sql('legacy',con,index=False)
+                reference.to_sql(m.OUTPUT_TABLE,con,index=False)
+            with patch.object(m,'OUTPUT_DB_PATH',path):
+                output,rows,features=m.augment_existing_dataset('legacy')
+            with sqlite3.connect(path) as con:
+                upgraded=pd.read_sql_query(f'SELECT * FROM "{output}"',con)
+            self.assertEqual((output,rows,features),('legacy_player_v2',1,2))
+            self.assertEqual(upgraded.iloc[0].H_PLR_GAME_COVERAGE,1.0)
 
-    def test_build_game_features(self):
-        team_df = pd.DataFrame(
-            {
-                "TEAM_ID": list(range(30)),
-                "TEAM_NAME": [f"Team {i}" for i in range(30)],
-                "STAT_A": list(range(30)),
-            }
-        )
-        index_map = {"Team A": 0, "Team B": 1}
-        features = create_games.build_game_features(team_df, "Team A", "Team B", index_map)
-        self.assertIsNotNone(features)
-        self.assertIn("TEAM_NAME", features.index)
-        self.assertIn("TEAM_NAME.1", features.index)
-
-    def test_fetch_team_table_missing(self):
-        with sqlite3.connect(":memory:") as con:
-            result = create_games.fetch_team_table(con, "2025-01-02")
-        self.assertIsNone(result)
-
-    def test_main_writes_dataset(self):
-        config = {
-            "create-games": {
-                "2023-24": {
-                    "start_date": "2023-10-23",
-                    "end_date": "2024-04-28",
-                }
-            }
-        }
-        odds_rows = [
-            {
-                "Date": "2025-01-02",
-                "Home": "Team A",
-                "Away": "Team B",
-                "OU": 210.5,
-                "Points": 205.0,
-                "Win_Margin": 5,
-                "Days_Rest_Home": 2,
-                "Days_Rest_Away": 4,
-            }
-        ]
-        team_df = pd.DataFrame(
-            {
-                "TEAM_ID": list(range(30)),
-                "TEAM_NAME": [f"Team {i}" for i in range(30)],
-                "STAT_A": list(range(30)),
-            }
-        )
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            odds_path = Path(tmpdir) / "odds.sqlite"
-            teams_path = Path(tmpdir) / "teams.sqlite"
-            out_path = Path(tmpdir) / "out.sqlite"
-
-            with sqlite3.connect(odds_path) as con:
-                pd.DataFrame(odds_rows).to_sql("2023-24", con, if_exists="replace", index=False)
-            with sqlite3.connect(teams_path) as con:
-                team_df.to_sql("2025-01-02", con, if_exists="replace", index=False)
-
-            original_config_path = create_games.CONFIG_PATH
-            original_odds_path = create_games.ODDS_DB_PATH
-            original_teams_path = create_games.TEAMS_DB_PATH
-            original_output_path = create_games.OUTPUT_DB_PATH
-            original_output_table = create_games.OUTPUT_TABLE
-            original_team_map = create_games.TEAM_INDEX_BY_SEASON
-            original_player_path = create_games.PLAYER_DB_PATH
-
-            try:
-                create_games.CONFIG_PATH = Path(tmpdir) / "config.toml"
-                create_games.ODDS_DB_PATH = odds_path
-                create_games.TEAMS_DB_PATH = teams_path
-                create_games.OUTPUT_DB_PATH = out_path
-                create_games.PLAYER_DB_PATH = Path(tmpdir) / "missing_player.sqlite"
-                create_games.OUTPUT_TABLE = "dataset_test"
-                create_games.TEAM_INDEX_BY_SEASON = {"2023-24": {"Team A": 0, "Team B": 1}}
-
-                with create_games.CONFIG_PATH.open("w") as handle:
-                    create_games.toml.dump(config, handle)
-                create_games.main()
-
-                with sqlite3.connect(out_path) as con:
-                    df = pd.read_sql_query('SELECT * FROM "dataset_test"', con)
-            finally:
-                create_games.CONFIG_PATH = original_config_path
-                create_games.ODDS_DB_PATH = original_odds_path
-                create_games.TEAMS_DB_PATH = original_teams_path
-                create_games.OUTPUT_DB_PATH = original_output_path
-                create_games.OUTPUT_TABLE = original_output_table
-                create_games.TEAM_INDEX_BY_SEASON = original_team_map
-                create_games.PLAYER_DB_PATH = original_player_path
-
-        self.assertEqual(len(df.index), 1)
-        self.assertIn("Score", df.columns)
-        self.assertIn("OU-Cover", df.columns)
-        self.assertIn("H_INJ_COVERAGE", df.columns)
-        self.assertIn("H_LINEUP_COVERAGE", df.columns)
-        self.assertEqual(float(df.iloc[0]["H_INJ_COVERAGE"]), 0.0)
-        self.assertEqual(float(df.iloc[0]["H_LINEUP_EXPECTED_STARTERS"]), 5.0)
-
-    def test_main_joins_player_features(self):
-        config = {
-            "create-games": {
-                "2023-24": {
-                    "start_date": "2023-10-23",
-                    "end_date": "2024-04-28",
-                }
-            },
-            "player-features": {
-                "rolling_windows": [7],
-                "defaults": {
-                    "default_inj_avail_min_wt": 1.0,
-                    "default_inj_coverage": 0.0,
-                },
-            },
-        }
-        odds_rows = [
-            {
-                "Date": "2025-01-02",
-                "Home": "Team A",
-                "Away": "Team B",
-                "OU": 210.5,
-                "Points": 205.0,
-                "Win_Margin": 5,
-                "Days_Rest_Home": 2,
-                "Days_Rest_Away": 4,
-            }
-        ]
-        team_df = pd.DataFrame(
-            {
-                "TEAM_ID": list(range(30)),
-                "TEAM_NAME": [f"Team {i}" for i in range(30)],
-                "STAT_A": list(range(30)),
-            }
-        )
-        player_rows = [
-            {
-                "Date": "2025-01-02",
-                "TEAM_NAME": "Team A",
-                "PLR_MIN_SUM": 240.0,
-                "PLR_PTS_SUM": 120.0,
-                "PLR_REB_SUM": 50.0,
-                "PLR_AST_SUM": 27.0,
-                "PLR_USG_WEIGHTED_SUM": 36.0,
-                "PLR_MIN_ROLL7": 238.0,
-                "PLR_PTS_ROLL7": 118.0,
-                "PLR_REB_ROLL7": 48.0,
-                "PLR_AST_ROLL7": 26.0,
-                "PLR_USG_WEIGHTED_ROLL7": 35.0,
-                "INJ_OUT_MIN_WT": 14.0,
-                "INJ_Q_MIN_WT": 5.0,
-                "INJ_DOUBTFUL_MIN_WT": 3.0,
-                "INJ_AVAIL_MIN_WT": 0.91,
-                "INJ_COVERAGE": 1.0,
-                "LINEUP_EXPECTED_STARTERS": 5.0,
-                "LINEUP_CONFIRMED_STARTERS": 4.0,
-                "LINEUP_PROJECTED_STARTERS": 1.0,
-                "LINEUP_COVERAGE": 1.0,
-                "LINEUP_EST_MIN": 156.0,
-                "LINEUP_EST_PTS": 80.0,
-                "LINEUP_EST_REB": 30.0,
-                "LINEUP_EST_AST": 18.0,
-                "LINEUP_EST_USG_WEIGHTED": 24.0,
-            },
-            {
-                "Date": "2025-01-02",
-                "TEAM_NAME": "Team B",
-                "PLR_MIN_SUM": 240.0,
-                "PLR_PTS_SUM": 112.0,
-                "PLR_REB_SUM": 46.0,
-                "PLR_AST_SUM": 24.0,
-                "PLR_USG_WEIGHTED_SUM": 34.0,
-                "PLR_MIN_ROLL7": 239.0,
-                "PLR_PTS_ROLL7": 111.0,
-                "PLR_REB_ROLL7": 45.0,
-                "PLR_AST_ROLL7": 23.0,
-                "PLR_USG_WEIGHTED_ROLL7": 33.0,
-                "INJ_OUT_MIN_WT": 8.0,
-                "INJ_Q_MIN_WT": 2.0,
-                "INJ_DOUBTFUL_MIN_WT": 0.0,
-                "INJ_AVAIL_MIN_WT": 0.96,
-                "INJ_COVERAGE": 1.0,
-                "LINEUP_EXPECTED_STARTERS": 5.0,
-                "LINEUP_CONFIRMED_STARTERS": 5.0,
-                "LINEUP_PROJECTED_STARTERS": 0.0,
-                "LINEUP_COVERAGE": 1.0,
-                "LINEUP_EST_MIN": 150.0,
-                "LINEUP_EST_PTS": 74.0,
-                "LINEUP_EST_REB": 29.0,
-                "LINEUP_EST_AST": 17.0,
-                "LINEUP_EST_USG_WEIGHTED": 23.0,
-            },
-        ]
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            odds_path = Path(tmpdir) / "odds.sqlite"
-            teams_path = Path(tmpdir) / "teams.sqlite"
-            player_path = Path(tmpdir) / "player.sqlite"
-            out_path = Path(tmpdir) / "out.sqlite"
-
-            with sqlite3.connect(odds_path) as con:
-                pd.DataFrame(odds_rows).to_sql("2023-24", con, if_exists="replace", index=False)
-            with sqlite3.connect(teams_path) as con:
-                team_df.to_sql("2025-01-02", con, if_exists="replace", index=False)
-            with sqlite3.connect(player_path) as con:
-                pd.DataFrame(player_rows).to_sql(
-                    create_games.PLAYER_FEATURES_TABLE,
-                    con,
-                    if_exists="replace",
-                    index=False,
-                )
-
-            original_config_path = create_games.CONFIG_PATH
-            original_odds_path = create_games.ODDS_DB_PATH
-            original_teams_path = create_games.TEAMS_DB_PATH
-            original_player_path = create_games.PLAYER_DB_PATH
-            original_output_path = create_games.OUTPUT_DB_PATH
-            original_team_map = create_games.TEAM_INDEX_BY_SEASON
-
-            try:
-                create_games.CONFIG_PATH = Path(tmpdir) / "config.toml"
-                create_games.ODDS_DB_PATH = odds_path
-                create_games.TEAMS_DB_PATH = teams_path
-                create_games.PLAYER_DB_PATH = player_path
-                create_games.OUTPUT_DB_PATH = out_path
-                create_games.TEAM_INDEX_BY_SEASON = {"2023-24": {"Team A": 0, "Team B": 1}}
-
-                with create_games.CONFIG_PATH.open("w") as handle:
-                    create_games.toml.dump(config, handle)
-                create_games.main(output_table="dataset_test")
-
-                with sqlite3.connect(out_path) as con:
-                    df = pd.read_sql_query('SELECT * FROM "dataset_test"', con)
-            finally:
-                create_games.CONFIG_PATH = original_config_path
-                create_games.ODDS_DB_PATH = original_odds_path
-                create_games.TEAMS_DB_PATH = original_teams_path
-                create_games.PLAYER_DB_PATH = original_player_path
-                create_games.OUTPUT_DB_PATH = original_output_path
-                create_games.TEAM_INDEX_BY_SEASON = original_team_map
-
-        self.assertEqual(float(df.iloc[0]["H_PLR_PTS_SUM"]), 120.0)
-        self.assertEqual(float(df.iloc[0]["A_PLR_PTS_SUM"]), 112.0)
-        self.assertEqual(float(df.iloc[0]["H_INJ_COVERAGE"]), 1.0)
-        self.assertEqual(float(df.iloc[0]["A_INJ_COVERAGE"]), 1.0)
-        self.assertEqual(float(df.iloc[0]["H_LINEUP_CONFIRMED_STARTERS"]), 4.0)
-        self.assertEqual(float(df.iloc[0]["A_LINEUP_EST_MIN"]), 150.0)
+    def test_default_v2_name_is_not_reused_for_a_legacy_copy(self):
+        self.assertEqual(m.player_v2_table_name(m.OUTPUT_TABLE),
+                         'dataset_2012-26_player_v2_legacy_copy')

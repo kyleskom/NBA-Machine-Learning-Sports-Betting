@@ -1,6 +1,9 @@
 import argparse
 import sqlite3
 from datetime import datetime
+import os
+import sys
+sys.path.insert(0, os.fspath(__import__("pathlib").Path(__file__).resolve().parents[2]))
 from pathlib import Path
 
 import numpy as np
@@ -8,6 +11,11 @@ import pandas as pd
 import toml
 
 from src.Utils import PlayerContext
+from src.Players.features import PlayerFeatureEngine
+from src.Players.identity import team_id
+from src.Storage.normalized import (canonical_path_for, connect as connect_canonical,
+                                    load_games as load_normalized_games,
+                                    load_latest_team_snapshot)
 from src.Utils.Dictionaries import (
     team_index_07,
     team_index_08,
@@ -24,7 +32,7 @@ TEAMS_DB_PATH = BASE_DIR / "Data" / "TeamData.sqlite"
 PLAYER_DB_PATH = BASE_DIR / "Data" / "PlayerData.sqlite"
 OUTPUT_DB_PATH = BASE_DIR / "Data" / "dataset.sqlite"
 PLAYER_FEATURES_TABLE = PlayerContext.PLAYER_FEATURES_TABLE
-OUTPUT_TABLE = "dataset_2012-26_player_v1"
+OUTPUT_TABLE = "dataset_2012-26_player_v2"
 
 TEAM_INDEX_BY_SEASON = {
     "2007-08": team_index_07,
@@ -95,26 +103,29 @@ def get_team_index_map(season_key):
     return team_index_current if start_year >= 2022 else team_index_14
 
 
-def fetch_team_table(teams_con, date_str):
-    if not table_exists(teams_con, date_str):
+def fetch_team_table(teams_con, date_str, canonical_con=None):
+    # DateTo snapshots contain that day's results. Only an earlier snapshot is safe.
+    if canonical_con is not None:
+        snapshot = load_latest_team_snapshot(canonical_con, date_str)
+        if snapshot is not None and not snapshot.empty:
+            return snapshot
+    candidates = [r[0] for r in teams_con.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                  if len(r[0]) == 10 and r[0] < date_str and r[0][:4].isdigit()]
+    if not candidates:
         return None
-    return pd.read_sql_query(f'SELECT * FROM "{date_str}"', teams_con)
+    previous = max(candidates)
+    if (datetime.fromisoformat(date_str)-datetime.fromisoformat(previous)).days > 7:
+        return None
+    return pd.read_sql_query(f'SELECT * FROM "{previous}"', teams_con)
 
 
-def build_game_features(team_df, home_team, away_team, index_map):
-    home_index = index_map.get(home_team)
-    away_index = index_map.get(away_team)
-    if home_index is None or away_index is None:
+def build_game_features(team_df, home_team, away_team, index_map=None):
+    home_id, away_id = team_id(home_team), team_id(away_team)
+    home = team_df[team_df.TEAM_ID.astype(int) == home_id]
+    away = team_df[team_df.TEAM_ID.astype(int) == away_id]
+    if len(home) != 1 or len(away) != 1:
         return None
-    if len(team_df.index) != 30:
-        return None
-
-    home_team_series = team_df.iloc[home_index]
-    away_team_series = team_df.iloc[away_index]
-    return pd.concat([
-        home_team_series,
-        away_team_series.rename(index={col: f"{col}.1" for col in team_df.columns.values}),
-    ])
+    return pd.concat([home.iloc[0], away.iloc[0].rename(index={c:f"{c}.1" for c in team_df.columns})])
 
 
 def select_odds_table(odds_con, season_key):
@@ -138,22 +149,53 @@ def get_player_defaults(config, feature_cols):
     return PlayerContext.get_player_defaults(config, feature_cols)
 
 
-def load_player_feature_map(player_con, table_name, feature_cols):
-    return PlayerContext.load_player_feature_map(player_con, table_name, feature_cols)
-
-
 def build_player_feature_row(feature_map, date_str, home_team, away_team, feature_cols, default_values):
-    if "exact" not in feature_map:
-        feature_map = {"exact": feature_map, "history": {}}
-    return PlayerContext.build_player_feature_row(
-        feature_map,
-        date_str,
-        home_team,
-        away_team,
-        feature_cols,
-        default_values,
-        allow_asof=False,
-    )
+    return PlayerContext.build_player_feature_row(feature_map, date_str, home_team, away_team,
+                                                  feature_cols, default_values)
+
+
+def player_columns(frame):
+    prefixes = ('H_PLR_', 'A_PLR_', 'H_INJ_', 'A_INJ_', 'H_LINEUP_', 'A_LINEUP_')
+    return [column for column in frame.columns if column.startswith(prefixes)]
+
+
+def player_v2_table_name(table_name):
+    if table_name == OUTPUT_TABLE:
+        return f'{table_name}_legacy_copy'
+    return table_name if table_name.endswith('_player_v2') else f'{table_name}_player_v2'
+
+
+def augment_existing_dataset(input_table, output_table=None, reference_table=OUTPUT_TABLE):
+    """Create a player-aware copy of an existing game dataset without changing labels."""
+    output_table = output_table or player_v2_table_name(input_table)
+    key_columns = ['Date', 'TEAM_NAME', 'TEAM_NAME.1']
+    with sqlite3.connect(OUTPUT_DB_PATH) as con:
+        legacy = pd.read_sql_query(f'SELECT * FROM "{input_table}"', con)
+        reference = pd.read_sql_query(f'SELECT * FROM "{reference_table}"', con)
+        missing = set(key_columns) - set(legacy.columns)
+        if missing:
+            raise ValueError(f'{input_table} cannot be upgraded; missing game keys {sorted(missing)}')
+        features = player_columns(reference)
+        if not features:
+            raise ValueError(f'{reference_table} does not contain player features')
+        lookup = reference[key_columns + features].copy()
+        if lookup.duplicated(key_columns).any():
+            raise ValueError(f'{reference_table} has duplicate game identity keys')
+        legacy = legacy.drop(columns=player_columns(legacy), errors='ignore')
+        upgraded = legacy.merge(lookup, on=key_columns, how='left', validate='many_to_one', sort=False)
+        unmatched = int(upgraded[features[0]].isna().sum())
+        if unmatched:
+            config = toml.load(CONFIG_PATH)
+            engine = PlayerFeatureEngine.from_database(PLAYER_DB_PATH, config)
+            if engine.logs.empty:
+                raise ValueError(f'{input_table}: {unmatched} games need player history, but the player database is empty')
+            missing_rows = upgraded[features[0]].isna()
+            for index, row in upgraded.loc[missing_rows].iterrows():
+                values = engine.matchup(row['TEAM_NAME'], row['TEAM_NAME.1'], row['Date'])
+                upgraded.loc[index, features] = [values[column] for column in features]
+            print(f'{input_table}: generated point-in-time player features for {unmatched} early rows absent from {reference_table}')
+        upgraded.to_sql(output_table, con, if_exists='replace', index=False)
+    return output_table, len(upgraded), len(features)
 
 
 def main(output_table=None, include_player_features=True):
@@ -172,25 +214,21 @@ def main(output_table=None, include_player_features=True):
     days_rest_home = []
     player_rows = []
 
-    with sqlite3.connect(ODDS_DB_PATH) as odds_con, sqlite3.connect(TEAMS_DB_PATH) as teams_con:
-        player_feature_map = {"exact": {}, "history": {}}
-        player_con = None
-        if include_player_features and PLAYER_DB_PATH.exists():
-            player_con = sqlite3.connect(PLAYER_DB_PATH)
-            player_feature_map = PlayerContext.load_player_feature_lookup(
-                player_con,
-                PLAYER_FEATURES_TABLE,
-                player_feature_cols,
-            )
-
+    canonical_path = canonical_path_for(ODDS_DB_PATH)
+    with sqlite3.connect(ODDS_DB_PATH) as odds_con, sqlite3.connect(TEAMS_DB_PATH) as teams_con, connect_canonical(canonical_path) as canonical_con:
+        player_feature_map = PlayerFeatureEngine.from_database(PLAYER_DB_PATH, config)
+        if include_player_features and player_feature_map.logs.empty:
+            raise ValueError("No player game logs. Run Get_Player_Data --backfill before building player-v2 data.")
+        team_cache = {}
         for season_key in config["create-games"].keys():
             print(season_key)
-            odds_table = select_odds_table(odds_con, season_key)
-            if not odds_table:
-                print(f"Missing odds tables for {season_key}.")
-                continue
-
-            odds_df = pd.read_sql_query(f'SELECT * FROM "{odds_table}"', odds_con)
+            odds_df = load_normalized_games(canonical_con, season_key)
+            if odds_df.empty:
+                odds_table = select_odds_table(odds_con, season_key)
+                if not odds_table:
+                    print(f"Missing odds data for {season_key}.")
+                    continue
+                odds_df = pd.read_sql_query(f'SELECT * FROM "{odds_table}"', odds_con)
             if odds_df.empty:
                 print(f"No odds data for {season_key}.")
                 continue
@@ -199,7 +237,9 @@ def main(output_table=None, include_player_features=True):
 
             for row in odds_df.itertuples(index=False):
                 date_str = normalize_date(row.Date)
-                team_df = fetch_team_table(teams_con, date_str)
+                if date_str not in team_cache:
+                    team_cache[date_str] = fetch_team_table(teams_con, date_str, canonical_con)
+                team_df = team_cache[date_str]
                 if team_df is None:
                     continue
 
@@ -207,6 +247,8 @@ def main(output_table=None, include_player_features=True):
                 if game is None:
                     continue
 
+                game["Date"] = date_str
+                game["Date.1"] = date_str
                 scores.append(row.Points)
                 ou_values.append(row.OU)
                 days_rest_home.append(row.Days_Rest_Home)
@@ -233,8 +275,6 @@ def main(output_table=None, include_player_features=True):
                     )
                 games.append(game)
 
-        if player_con is not None:
-            player_con.close()
 
     if not games:
         print("No game rows produced. Check odds and team tables.")
@@ -260,6 +300,8 @@ def main(output_table=None, include_player_features=True):
             continue
         frame[field] = frame[field].astype(float)
 
+    if include_player_features:
+        print("Player history coverage:", frame[["H_PLR_GAME_COVERAGE", "A_PLR_GAME_COVERAGE"]].mean().to_dict())
     with sqlite3.connect(OUTPUT_DB_PATH) as con:
         frame.to_sql(output_table, con, if_exists="replace", index=False)
 
@@ -276,5 +318,15 @@ if __name__ == "__main__":
         action="store_true",
         help="Disable player/injury feature join and build legacy-style dataset columns only.",
     )
+    parser.add_argument(
+        "--augment-table",
+        action="append",
+        help="Create a <table>_player_v2 copy using player features from the current v2 dataset; repeat for multiple tables.",
+    )
     args = parser.parse_args()
-    main(output_table=args.output_table, include_player_features=not args.no_player_features)
+    if args.augment_table:
+        for table in args.augment_table:
+            output, rows, features = augment_existing_dataset(table)
+            print(f'{table} -> {output}: {rows} rows, {features} player columns')
+    else:
+        main(output_table=args.output_table, include_player_features=not args.no_player_features)

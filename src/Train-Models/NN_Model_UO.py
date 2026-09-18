@@ -15,7 +15,7 @@ from src.Utils import PlayerContext  # noqa: E402
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models"
 
-DEFAULT_DATASET = "dataset_2012-26_player_v1"
+DEFAULT_DATASET = "dataset_2012-26_player_v2"
 TARGET_COLUMN = "OU-Cover"
 DATE_COLUMN = "Date"
 DROP_COLUMNS = [
@@ -49,7 +49,8 @@ def prepare_data(df):
     X["OU"] = ou_values
     feature_columns = list(X.columns)
     X = X.replace([np.inf, -np.inf], np.nan)
-    X = X.fillna(X.median(numeric_only=True)).fillna(0)
+    if X.isna().any().any():
+        raise ValueError("Dataset contains missing features; rebuild the validated player dataset")
     X = X.to_numpy(dtype=float)
     X = tf.keras.utils.normalize(X, axis=1)
     return X, y, feature_columns

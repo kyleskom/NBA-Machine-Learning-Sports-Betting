@@ -39,7 +39,7 @@ def _list_model_candidates(prefix):
 
 
 def _select_best_model(prefix, pattern):
-    candidates = _list_model_candidates(prefix)
+    candidates = [p for p in _list_model_candidates(prefix) if PlayerContext.feature_sidecar_path(p).exists()]
     if not candidates:
         raise FileNotFoundError(f"No model found for prefix {prefix} in {MODEL_DIR}")
 
@@ -70,17 +70,7 @@ def _prepare_nn_data(model, frame, feature_columns, label):
         values = PlayerContext.align_frame_to_columns(frame, feature_columns).values
         return tf.keras.utils.normalize(values, axis=1)
 
-    expected = model.input_shape[-1]
-    values = frame.values.astype(float)
-    if values.shape[1] > expected:
-        print(f"{label}: no feature sidecar found; using first {expected} legacy columns.")
-        values = values[:, :expected]
-    elif values.shape[1] < expected:
-        raise ValueError(
-            f"{label}: live frame has {values.shape[1]} features but model expects {expected}. "
-            "Retrain the model or restore its feature sidecar."
-        )
-    return tf.keras.utils.normalize(values, axis=1)
+    raise ValueError(f"{label}: feature manifest required. Retrain with player-v2 data.")
 
 
 def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
@@ -109,6 +99,10 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
         under_over = int(np.argmax(ou_predictions_array[count]))
         winner_confidence = ml_predictions_array[count]
         un_confidence = ou_predictions_array[count]
+        if under_over == 2:
+            print(f"{home_team} vs {away_team}: PUSH {todays_games_uo[count]}")
+            count += 1
+            continue
         if winner == 1:
             winner_confidence = round(winner_confidence[0][1] * 100, 1)
             if under_over == 0:
@@ -156,9 +150,9 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
                                  'away_color': Fore.GREEN if ev_away > 0 else Fore.RED}
         bankroll_descriptor = ' Fraction of Bankroll: '
         bankroll_fraction_home = bankroll_descriptor + str(
-            kc.calculate_kelly_criterion(home_team_odds[count], ml_predictions_array[count][0][1])) + '%'
+            kc.calculate_kelly_criterion(home_team_odds[count], ml_predictions_array[count][0][1]) if home_team_odds[count] else 0) + '%'
         bankroll_fraction_away = bankroll_descriptor + str(
-            kc.calculate_kelly_criterion(away_team_odds[count], ml_predictions_array[count][0][0])) + '%'
+            kc.calculate_kelly_criterion(away_team_odds[count], ml_predictions_array[count][0][0]) if away_team_odds[count] else 0) + '%'
 
         print(home_team + ' EV: ' + expected_value_colors['home_color'] + str(ev_home) + Style.RESET_ALL + (
             bankroll_fraction_home if kelly_criterion else ''))
