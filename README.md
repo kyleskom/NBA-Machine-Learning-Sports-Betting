@@ -99,5 +99,33 @@ cd src/Process-Data
 python -m Get_Odds_Data --backfill --season 2025-26
 ```
 
+### Days rest
+`Days-Rest-Home` and `Days-Rest-Away` are built during training by
+`Get_Odds_Data`, which records the number of calendar days since a team last
+played. `main.py` used to recompute that with a different definition, so at
+prediction time the feature did not mean what it meant in the training data.
+`src/Utils/days_rest.py` now mirrors the `Get_Odds_Data` definition and
+`main.py` calls it.
+
+The definition is: the number of calendar days between the team's most recent
+game **strictly before** the game day, with no day offset and no clamping, and
+`7` when the team has no earlier game on record. Games on the game day itself
+are ignored, and the value does not depend on the time of day the script is
+run.
+
+Two things to keep in mind if you touch this:
+
+- `Get_Odds_Data` is still where the definition lives, so a change to how rest
+  is computed has to be made in **both** `Get_Odds_Data.append_game_rows` and
+  `days_rest.py` to keep training and prediction in sync.
+  `Tests/test_days_rest.py` asserts the two agree, and fails if only one moves.
+- `src/Process-Data/Add_Days_Rest.py` defines the same column differently
+  (no-history `10`, clamped to `9`). It rewrites the `odds_<season>` tables, and
+  `Create_Games` only reads those when no `odds_<season>_new` table exists, so
+  the effect is conditional. It is not part of the pipeline above, and
+  `dataset_2012-26` was built without it -- it holds raw values above 9 and
+  essentially no 10s, which the tests assert. Running it against the tables a
+  rebuild will read will change the labels out from under the trained models.
+
 ## Contributing
 Contributions are welcome. If you change model behavior or data pipelines, add a note in the README and update any related scripts or docs.

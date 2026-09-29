@@ -1,5 +1,5 @@
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import pandas as pd
 import tensorflow as tf
@@ -8,6 +8,7 @@ from colorama import Fore, Style
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
+from src.Utils.days_rest import days_rest_before
 from src.Utils.tools import (
     create_todays_games_from_odds,
     get_json_data,
@@ -43,33 +44,13 @@ def create_todays_games_data(games, df, odds, schedule_df, today):
             away_team_odds.append(input(away_team + ' odds: '))
 
         # calculate days rest for both teams
-        home_games = schedule_df[
-            (schedule_df['Home Team'] == home_team) | (schedule_df['Away Team'] == home_team)
-        ]
-        away_games = schedule_df[
-            (schedule_df['Home Team'] == away_team) | (schedule_df['Away Team'] == away_team)
-        ]
-        previous_home_games = home_games.loc[
-            home_games['Date'] <= today
-        ].sort_values('Date', ascending=False).head(1)['Date']
-        previous_away_games = away_games.loc[
-            away_games['Date'] <= today
-        ].sort_values('Date', ascending=False).head(1)['Date']
-        if len(previous_home_games) > 0:
-            last_home_date = previous_home_games.iloc[0]
-            home_days_off = timedelta(days=1) + today - last_home_date
-        else:
-            home_days_off = timedelta(days=7)
-        if len(previous_away_games) > 0:
-            last_away_date = previous_away_games.iloc[0]
-            away_days_off = timedelta(days=1) + today - last_away_date
-        else:
-            away_days_off = timedelta(days=7)
+        home_days_off = days_rest_before(schedule_df, home_team, today)
+        away_days_off = days_rest_before(schedule_df, away_team, today)
         home_team_series = df.iloc[team_index_current.get(home_team)]
         away_team_series = df.iloc[team_index_current.get(away_team)]
         stats = pd.concat([home_team_series, away_team_series])
-        stats['Days-Rest-Home'] = home_days_off.days
-        stats['Days-Rest-Away'] = away_days_off.days
+        stats['Days-Rest-Home'] = home_days_off
+        stats['Days-Rest-Away'] = away_days_off
         match_data.append(stats)
 
     games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
