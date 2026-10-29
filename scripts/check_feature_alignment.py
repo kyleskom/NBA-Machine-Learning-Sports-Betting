@@ -1,11 +1,12 @@
 import argparse
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import sys
 
 import numpy as np
 import pandas as pd
+import toml
 
 try:
     import xgboost as xgb
@@ -20,6 +21,8 @@ except ImportError:
 BASE_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BASE_DIR))
 from src.Utils import PlayerContext  # noqa: E402
+from src.Predict.model_selection import selected_model_path  # noqa: E402
+from src.Utils.season import live_team_stats_url, runtime_season, scores_url  # noqa: E402
 
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models"
@@ -70,15 +73,16 @@ def load_frame_columns(path):
 
 
 def load_live_frames():
-    sys.path.insert(0, str(BASE_DIR))
-    from main import create_todays_games_data, load_schedule, DATA_URL, TODAYS_GAMES_URL
+    from main import create_todays_games_data, load_schedule
     from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
-    stats_json = get_json_data(DATA_URL)
+    config = toml.load(BASE_DIR / "config.toml")
+    today = datetime.now()
+    season = runtime_season(config, today)
+    stats_json = get_json_data(live_team_stats_url(config, season, today.date() - timedelta(days=1)))
     df = to_data_frame(stats_json)
-    schedule_df = load_schedule()
-    today = datetime.today()
-    games = create_todays_games(get_todays_games_json(TODAYS_GAMES_URL))
+    schedule_df = load_schedule(season)
+    games = create_todays_games(get_todays_games_json(scores_url(season)))
     odds = {
         f"{home}:{away}": {
             "under_over_odds": 0.0,
@@ -185,8 +189,9 @@ def main():
     describe_model_input(nn_ml_model, "NN ML")
     describe_model_input(nn_ou_model, "NN OU")
 
-    xgb_ml_model = Path(args.xgb_ml_model) if args.xgb_ml_model else find_latest_model("XGBoost_*_ML*.json")
-    xgb_ou_model = Path(args.xgb_uo_model) if args.xgb_uo_model else find_latest_model("XGBoost_*_UO*.json")
+    xgb_dir = MODEL_DIR / "XGBoost_Models"
+    xgb_ml_model = Path(args.xgb_ml_model) if args.xgb_ml_model else selected_model_path("ML", xgb_dir)
+    xgb_ou_model = Path(args.xgb_uo_model) if args.xgb_uo_model else selected_model_path("UO", xgb_dir)
     describe_xgb_input(xgb_ml_model, "XGB ML")
     describe_xgb_input(xgb_ou_model, "XGB OU")
 

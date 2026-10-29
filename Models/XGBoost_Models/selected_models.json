@@ -1,0 +1,27 @@
+{
+  "ML": {
+    "kind": "ML",
+    "filename": "XGBoost_68.3%_ML_md12_eta0p007_sub0p796_col0p749_cbl0p760_cbn0p721_mcw22_g7p529_mds12_mb241_l0p746_a9p788_nb2745.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.6833802816901409,
+    "test_log_loss": 0.6021091765238152,
+    "recorded_at": "2026-09-20T22:48:26.765532+00:00",
+    "promoted": true
+  },
+  "UO": {
+    "kind": "UO",
+    "filename": "XGBoost_49.2%_UO_md3_eta0p040_sub0p742_col0p609_cbl0p692_cbn0p626_mcw13_g3p897_mds2_mb510_l3p589_a0p334_nb775.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.49234303215926495,
+    "test_log_loss": 0.7063723406687539,
+    "recorded_at": "2026-09-21T20:13:42.481786+00:00",
+    "evaluation_key": {
+      "dataset_sha256": "07b153fb056c00460a823802745efa041a492b4144a641d1a52e25436d1188ec",
+      "final_start": "2025-10-01",
+      "final_end": "2026-06-13",
+      "calibration": "sigmoid"
+    },
+    "experiment_report": "XGBoost_49.2%_UO_md3_eta0p040_sub0p742_col0p609_cbl0p692_cbn0p626_mcw13_g3p897_mds2_mb510_l3p589_a0p334_nb775_experiment.json",
+    "promoted": true
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "dataset": "huggingface:minmaxxxer/nba-odds-2026-27",
+  "source_url": "https://huggingface.co/datasets/minmaxxxer/nba-odds-2026-27/resolve/main/nba_2026_27_odds.csv",
+  "license": "CC-BY-4.0",
+  "accessed_at": "2026-10-26T17:16:05.218541+00:00",
+  "rows_imported": 43,
+  "fields_used": [
+    "date_et",
+    "home_team",
+    "away_team",
+    "home_score",
+    "away_score",
+    "close_spread_home",
+    "close_total"
+  ],
+  "odds_note": "Consensus closing total/spread only; no individual sportsbook payout prices were supplied.",
+  "attribution": "minmaxxxer, NBA 2026-27 Odds and Results, CC BY 4.0"
+}

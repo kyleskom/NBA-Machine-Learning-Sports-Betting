@@ -1,0 +1,124 @@
+[
+  {
+    "kind": "ML",
+    "filename": "XGBoost_67.7%_ML_md4_eta0p041_sub0p832_col0p715_cbl0p775_cbn0p722_mcw15_g2p473_mds4_mb542_l2p703_a0p221_nb1410.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.6766197183098591,
+    "test_log_loss": 0.6023503045248716,
+    "recorded_at": "2026-09-20T22:38:02.829008+00:00",
+    "promoted": true
+  },
+  {
+    "kind": "UO",
+    "filename": "XGBoost_50.2%_UO_md4_eta0p040_sub0p701_col0p602_cbl0p799_cbn0p717_mcw13_g4p692_mds2_mb302_l2p103_a0p544_nb1117.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.5019718309859155,
+    "test_log_loss": 0.7166131451034822,
+    "recorded_at": "2026-09-20T22:38:50.300863+00:00",
+    "promoted": true
+  },
+  {
+    "kind": "ML",
+    "filename": "XGBoost_66.6%_ML_md6_eta0p143_sub0p804_col0p894_cbl0p666_cbn0p536_mcw3_g0p957_mds7_mb897_l1p823_a1p077_nb2932.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.6664788732394367,
+    "test_log_loss": 0.6095108710158393,
+    "recorded_at": "2026-09-20T22:45:27.725742+00:00",
+    "promoted": false
+  },
+  {
+    "kind": "UO",
+    "filename": "XGBoost_49.8%_UO_md7_eta0p071_sub0p915_col0p803_cbl0p411_cbn0p984_mcw14_g11p417_mds9_mb833_l0p069_a0p063_nb1601.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.49802816901408453,
+    "test_log_loss": 0.7160312816780713,
+    "recorded_at": "2026-09-20T22:46:58.455602+00:00",
+    "promoted": true
+  },
+  {
+    "kind": "ML",
+    "filename": "XGBoost_69.1%_ML_md3_eta0p094_sub0p609_col0p426_cbl0p984_cbn0p758_mcw18_g11p854_mds12_mb944_l2p633_a0p006_nb1868.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.6912676056338029,
+    "test_log_loss": 0.6054152224636629,
+    "recorded_at": "2026-09-20T22:48:06.805296+00:00",
+    "promoted": false
+  },
+  {
+    "kind": "ML",
+    "filename": "XGBoost_68.3%_ML_md12_eta0p007_sub0p796_col0p749_cbl0p760_cbn0p721_mcw22_g7p529_mds12_mb241_l0p746_a9p788_nb2745.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.6833802816901409,
+    "test_log_loss": 0.6021091765238152,
+    "recorded_at": "2026-09-20T22:48:26.765532+00:00",
+    "promoted": true
+  },
+  {
+    "kind": "UO",
+    "filename": "XGBoost_49.6%_UO_md8_eta0p149_sub0p464_col0p673_cbl0p688_cbn0p680_mcw6_g6p550_mds3_mb1020_l0p708_a0p082_nb2781.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.49577464788732395,
+    "test_log_loss": 0.7160087278370338,
+    "recorded_at": "2026-09-21T01:34:33.751048+00:00",
+    "promoted": true
+  },
+  {
+    "kind": "ML",
+    "filename": "XGBoost_66.4%_ML_md12_eta0p003_sub0p568_col0p751_cbl0p517_cbn0p808_mcw1_g1p487_mds2_mb500_l0p469_a0p005_nb883.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.663661971830986,
+    "test_log_loss": 0.6071327876535237,
+    "recorded_at": "2026-09-21T01:37:11.394916+00:00",
+    "promoted": false
+  },
+  {
+    "kind": "ML",
+    "filename": "XGBoost_66.4%_ML_md12_eta0p003_sub0p568_col0p751_cbl0p517_cbn0p808_mcw1_g1p487_mds2_mb500_l0p469_a0p005_nb883.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.663661971830986,
+    "test_log_loss": 0.6071327876535237,
+    "recorded_at": "2026-09-21T01:39:24.697047+00:00",
+    "promoted": false
+  },
+  {
+    "kind": "ML",
+    "filename": "XGBoost_66.4%_ML_md12_eta0p003_sub0p568_col0p751_cbl0p517_cbn0p808_mcw1_g1p487_mds2_mb500_l0p469_a0p005_nb883.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.663661971830986,
+    "test_log_loss": 0.6071327876535237,
+    "recorded_at": "2026-09-21T01:40:32.810684+00:00",
+    "promoted": false
+  },
+  {
+    "kind": "ML",
+    "filename": "XGBoost_68.6%_ML_md4_eta0p053_sub0p824_col0p763_cbl0p705_cbn0p652_mcw10_g0p511_mds3_mb696_l3p551_a0p637_nb2125.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.6860643185298622,
+    "test_log_loss": 0.6055408017184672,
+    "recorded_at": "2026-09-21T20:09:41.432316+00:00",
+    "evaluation_key": {
+      "dataset_sha256": "5ac5dbdce74809ad3891cedcc1d5e685cc308112ceecc22abf37d261f395756c",
+      "final_start": "2025-10-01",
+      "final_end": "2026-06-13",
+      "calibration": "sigmoid"
+    },
+    "experiment_report": "XGBoost_68.6%_ML_md4_eta0p053_sub0p824_col0p763_cbl0p705_cbn0p652_mcw10_g0p511_mds3_mb696_l3p551_a0p637_nb2125_experiment.json",
+    "promoted": false
+  },
+  {
+    "kind": "UO",
+    "filename": "XGBoost_49.2%_UO_md3_eta0p040_sub0p742_col0p609_cbl0p692_cbn0p626_mcw13_g3p897_mds2_mb510_l3p589_a0p334_nb775.json",
+    "dataset": "dataset_2012-26_player_v2",
+    "test_accuracy": 0.49234303215926495,
+    "test_log_loss": 0.7063723406687539,
+    "recorded_at": "2026-09-21T20:13:42.481786+00:00",
+    "evaluation_key": {
+      "dataset_sha256": "07b153fb056c00460a823802745efa041a492b4144a641d1a52e25436d1188ec",
+      "final_start": "2025-10-01",
+      "final_end": "2026-06-13",
+      "calibration": "sigmoid"
+    },
+    "experiment_report": "XGBoost_49.2%_UO_md3_eta0p040_sub0p742_col0p609_cbl0p692_cbn0p626_mcw13_g3p897_mds2_mb510_l3p589_a0p334_nb775_experiment.json",
+    "promoted": true
+  }
+]

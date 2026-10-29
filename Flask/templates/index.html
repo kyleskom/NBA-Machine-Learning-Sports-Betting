@@ -169,12 +169,17 @@
                                 <div class="book-head">
                                     <span class="book-name">{{ sportsbook }}</span>
                                     {% if sbgame %}
-                                        {% if sbgame.ou_pick %}
+                                        {% if sbgame.status == 'PASS' %}
+                                            <span class="ou-chip under">PASS</span>
+                                        {% elif sbgame.ou_pick %}
                                             <span class="ou-chip {% if sbgame.ou_pick == 'UNDER' %}under{% endif %}">{{ sbgame.ou_pick }} {{ sbgame.ou_value }}</span>
                                         {% endif %}
                                     {% endif %}
                                 </div>
                                 {% if sbgame %}
+                                    {% if sbgame.status == 'PASS' %}
+                                        <div class="empty-book">{{ sbgame.reasons|join('; ') }}</div>
+                                    {% else %}
                                     {% set away_conf = sbgame.away_confidence|default('0')|float %}
                                     {% set home_conf = sbgame.home_confidence|default('0')|float %}
                                     {% set away_ev = sbgame.away_team_ev|default('0')|float %}
@@ -223,6 +228,7 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {% endif %}
                                 {% else %}
                                     <div class="empty-book">No odds for this matchup.</div>
                                 {% endif %}

@@ -1,0 +1,39 @@
+{
+  "calibration": "sigmoid",
+  "dataset": {
+    "dataset": "dataset_2012-26_player_v2",
+    "date_end": "2026-06-13",
+    "date_start": "2012-11-02",
+    "feature_count": 197,
+    "rows": 17749,
+    "sha256": "07b153fb056c00460a823802745efa041a492b4144a641d1a52e25436d1188ec"
+  },
+  "final_diagnostics": {
+    "accuracy": 0.49234303215926495,
+    "log_loss": 0.7063723406687539,
+    "rows": 1306
+  },
+  "final_split": {
+    "final_dates": 209,
+    "final_end": "2026-06-13",
+    "final_rows": 1306,
+    "final_start": "2025-10-01",
+    "method": "fixed_date",
+    "train_dates": 2609,
+    "train_end": "2025-06-22",
+    "train_rows": 16443,
+    "train_start": "2012-11-02"
+  },
+  "kind": "UO",
+  "market_and_backtest": {
+    "available": false,
+    "reason": "Totals payout prices and quote timestamps are not stored yet."
+  },
+  "sealed_final_note": "Do not use this final period to tune future candidates. Change it only when opening a new evaluation cycle.",
+  "selection_cv_log_loss": 0.7424618925808647,
+  "training": {
+    "calibration_fraction": 0.1,
+    "push_weight": 0.25,
+    "recency_half_life_days": 730
+  }
+}

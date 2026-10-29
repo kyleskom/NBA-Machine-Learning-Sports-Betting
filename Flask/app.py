@@ -1,8 +1,23 @@
 from datetime import date
-import json
 from flask import Flask, render_template,jsonify
 from functools import lru_cache
-import subprocess, requests, re, time
+import os
+from pathlib import Path
+import sys
+import requests
+import time
+import toml
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(BASE_DIR))
+from main import predict_board
+from src.Predict.service import template_games
+from src.Utils.season import runtime_season
+
+
+RAPIDAPI_BASE_URL = "https://tank01-fantasy-stats.p.rapidapi.com"
+RAPIDAPI_HOST = "tank01-fantasy-stats.p.rapidapi.com"
+REQUEST_TIMEOUT_SECONDS = 15
 
 
 @lru_cache()
@@ -21,34 +36,7 @@ def fetch_betmgm(ttl_hash=None):
     return fetch_game_data(sportsbook="betmgm")
 
 def fetch_game_data(sportsbook="fanduel"):
-    cmd = ["python", "main.py", "-xgb", f"-odds={sportsbook}"]
-    stdout = subprocess.check_output(cmd, cwd="../").decode()
-    data_re = re.compile(r'\n(?P<home_team>[\w ]+)(\((?P<home_confidence>[\d+\.]+)%\))? vs (?P<away_team>[\w ]+)(\((?P<away_confidence>[\d+\.]+)%\))?: (?P<ou_pick>OVER|UNDER) (?P<ou_value>[\d+\.]+) (\((?P<ou_confidence>[\d+\.]+)%\))?', re.MULTILINE)
-    ev_re = re.compile(r'(?P<team>[\w ]+) EV: (?P<ev>[-\d+\.]+)', re.MULTILINE)
-    odds_re = re.compile(r'(?P<away_team>[\w ]+) \((?P<away_team_odds>-?\d+)\) @ (?P<home_team>[\w ]+) \((?P<home_team_odds>-?\d+)\)', re.MULTILINE)
-    games = {}
-    for match in data_re.finditer(stdout):
-        game_dict = {'away_team': match.group('away_team').strip(),
-                     'home_team': match.group('home_team').strip(),
-                     'away_confidence': match.group('away_confidence'),
-                     'home_confidence': match.group('home_confidence'),
-                     'ou_pick': match.group('ou_pick'),
-                     'ou_value': match.group('ou_value'),
-                     'ou_confidence': match.group('ou_confidence')}
-        for ev_match in ev_re.finditer(stdout):
-            if ev_match.group('team') == game_dict['away_team']:
-                game_dict['away_team_ev'] = ev_match.group('ev')
-            if ev_match.group('team') == game_dict['home_team']:
-                game_dict['home_team_ev'] = ev_match.group('ev')
-        for odds_match in odds_re.finditer(stdout):
-            if odds_match.group('away_team') == game_dict['away_team']:
-                game_dict['away_team_odds'] = odds_match.group('away_team_odds')
-            if odds_match.group('home_team') == game_dict['home_team']:
-                game_dict['home_team_odds'] = odds_match.group('home_team_odds')
-
-        print(json.dumps(game_dict, sort_keys=True, indent=4))
-        games[f"{game_dict['away_team']}:{game_dict['home_team']}"] = game_dict
-    return games
+    return template_games(predict_board(sportsbook))
 
 
 def get_ttl_hash(seconds=600):
@@ -69,67 +57,58 @@ def index():
     return render_template('index.html', today=date.today(), data={"fanduel": fanduel, "draftkings": draftkings, "betmgm": betmgm})
 
 
+@app.route('/api/predictions/<sportsbook>')
+def api_predictions(sportsbook):
+    return jsonify(predict_board(sportsbook))
+
+
+
+
+def rapidapi_headers():
+    key = os.environ.get("RAPIDAPI_KEY")
+    if not key:
+        return None
+    return {"x-rapidapi-key": key, "x-rapidapi-host": RAPIDAPI_HOST}
+
+
+def current_season_start_year():
+    config = toml.load(BASE_DIR / "config.toml")
+    return runtime_season(config).split("-", 1)[0]
+
+
+def rapidapi_get(path, params):
+    headers = rapidapi_headers()
+    if headers is None:
+        return None, "RAPIDAPI_KEY is not configured"
+    try:
+        response = requests.get(f"{RAPIDAPI_BASE_URL}/{path}", headers=headers, params=params,
+                                timeout=REQUEST_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        return response.json(), None
+    except (requests.RequestException, ValueError) as exc:
+        return None, str(exc)
 
 
 def get_player_data(team_abv):
-    """Fetch player data for a given team abbreviation"""
-    url = "https://tank01-fantasy-stats.p.rapidapi.com/getNBATeamRoster"
-    headers = {
-        "x-rapidapi-key": "a0f0cd0b5cmshfef96ed37a9cda6p1f67bajsnfcdd16f37df8",
-        "x-rapidapi-host": "tank01-fantasy-stats.p.rapidapi.com"
-    }
-    querystring = {"teamAbv": team_abv}
-    
-    try:
-        response = requests.get(url, headers=headers, params=querystring)
-        data = response.json()
-        
-        if data.get('statusCode') == 200:
-            formatted_players = []
-            roster = data.get('body', {}).get('roster', [])
-            
-            for player in roster:
-                # Format injury status
-                injury_status = "Healthy"
-                if player.get('injury'):
-                    injury_info = player['injury']
-                    if injury_info.get('designation'):
-                        injury_status = injury_info['designation']
-                        if injury_info.get('description'):
-                            injury_status += f" - {injury_info['description']}"
-                
-                formatted_player = {
-                    'name': player.get('longName'),
-                    'shortName': player.get('shortName'),
-                    'headshot': player.get('nbaComHeadshot'),
-                    'injury': injury_status,
-                    'position': player.get('pos'),
-                    'height': player.get('height'),
-                    'weight': player.get('weight'),
-                    'college': player.get('college'),
-                    'experience': player.get('exp'),
-                    'jerseyNum': player.get('jerseyNum'),
-                    'playerId': player.get('playerID'),
-                    'birthDate': player.get('bDay')
-                }
-                formatted_players.append(formatted_player)
-            
-            return {
-                'success': True,
-                'players': formatted_players
-            }
-        
-        return {
-            'success': False,
-            'error': 'Failed to fetch team data'
-        }
-        
-    except Exception as e:
-        print(f"Error in get_player_data: {str(e)}")
-        return {
-            'success': False,
-            'error': str(e)
-        }
+    """Fetch and normalize a team roster for the roster modal."""
+    data, error = rapidapi_get("getNBATeamRoster", {"teamAbv": team_abv})
+    if error or data.get("statusCode") != 200:
+        return {"success": False, "error": error or "Failed to fetch team data"}
+    players = []
+    for player in data.get("body", {}).get("roster", []):
+        injury = player.get("injury") or {}
+        injury_status = injury.get("designation") or "Healthy"
+        if injury_status != "Healthy" and injury.get("description"):
+            injury_status += f" - {injury['description']}"
+        players.append({
+            "name": player.get("longName"), "shortName": player.get("shortName"),
+            "headshot": player.get("nbaComHeadshot"), "injury": injury_status,
+            "position": player.get("pos"), "height": player.get("height"),
+            "weight": player.get("weight"), "college": player.get("college"),
+            "experience": player.get("exp"), "jerseyNum": player.get("jerseyNum"),
+            "playerId": player.get("playerID"), "birthDate": player.get("bDay"),
+        })
+    return {"success": True, "players": players}
 
 
 @app.route("/team-data/<team_name>")
@@ -151,72 +130,30 @@ def team_data(team_name):
     
 @app.route("/player-stats/<player_id>")
 def player_stats(player_id):
-    headers = {
-        "x-rapidapi-key": "a0f0cd0b5cmshfef96ed37a9cda6p1f67bajsnfcdd16f37df8",
-        "x-rapidapi-host": "tank01-fantasy-stats.p.rapidapi.com"
-    }
-    
-    # First get player info
-    info_url = "https://tank01-fantasy-stats.p.rapidapi.com/getNBAPlayerInfo"
-    info_querystring = {"playerID": player_id}
-    
-    # Then get game stats
-    games_url = "https://tank01-fantasy-stats.p.rapidapi.com/getNBAGamesForPlayer"
-    games_querystring = {
-        "playerID": player_id,
-        "season": "2024",
-    }
-    
-    try:
-        # Get both responses
-        info_response = requests.get(info_url, headers=headers, params=info_querystring)
-        games_response = requests.get(games_url, headers=headers, params=games_querystring)
-        
-        info_data = info_response.json()
-        games_data = games_response.json()
-        
-        if info_data.get('statusCode') == 200 and games_data.get('statusCode') == 200:
-            # Process games data
-            games = list(games_data['body'].values())
-            games.sort(key=lambda x: x['gameID'], reverse=True)
-            recent_games = games[:10]
-            
-            # Get player info
-            player_info = info_data['body']
-            
-            # Format injury info
-            injury_status = "Healthy"
-            if player_info.get('injury'):
-                injury_info = player_info['injury']
-                injury_status = injury_info
-
-            # Combine and return all data
-            return jsonify({
-                'success': True,
-                'games': recent_games,
-                'player': {
-                    'name': player_info.get('longName'),
-                    'position': player_info.get('pos'),
-                    'number': player_info.get('jerseyNum'),
-                    'height': player_info.get('height'),
-                    'weight': player_info.get('weight'),
-                    'team': player_info.get('team'),
-                    'college': player_info.get('college'),
-                    'experience': player_info.get('exp'),
-                    'headshot': player_info.get('nbaComHeadshot'),
-                    'injury': injury_status
-                }
-            })
-            
+    info_data, info_error = rapidapi_get("getNBAPlayerInfo", {"playerID": player_id})
+    games_data, games_error = rapidapi_get("getNBAGamesForPlayer", {
+        "playerID": player_id, "season": current_season_start_year(),
+    })
+    if info_error or games_error:
+        return jsonify({"success": False, "error": info_error or games_error})
+    if info_data.get('statusCode') == 200 and games_data.get('statusCode') == 200:
+        games = list(games_data['body'].values())
+        games.sort(key=lambda x: x['gameID'], reverse=True)
+        recent_games = games[:10]
+        player_info = info_data['body']
+        injury_status = player_info.get('injury') or "Healthy"
         return jsonify({
-            'success': False,
-            'error': 'Failed to fetch player data'
+            'success': True,
+            'games': recent_games,
+            'player': {
+                'name': player_info.get('longName'), 'position': player_info.get('pos'),
+                'number': player_info.get('jerseyNum'), 'height': player_info.get('height'),
+                'weight': player_info.get('weight'), 'team': player_info.get('team'),
+                'college': player_info.get('college'), 'experience': player_info.get('exp'),
+                'headshot': player_info.get('nbaComHeadshot'), 'injury': injury_status,
+            },
         })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        })
+    return jsonify({'success': False, 'error': 'Failed to fetch player data'})
 
         
 team_abbreviations = {

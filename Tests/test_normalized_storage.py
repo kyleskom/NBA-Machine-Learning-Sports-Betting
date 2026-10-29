@@ -1,6 +1,7 @@
 import sqlite3
 import tempfile
 import unittest
+import importlib.util
 from pathlib import Path
 
 import pandas as pd
@@ -9,6 +10,11 @@ from src.Players.identity import team_id
 from src.Storage.normalized import (connect, load_games, load_latest_team_snapshot,
                                     migrate_legacy_odds_data, migrate_legacy_team_data,
                                     save_odds_rows, save_team_snapshot)
+
+CREATE_GAMES_PATH = Path(__file__).resolve().parents[1] / 'src' / 'Process-Data' / 'Create_Games.py'
+CREATE_GAMES_SPEC = importlib.util.spec_from_file_location('create_games_normalized', CREATE_GAMES_PATH)
+create_games = importlib.util.module_from_spec(CREATE_GAMES_SPEC)
+CREATE_GAMES_SPEC.loader.exec_module(create_games)
 
 
 class TestNormalizedStorage(unittest.TestCase):
@@ -50,3 +56,16 @@ class TestNormalizedStorage(unittest.TestCase):
                 self.assertEqual(migrate_legacy_team_data(legacy, canonical), 1)
                 self.assertEqual(migrate_legacy_odds_data(legacy, canonical), 1)
                 self.assertEqual(load_games(canonical, '2024-25').iloc[0].OU, 225)
+
+    def test_dataset_builder_prefers_normalized_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            canonical_path = Path(directory) / 'canonical.sqlite'
+            with connect(canonical_path) as canonical, sqlite3.connect(':memory:') as legacy:
+                save_team_snapshot(canonical, pd.DataFrame([
+                    {'TEAM_ID': team_id('ATL'), 'TEAM_NAME': 'Atlanta Hawks', 'W': 1},
+                ]), '2025-01-02', '2024-25')
+                legacy.execute('CREATE TABLE "2025-01-02" (TEAM_ID INTEGER, TEAM_NAME TEXT, W INTEGER)')
+                legacy.execute('INSERT INTO "2025-01-02" VALUES (?,?,?)',
+                               (team_id('ATL'), 'Atlanta Hawks', 99))
+                snapshot = create_games.fetch_team_table(legacy, '2025-01-03', canonical)
+            self.assertEqual(snapshot.iloc[0].W, 1)

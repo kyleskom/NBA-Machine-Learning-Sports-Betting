@@ -14,4 +14,9 @@ class BoosterWrapper(ClassifierMixin, BaseEstimator):
         return self
 
     def predict_proba(self,X):
-        return self.booster.predict(xgb.DMatrix(X))
+        probabilities = self.booster.predict(xgb.DMatrix(X))
+        # binary:logistic returns a one-dimensional positive-class probability,
+        # while sklearn calibration consistently expects one column per class.
+        if self.num_class == 2 and probabilities.ndim == 1:
+            return np.column_stack((1 - probabilities, probabilities))
+        return probabilities

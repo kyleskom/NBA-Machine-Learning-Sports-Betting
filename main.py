@@ -14,8 +14,11 @@ from colorama import Fore, Style
 
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 from src.Predict import NN_Runner, XGBoost_Runner
+from src.Predict.service import response as prediction_response, xgboost_board
+from src.Storage.normalized import connect as connect_canonical, load_games
 from src.Utils.Dictionaries import team_index_current
 from src.Utils import PlayerContext
+from src.Utils.season import live_team_stats_url, runtime_season, schedule_path, scores_url
 from src.Utils.tools import (
     create_todays_games_from_odds,
     get_json_data,
@@ -24,9 +27,6 @@ from src.Utils.tools import (
     create_todays_games,
 )
 
-TODAYS_GAMES_URL = "https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2025/scores/00_todays_scores.json"
-DATA_URL = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom=&DateTo=&Division=&GameScope=&GameSegment=&Height=&ISTRound=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=2025-26&SeasonSegment=&SeasonType=Regular%20Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision="
-SCHEDULE_PATH = "Data/nba-2025-UTC.csv"
 CONFIG_PATH = Path(__file__).resolve().parent / "config.toml"
 
 
@@ -130,13 +130,25 @@ def create_todays_games_data(games, df, odds, schedule_df, today, config=None, i
     return data, todays_games_uo, frame_ml, home_team_odds, away_team_odds
 
 
-def load_schedule():
-    frame = pd.read_csv(Path(__file__).resolve().parent / SCHEDULE_PATH)
-    frame['Date'] = pd.to_datetime(frame['Date'], format='%d/%m/%Y %H:%M', utc=True)
-    return frame
+def load_schedule(season):
+    """Load the saved season schedule, falling back to canonical completed games."""
+    path = schedule_path(season)
+    if path.exists():
+        frame = pd.read_csv(path)
+        frame['Date'] = pd.to_datetime(frame['Date'], format='%d/%m/%Y %H:%M', utc=True)
+        return frame
+    with connect_canonical() as con:
+        games = load_games(con, season)
+    if games.empty:
+        return pd.DataFrame(columns=['Home Team', 'Away Team', 'Date'])
+    return pd.DataFrame({
+        'Home Team': games['Home'],
+        'Away Team': games['Away'],
+        'Date': pd.to_datetime(games['Date'], utc=True),
+    })
 
 
-def resolve_games(odds, sportsbook):
+def resolve_games(odds, sportsbook, verbose=True, season=None):
     if odds:
         games = create_todays_games_from_odds(odds)
         if len(games) == 0:
@@ -151,17 +163,24 @@ def resolve_games(odds, sportsbook):
             )
             print(Style.RESET_ALL)
             return games, None
-        print(f"------------------{sportsbook} odds data------------------")
-        for game_key in odds.keys():
-            home_team, away_team = game_key.split(":")
-            print(
-                f"{away_team} ({odds[game_key][away_team]['money_line_odds']}) @ "
-                f"{home_team} ({odds[game_key][home_team]['money_line_odds']})"
-            )
+        if verbose:
+            print(f"------------------{sportsbook} odds data------------------")
+            for game_key in odds.keys():
+                home_team, away_team = game_key.split(":")
+                print(
+                    f"{away_team} ({odds[game_key][away_team]['money_line_odds']}) @ "
+                    f"{home_team} ({odds[game_key][home_team]['money_line_odds']})"
+                )
         return games, odds
 
-    games_json = get_todays_games_json(TODAYS_GAMES_URL)
-    return create_todays_games(games_json), None
+    if season is None:
+        season = runtime_season(toml.load(CONFIG_PATH))
+    games_json = get_todays_games_json(scores_url(season))
+    games = create_todays_games(games_json)
+    if not games:
+        print('No NBA games available for today.')
+        return None, None
+    return games, None
 
 
 def run_models(data, normalized_data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args):
@@ -171,6 +190,7 @@ def run_models(data, normalized_data, todays_games_uo, frame_ml, games, home_tea
             data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, args.kc
         )
         print("-------------------------------------------------------")
+
     if args.nn:
         print("------------Neural Network Model Predictions-----------")
         NN_Runner.nn_runner(
@@ -179,25 +199,68 @@ def run_models(data, normalized_data, todays_games_uo, frame_ml, games, home_tea
         print("-------------------------------------------------------")
 
 
+def predict_board(sportsbook='fanduel', kelly=False):
+    """Build a structured XGBoost board with READY/PASS status for each game."""
+    config = toml.load(CONFIG_PATH)
+    today = datetime.now(ZoneInfo("America/New_York"))
+    season = runtime_season(config, today)
+    odds = SbrOddsProvider(sportsbook=sportsbook).get_odds()
+    games, odds = resolve_games(odds, sportsbook, verbose=False, season=season)
+    if games is None or odds is None:
+        return prediction_response([], sportsbook, {'error': 'No usable odds were returned'})
+    with connect_players() as con:
+        reports = refresh_reports(con, config, today.date().isoformat())
+    parts = urlsplit(live_team_stats_url(config, season, today.date() - timedelta(days=1)))
+    query = parse_qs(parts.query, keep_blank_values=True)
+    query['DateTo'] = [(today.date() - timedelta(days=1)).strftime('%m/%d/%Y')]
+    team_stats = to_data_frame(get_json_data(urlunsplit((parts.scheme, parts.netloc, parts.path,
+                                                         urlencode(query, doseq=True), parts.fragment))))
+    data, totals, frame, home_odds, away_odds = create_todays_games_data(
+        games, team_stats, odds, load_schedule(season), today, config=config)
+    if data is None:
+        return prediction_response([], sportsbook, reports)
+    board = xgboost_board(data, totals, frame, games, home_odds, away_odds, config, kelly)
+    return prediction_response(board, sportsbook, reports)
+
+
+def print_board(result):
+    print('Player reports:', result['report_refresh'])
+    for game in result['games']:
+        matchup = f"{game['away_team']} @ {game['home_team']}"
+        if game['status'] == 'PASS':
+            print(f"PASS {matchup}: {'; '.join(game['reasons'])}")
+            continue
+        moneyline, total = game['moneyline'], game['total']
+        confidence = max(moneyline['home_probability'], moneyline['away_probability']) * 100
+        print(f"{matchup}: {moneyline['pick']} ({confidence:.1f}%), {total['pick']} {total['line']} ({total['probability'] * 100:.1f}%)")
+
+
 def main(args):
+    if args.A:
+        args.xgb = True
+        args.nn = True
+    if args.xgb and not args.nn:
+        print_board(predict_board(args.odds or 'fanduel', args.kc))
+        return
+    config = toml.load(CONFIG_PATH)
+    today = datetime.now(ZoneInfo("America/New_York"))
+    season = runtime_season(config, today)
     odds = None
     if args.odds:
         odds = SbrOddsProvider(sportsbook=args.odds).get_odds()
-    games, odds = resolve_games(odds, args.odds)
+    games, odds = resolve_games(odds, args.odds, season=season)
     if games is None:
         return
 
-    today = datetime.now(ZoneInfo("America/New_York"))
-    config = toml.load(CONFIG_PATH)
     with connect_players() as con:
         print("Player reports:", refresh_reports(con, config, today.date().isoformat()))
     # Match training: exclude all current-day team results.
-    parts = urlsplit(DATA_URL)
+    parts = urlsplit(live_team_stats_url(config, season, today.date() - timedelta(days=1)))
     query = parse_qs(parts.query, keep_blank_values=True)
     query["DateTo"] = [(today.date()-timedelta(days=1)).strftime("%m/%d/%Y")]
     stats_json = get_json_data(urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query, doseq=True), parts.fragment)))
     df = to_data_frame(stats_json)
-    schedule_df = load_schedule()
+    schedule_df = load_schedule(season)
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = create_todays_games_data(
         games, df, odds, schedule_df, today, config=config
     )
@@ -217,10 +280,6 @@ def main(args):
     if data is None:
         print("No valid games found to predict.")
         return
-
-    if args.A:
-        args.xgb = True
-        args.nn = True
 
     normalized_data = tf.keras.utils.normalize(data, axis=1) if args.nn else None
     run_models(

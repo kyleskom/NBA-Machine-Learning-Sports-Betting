@@ -54,6 +54,7 @@ TEAM_INDEX_BY_SEASON = {
     "2023-24": team_index_current,
     "2024-25": team_index_current,
     "2025-26": team_index_current,
+    "2026-27": team_index_current,
 }
 
 DEFAULT_PLAYER_WINDOWS = [7, 14, 30]
@@ -220,9 +221,12 @@ def main(output_table=None, include_player_features=True):
         if include_player_features and player_feature_map.logs.empty:
             raise ValueError("No player game logs. Run Get_Player_Data --backfill before building player-v2 data.")
         team_cache = {}
-        for season_key in config["create-games"].keys():
+        for season_key, season_settings in config["create-games"].items():
             print(season_key)
-            odds_df = load_normalized_games(canonical_con, season_key)
+            odds_sportsbook = season_settings.get("odds_sportsbook", "fanduel")
+            odds_df = load_normalized_games(
+                canonical_con, season_key, sportsbook=odds_sportsbook
+            )
             if odds_df.empty:
                 odds_table = select_odds_table(odds_con, season_key)
                 if not odds_table:
