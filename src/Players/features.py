@@ -183,7 +183,8 @@ class PlayerFeatureEngine:
             # A different provider ID is safe when its team-scoped name resolves.
             # A new or unresolved player can be retained as a provisional
             # rotation member, but cannot make roster coverage confirmed.
-            safe=bool(roster) and all(player is not None for player in resolved)
+            resolved_ids = {player['PLAYER_ID'] for player in resolved if player is not None}
+            safe = len(resolved_ids) > 5 and all(player is not None for player in resolved)
             if safe:
                 roster_ids={player['PLAYER_ID'] for player in resolved if player is not None}
                 rotation = [r for r in rotation if r['PLAYER_ID'] in roster_ids]
@@ -261,7 +262,7 @@ class PlayerFeatureEngine:
             reasons.append('injury report is missing, stale, or unresolved')
         if values['PLR_ROSTER_CONFIRMED'] < 1:
             reasons.append('game-day roster is missing or has unresolved players')
-        if require_lineup and values['LINEUP_COVERAGE'] < 1:
+        if require_lineup and values['LINEUP_CONFIRMED_STARTERS'] < 5:
             reasons.append('starting lineup is incomplete or unconfirmed')
         return {'eligible': not reasons, 'reasons': reasons, 'features': values}
 

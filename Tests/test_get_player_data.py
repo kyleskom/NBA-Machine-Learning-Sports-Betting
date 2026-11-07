@@ -207,6 +207,23 @@ class TestPlayerData(unittest.TestCase):
         self.assertEqual(result['LINEUP_COVERAGE'],0)
         self.assertEqual(result['LINEUP_CONFIRMED_STARTERS'],0)
 
+    def test_expected_lineup_is_projected_and_not_bet_ready(self):
+        snap = envelope([{'team': 'ATL', 'player_name': f'Player ATL {n}', 'status': 'Expected'}
+                         for n in range(5)], kind='lineups')
+        engine = PlayerFeatureEngine(pd.DataFrame(logs()), [snap])
+        result = engine.team_features('ATL', '2025-01-03', NOW)
+        self.assertEqual(result['LINEUP_PROJECTED_STARTERS'], 5)
+        self.assertEqual(result['LINEUP_CONFIRMED_STARTERS'], 0)
+        self.assertIn('starting lineup is incomplete or unconfirmed',
+                      engine.availability_readiness('ATL', '2025-01-03', NOW)['reasons'])
+
+    def test_five_player_roster_snapshot_does_not_remove_the_bench(self):
+        roster = envelope([{'team': 'ATL', 'player_name': f'Player ATL {n}'} for n in range(5)],
+                          kind='rosters', complete=['ATL'])
+        result = PlayerFeatureEngine(pd.DataFrame(logs()), [roster]).team_features('ATL', '2025-01-03', NOW)
+        self.assertEqual(result['PLR_ROSTER_CONFIRMED'], 0)
+        self.assertEqual(result['PLR_ROTATION_SIZE'], 8)
+
     def test_report_contract_rejects_missing_time_conflicts_and_future(self):
         for payload in [[],{'records':[]}, {'game_date':'2025-01-03','published_at':'2025-01-03','records':[]}]:
             with self.assertRaises(ValueError):parse_snapshot(payload,'injuries','test',NOW)
@@ -261,7 +278,16 @@ Lively II, Dereck Out Foot injury
         self.assertTrue(all(row['player_id'].startswith('nba:') for row in lineup['records']))
         self.assertEqual(lineup['_artifact']['content'], artifact)
         self.assertEqual(len(roster['records']), 14)
-        self.assertEqual(roster['complete_teams'], sorted([team_id('ATL'), team_id('BOS')]))
+        self.assertEqual(roster['complete_teams'], [])
+
+    def test_daily_feed_with_only_starters_is_not_a_complete_roster(self):
+        payload = {'games': [{'homeTeam': {'teamId': team_id('ATL'), 'players': [
+            {'personId': n, 'playerName': f'Player {n}', 'lineupStatus': 'Expected'} for n in range(5)]}}]}
+        settings = {'daily_lineups_url_template': 'https://example.test/{date_compact}'}
+        with patch('src.Players.reports.get_json_with_metadata', return_value=(payload, b'{}', {})):
+            roster = nba_daily_lineups_snapshot('2025-01-03', 'rosters', settings, NOW)
+        self.assertEqual(len(roster['records']), 5)
+        self.assertEqual(roster['complete_teams'], [])
 
     def test_availability_readiness_requires_all_live_inputs(self):
         engine = PlayerFeatureEngine(pd.DataFrame(logs()))

@@ -20,7 +20,7 @@ INJURY_STATUS_MAP = {'out':'OUT','o':'OUT','inactive':'OUT','doubtful':'DOUBTFUL
     'questionable':'QUESTIONABLE','game time decision':'QUESTIONABLE','gtd':'QUESTIONABLE',
     'day-to-day':'QUESTIONABLE','probable':'PROBABLE','healthy':'ACTIVE','active':'ACTIVE','available':'ACTIVE'}
 LINEUP_STATUS_MAP = {'confirmed':'CONFIRMED','confirmed starter':'CONFIRMED','starting':'CONFIRMED',
-    'projected':'PROJECTED','projected starter':'PROJECTED','starter':'PROJECTED',
+    'projected':'PROJECTED','projected starter':'PROJECTED','starter':'PROJECTED','expected':'PROJECTED',
     'bench':'BENCH','out':'OUT','inactive':'OUT'}
 
 
@@ -147,7 +147,8 @@ def nba_daily_lineups_snapshot(game_date, kind, settings, fetched_at=None):
                 continue
             tid = team_id(team.get('teamId') or team.get('teamAbbreviation'))
             if kind == 'rosters':
-                complete.add(tid)
+                # This is a lineup feed, not an authoritative full-roster feed.
+                # Retain its observations without claiming roster completeness.
                 selected = players
             else:
                 # NBA's daily feed orders the five listed starters first and
@@ -163,7 +164,7 @@ def nba_daily_lineups_snapshot(game_date, kind, settings, fetched_at=None):
             'records': records, 'complete_teams': sorted(complete),
             '_artifact': {'source_url': url, 'content': content,
                           'content_type': headers.get('Content-Type', 'application/json'),
-                          'parser_version': 'nba_daily_lineups_v1'}}
+                          'parser_version': 'nba_daily_lineups_v2'}}
 
 
 def timestamp(value):

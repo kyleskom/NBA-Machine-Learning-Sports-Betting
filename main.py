@@ -14,7 +14,7 @@ from colorama import Fore, Style
 
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 from src.Predict import NN_Runner, XGBoost_Runner
-from src.Predict.service import response as prediction_response, xgboost_board
+from src.Predict.service import availability_reasons, response as prediction_response, xgboost_board
 from src.Storage.normalized import connect as connect_canonical, load_games
 from src.Utils.Dictionaries import team_index_current
 from src.Utils import PlayerContext
@@ -199,6 +199,22 @@ def run_models(data, normalized_data, todays_games_uo, frame_ml, games, home_tea
         print("-------------------------------------------------------")
 
 
+def collect_prediction_inputs(config, season, today, games, odds):
+    """Refresh reports before choosing the cutoff used to read their snapshots."""
+    with connect_players() as con:
+        reports = refresh_reports(con, config, today.date().isoformat())
+    # Daily-lineup reports use their fetch time as their publication time. A
+    # cutoff captured before the refresh would exclude the just-fetched reports.
+    as_of = datetime.now(ZoneInfo("America/New_York"))
+    parts = urlsplit(live_team_stats_url(config, season, today.date() - timedelta(days=1)))
+    query = parse_qs(parts.query, keep_blank_values=True)
+    query['DateTo'] = [(today.date() - timedelta(days=1)).strftime('%m/%d/%Y')]
+    team_stats = to_data_frame(get_json_data(urlunsplit((parts.scheme, parts.netloc, parts.path,
+                                                         urlencode(query, doseq=True), parts.fragment))))
+    inputs = create_todays_games_data(games, team_stats, odds, load_schedule(season), as_of, config=config)
+    return reports, inputs
+
+
 def predict_board(sportsbook='fanduel', kelly=False):
     """Build a structured XGBoost board with READY/PASS status for each game."""
     config = toml.load(CONFIG_PATH)
@@ -208,15 +224,8 @@ def predict_board(sportsbook='fanduel', kelly=False):
     games, odds = resolve_games(odds, sportsbook, verbose=False, season=season)
     if games is None or odds is None:
         return prediction_response([], sportsbook, {'error': 'No usable odds were returned'})
-    with connect_players() as con:
-        reports = refresh_reports(con, config, today.date().isoformat())
-    parts = urlsplit(live_team_stats_url(config, season, today.date() - timedelta(days=1)))
-    query = parse_qs(parts.query, keep_blank_values=True)
-    query['DateTo'] = [(today.date() - timedelta(days=1)).strftime('%m/%d/%Y')]
-    team_stats = to_data_frame(get_json_data(urlunsplit((parts.scheme, parts.netloc, parts.path,
-                                                         urlencode(query, doseq=True), parts.fragment))))
-    data, totals, frame, home_odds, away_odds = create_todays_games_data(
-        games, team_stats, odds, load_schedule(season), today, config=config)
+    reports, inputs = collect_prediction_inputs(config, season, today, games, odds)
+    data, totals, frame, home_odds, away_odds = inputs
     if data is None:
         return prediction_response([], sportsbook, reports)
     board = xgboost_board(data, totals, frame, games, home_odds, away_odds, config, kelly)
@@ -224,7 +233,7 @@ def predict_board(sportsbook='fanduel', kelly=False):
 
 
 def print_board(result):
-    print('Player reports:', result['report_refresh'])
+    print('Player report downloads (availability checked per game):', result['report_refresh'])
     for game in result['games']:
         matchup = f"{game['away_team']} @ {game['home_team']}"
         if game['status'] == 'PASS':
@@ -252,34 +261,28 @@ def main(args):
     if games is None:
         return
 
-    with connect_players() as con:
-        print("Player reports:", refresh_reports(con, config, today.date().isoformat()))
-    # Match training: exclude all current-day team results.
-    parts = urlsplit(live_team_stats_url(config, season, today.date() - timedelta(days=1)))
-    query = parse_qs(parts.query, keep_blank_values=True)
-    query["DateTo"] = [(today.date()-timedelta(days=1)).strftime("%m/%d/%Y")]
-    stats_json = get_json_data(urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query, doseq=True), parts.fragment)))
-    df = to_data_frame(stats_json)
-    schedule_df = load_schedule(season)
-    data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = create_todays_games_data(
-        games, df, odds, schedule_df, today, config=config
-    )
-    if data is not None:
-        coverage = frame_ml[["H_PLR_GAME_COVERAGE", "A_PLR_GAME_COVERAGE"]].min().min()
-        if coverage < 1:
-            raise ValueError("Player histories missing/stale for this slate. Refresh player game logs before prediction.")
-        eligibility = config.get('bet-eligibility', {})
-        if eligibility.get('require_complete_availability', True):
-            required = ["H_INJ_COVERAGE", "A_INJ_COVERAGE", "H_PLR_ROSTER_CONFIRMED", "A_PLR_ROSTER_CONFIRMED"]
-            if eligibility.get('require_confirmed_lineups', True):
-                required += ["H_LINEUP_COVERAGE", "A_LINEUP_COVERAGE"]
-            unavailable = [column for column in required if frame_ml[column].min() < 1]
-            if unavailable:
-                print("No bet: live player availability is incomplete (" + ", ".join(unavailable) + ").")
-                return
+    reports, inputs = collect_prediction_inputs(config, season, today, games, odds)
+    data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = inputs
+    print('Player report downloads (availability checked per game):', reports)
     if data is None:
         print("No valid games found to predict.")
         return
+
+    eligible = []
+    for index, (home, away) in enumerate(games[:len(frame_ml.index)]):
+        reasons = availability_reasons(frame_ml.iloc[index], config)
+        if reasons:
+            print(f"PASS {away} @ {home}: {'; '.join(reasons)}")
+        else:
+            eligible.append(index)
+    if not eligible:
+        return
+    data = data[eligible]
+    frame_ml = frame_ml.iloc[eligible].reset_index(drop=True)
+    games = [games[index] for index in eligible]
+    todays_games_uo = [todays_games_uo[index] for index in eligible]
+    home_team_odds = [home_team_odds[index] for index in eligible]
+    away_team_odds = [away_team_odds[index] for index in eligible]
 
     normalized_data = tf.keras.utils.normalize(data, axis=1) if args.nn else None
     run_models(

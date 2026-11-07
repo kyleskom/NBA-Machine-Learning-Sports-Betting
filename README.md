@@ -136,6 +136,8 @@ If a report is not yet published or a team has not submitted one, the affected c
 
 `[bet-eligibility]` is configured to issue **no bet** unless both teams have complete, fresh injury and game-day roster coverage plus five confirmed starters. This intentionally defers a prediction when the live information needed to price player availability is not yet known.
 
+Report download status (`updated`) means a source was fetched successfully; it does not mean every team's availability is complete. The CLI prints a separate `PASS` with the missing inputs for each affected matchup and continues with eligible games. `Expected` starters count as projected, not confirmed. A daily feed containing only five starters is not a complete roster; those games remain on PASS until a complete roster source is supplied. To use a provider-neutral full-roster JSON source, set `[player-rosters].adapter` to `""` and configure `primary_url` or `json_path` using the report contract above.
+
 ### Neural network notes
 - The NN training scripts default to `dataset_2012-26_player_v2`.
 - They save models into `Models/` with timestamped names plus feature sidecars for prediction-time alignment.

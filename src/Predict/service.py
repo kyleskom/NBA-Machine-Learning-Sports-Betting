@@ -12,14 +12,18 @@ def availability_reasons(row, config):
     if not policy.get('require_complete_availability', True):
         return reasons
     required = ['H_INJ_COVERAGE', 'A_INJ_COVERAGE', 'H_PLR_ROSTER_CONFIRMED', 'A_PLR_ROSTER_CONFIRMED']
-    if policy.get('require_confirmed_lineups', True):
-        required += ['H_LINEUP_COVERAGE', 'A_LINEUP_COVERAGE']
     labels = {
         'H_INJ_COVERAGE': 'home injury report incomplete', 'A_INJ_COVERAGE': 'away injury report incomplete',
         'H_PLR_ROSTER_CONFIRMED': 'home roster unresolved', 'A_PLR_ROSTER_CONFIRMED': 'away roster unresolved',
         'H_LINEUP_COVERAGE': 'home lineup incomplete', 'A_LINEUP_COVERAGE': 'away lineup incomplete',
     }
     reasons.extend(labels[column] for column in required if row.get(column, 0) < 1)
+    if policy.get('require_confirmed_lineups', True):
+        for prefix, side in [('H', 'home'), ('A', 'away')]:
+            confirmed = row.get(f'{prefix}_LINEUP_CONFIRMED_STARTERS', 0)
+            if confirmed < 5:
+                projected = row.get(f'{prefix}_LINEUP_PROJECTED_STARTERS', 0)
+                reasons.append(f'{side} lineup unconfirmed ({confirmed:g}/5 confirmed, {projected:g}/5 projected)')
     return reasons
 
 
