@@ -17,6 +17,10 @@ class TestCreateGames(unittest.TestCase):
 
     def test_normalize_date(self):
         self.assertEqual(create_games.normalize_date("2025-01-02"), "2025-01-02")
+        self.assertEqual(create_games.normalize_date("2025-01-02 00:00:00"), "2025-01-02")
+        self.assertEqual(create_games.normalize_date(pd.Timestamp("2025-01-02 23:00:00")), "2025-01-02")
+        with self.assertRaises(ValueError):
+            create_games.normalize_date("unparseable")
         self.assertEqual(create_games.normalize_date(datetime(2025, 1, 2, 12, 0, 0)), "2025-01-02")
 
     def test_get_team_index_map(self):
@@ -62,7 +66,7 @@ class TestCreateGames(unittest.TestCase):
         }
         odds_rows = [
             {
-                "Date": "2025-01-02",
+                "Date": "2024-01-02",
                 "Home": "Team A",
                 "Away": "Team B",
                 "OU": 210.5,
@@ -88,7 +92,7 @@ class TestCreateGames(unittest.TestCase):
             with sqlite3.connect(odds_path) as con:
                 pd.DataFrame(odds_rows).to_sql("2023-24", con, if_exists="replace", index=False)
             with sqlite3.connect(teams_path) as con:
-                team_df.to_sql("2025-01-02", con, if_exists="replace", index=False)
+                team_df.to_sql("2024-01-01", con, if_exists="replace", index=False)
 
             original_config_path = create_games.CONFIG_PATH
             original_odds_path = create_games.ODDS_DB_PATH

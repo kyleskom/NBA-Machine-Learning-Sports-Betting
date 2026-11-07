@@ -8,6 +8,8 @@ import xgboost as xgb
 from colorama import Fore, Style, init, deinit
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
+from src.Utils.gpu import xgb_device
+from src.Utils.features import XGB_ML_FEATURES, XGB_UO_FEATURES, select_features
 
 
 init()
@@ -40,8 +42,10 @@ def _load_calibrator(model_path):
     if not calibration_path.exists():
         return None
     try:
+        import src.Utils.xgb_calibration  # noqa: F401  (makes BoosterWrapper importable for unpickling)
         return joblib.load(calibration_path)
-    except Exception:
+    except Exception as exc:
+        print(f"WARNING: could not load calibrator {calibration_path.name} ({type(exc).__name__}: {exc}); using raw model probabilities")
         return None
 
 
@@ -51,11 +55,13 @@ def _load_models():
         ml_path = _select_model_path("ML")
         xgb_ml = xgb.Booster()
         xgb_ml.load_model(str(ml_path))
+        xgb_ml.set_param({'device': xgb_device()})
         xgb_ml_calibrator = _load_calibrator(ml_path)
     if xgb_uo is None:
         uo_path = _select_model_path("UO")
         xgb_uo = xgb.Booster()
         xgb_uo.load_model(str(uo_path))
+        xgb_uo.set_param({'device': xgb_device()})
         xgb_uo_calibrator = _load_calibrator(uo_path)
 
 
@@ -70,7 +76,7 @@ def _format_game_line(home_team, away_team, winner_is_home, winner_confidence, u
     loser_team = away_team if winner_is_home else home_team
     winner_color = Fore.GREEN if winner_is_home else Fore.RED
     loser_color = Fore.RED if winner_is_home else Fore.GREEN
-    ou_label = "UNDER" if under_over == 0 else "OVER"
+    ou_label = {0: "UNDER", 1: "OVER", 2: "PUSH"}[under_over]
     ou_color = Fore.MAGENTA if under_over == 0 else Fore.BLUE
     return (
         f"{winner_color}{winner_team}{Style.RESET_ALL}"
@@ -146,10 +152,13 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
     frame_uo["OU"] = np.asarray(todays_games_uo, dtype=float)
 
     try:
-        ml_predictions_array = _predict_probs(xgb_ml, data, xgb_ml_calibrator)
+        ml_predictions_array = _predict_probs(
+            xgb_ml, select_features(frame_ml, XGB_ML_FEATURES).to_numpy(dtype=float),
+            xgb_ml_calibrator,
+        )
         ou_predictions_array = _predict_probs(
             xgb_uo,
-            frame_uo.values.astype(float),
+            select_features(frame_uo, XGB_UO_FEATURES).to_numpy(dtype=float),
             xgb_uo_calibrator,
         )
 
@@ -179,5 +188,6 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
             away_team_odds,
             kelly_criterion,
         )
+        return ml_predictions_array
     finally:
         deinit()

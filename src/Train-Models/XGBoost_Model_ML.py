@@ -1,11 +1,34 @@
 import argparse
 import sqlite3
 from pathlib import Path
+import sys
+
+# Support direct execution from src/Train-Models as documented.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from src.Utils.xgb_calibration import fit_calibrator
+from src.Utils.features import XGB_ML_FEATURES, select_features
 
 import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+import shutil as _shutil
+import subprocess as _subprocess
+
+
+def _xgb_device():
+    """Use the GPU (CUDA) when one is available, e.g. a Colab T4."""
+    if not _shutil.which("nvidia-smi"):
+        return "cpu"
+    try:
+        ok = _subprocess.run(["nvidia-smi", "-L"], capture_output=True, timeout=10).returncode == 0
+    except Exception:
+        ok = False
+    return "cuda" if ok else "cpu"
+
+
+XGB_DEVICE = _xgb_device()
+print(f"XGBoost device: {XGB_DEVICE}")
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import accuracy_score, log_loss
 from sklearn.model_selection import TimeSeriesSplit
@@ -14,21 +37,9 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models" / "XGBoost_Models"
 
-DEFAULT_DATASET = "dataset_2012-26"
+DEFAULT_DATASET = "dataset_2012-27"
 TARGET_COLUMN = "Home-Team-Win"
 DATE_COLUMN = "Date"
-DROP_COLUMNS = [
-    "index",
-    "Score",
-    "Home-Team-Win",
-    "TEAM_NAME",
-    "Date",
-    "index.1",
-    "TEAM_NAME.1",
-    "Date.1",
-    "OU-Cover",
-    "OU",
-]
 NUM_CLASSES = 2
 
 
@@ -43,7 +54,7 @@ def prepare_data(df):
         data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN], errors="coerce")
         data = data.sort_values(DATE_COLUMN)
     y = data[TARGET_COLUMN].astype(int).to_numpy()
-    X = data.drop(columns=DROP_COLUMNS, errors="ignore").astype(float).to_numpy()
+    X = select_features(data, XGB_ML_FEATURES).astype(float).to_numpy()
     return X, y
 
 
@@ -94,6 +105,7 @@ def sample_params(rng, seed):
         "eval_metric": ["mlogloss", "merror"],
         "seed": seed,
         "tree_method": "hist",
+        "device": XGB_DEVICE,
     }
     num_boost_round = int(rng.integers(300, 2501))
     return params, num_boost_round
@@ -117,17 +129,6 @@ def format_param(value, precision=3):
     formatted = f"{value:.{precision}f}" if isinstance(value, float) else str(value)
     return formatted.replace(".", "p")
 
-
-class BoosterWrapper:
-    def __init__(self, booster, num_class):
-        self.booster = booster
-        self.classes_ = np.arange(num_class)
-
-    def fit(self, X, y):
-        return self
-
-    def predict_proba(self, X):
-        return self.booster.predict(xgb.DMatrix(X))
 
 
 def walk_forward_cv_loss(X, y, params, num_boost_round, n_splits):
@@ -203,12 +204,7 @@ def main():
     if args.calibration == "none":
         probabilities = best_model.predict(xgb.DMatrix(X_test))
     else:
-        calibrator = CalibratedClassifierCV(
-            BoosterWrapper(best_model, NUM_CLASSES),
-            method=args.calibration,
-            cv="prefit",
-        )
-        calibrator.fit(X_calib, y_calib)
+        calibrator = fit_calibrator(best_model, NUM_CLASSES, X_calib, y_calib, args.calibration)
         probabilities = calibrator.predict_proba(X_test)
 
     y_pred = np.argmax(probabilities, axis=1)

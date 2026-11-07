@@ -1,10 +1,13 @@
 import sqlite3
+from functools import lru_cache
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import toml
+
+from src.Utils.snapshots import calendar_date, snapshot_dates, select_snapshot_date
 
 from src.Utils.Dictionaries import (
     team_index_07,
@@ -20,7 +23,7 @@ CONFIG_PATH = BASE_DIR / "config.toml"
 ODDS_DB_PATH = BASE_DIR / "Data" / "OddsData.sqlite"
 TEAMS_DB_PATH = BASE_DIR / "Data" / "TeamData.sqlite"
 OUTPUT_DB_PATH = BASE_DIR / "Data" / "dataset.sqlite"
-OUTPUT_TABLE = "dataset_2012-26"
+OUTPUT_TABLE = "dataset_2012-27"
 
 TEAM_INDEX_BY_SEASON = {
     "2007-08": team_index_07,
@@ -42,6 +45,7 @@ TEAM_INDEX_BY_SEASON = {
     "2023-24": team_index_current,
     "2024-25": team_index_current,
     "2025-26": team_index_current,
+    "2026-27": team_index_current,
 }
 
 
@@ -54,14 +58,7 @@ def table_exists(con, table_name):
 
 
 def normalize_date(value):
-    if isinstance(value, datetime):
-        return value.date().isoformat()
-    if hasattr(value, "date"):
-        try:
-            return value.date().isoformat()
-        except Exception:
-            pass
-    return str(value)
+    return calendar_date(value).isoformat()
 
 
 def get_team_index_map(season_key):
@@ -74,8 +71,11 @@ def get_team_index_map(season_key):
     return team_index_current if start_year >= 2022 else team_index_14
 
 
-def fetch_team_table(teams_con, date_str):
-    if not table_exists(teams_con, date_str):
+def fetch_team_table(teams_con, date_str, known_tables=None):
+    if known_tables is None:
+        if not table_exists(teams_con, date_str):
+            return None
+    elif date_str not in known_tables:
         return None
     return pd.read_sql_query(f'SELECT * FROM "{date_str}"', teams_con)
 
@@ -121,30 +121,49 @@ def main():
     days_rest_home = []
 
     with sqlite3.connect(ODDS_DB_PATH) as odds_con, sqlite3.connect(TEAMS_DB_PATH) as teams_con:
-        for season_key in config["create-games"].keys():
+        dates = snapshot_dates(teams_con)
+        known_tables = set(dates)
+
+        # Bound memory while reusing snapshots across every game on the same date.
+        @lru_cache(maxsize=32)
+        def cached_team_table(snapshot_date):
+            return fetch_team_table(teams_con, snapshot_date, known_tables)
+
+        @lru_cache(maxsize=None)
+        def prior_snapshot(game_date, season_start):
+            return select_snapshot_date(dates, game_date, season_start)
+
+        for season_key, season_config in config["create-games"].items():
+            skipped_no_prior = 0
+            season_start = normalize_date(datetime.strptime(season_config["start_date"], "%Y-%m-%d"))
             print(season_key)
             odds_table = select_odds_table(odds_con, season_key)
             if not odds_table:
-                print(f"Missing odds tables for {season_key}.")
+                print(f"Missing odds tables for {season_key}. Skipped (no prior snapshot): 0")
                 continue
 
             odds_df = pd.read_sql_query(f'SELECT * FROM "{odds_table}"', odds_con)
             if odds_df.empty:
-                print(f"No odds data for {season_key}.")
+                print(f"No odds data for {season_key}. Skipped (no prior snapshot): 0")
                 continue
 
             index_map = get_team_index_map(season_key)
 
             for row in odds_df.itertuples(index=False):
                 date_str = normalize_date(row.Date)
-                team_df = fetch_team_table(teams_con, date_str)
-                if team_df is None:
+                snapshot_date = prior_snapshot(date_str, season_start)
+                if snapshot_date is None:
+                    skipped_no_prior += 1
                     continue
+                team_df = cached_team_table(snapshot_date)
 
                 game = build_game_features(team_df, row.Home, row.Away, index_map)
                 if game is None:
                     continue
 
+                # Keep game dates for chronological train/test splits, not snapshot dates.
+                game["Date"] = date_str
+                game["Date.1"] = date_str
                 scores.append(row.Points)
                 ou_values.append(row.OU)
                 days_rest_home.append(row.Days_Rest_Home)
@@ -159,6 +178,8 @@ def main():
                     ou_cover.append(2)
 
                 games.append(game)
+
+            print(f"Skipped (no prior snapshot) for {season_key}: {skipped_no_prior}")
 
     if not games:
         print("No game rows produced. Check odds and team tables.")

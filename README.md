@@ -42,6 +42,17 @@ Optional flags:
 - `-A` run all models
 - `-kc` show Kelly Criterion bankroll fraction
 
+## Prediction markets (Kalshi + Polymarket US)
+```bash
+python3 main.py -A -odds=kalshi        # moneyline odds from Kalshi, totals from Kalshi's ladder
+python3 main.py -A -odds=polymarket    # moneyline odds from Polymarket US
+python3 main.py -A -markets            # model win % vs both venues, after taker fees
+python3 main.py -A -odds=kalshi -date 2026-10-28
+```
+Contract prices are converted to American odds after taker fees (Kalshi 0.07·p·(1−p), Polymarket US 0.0695·p·(1−p)), so EV and Kelly output use the real all-in cost. Both APIs are public; no keys needed.
+
+The season, stats URL, and schedule file are derived from today's date (schedule auto-downloads from fixturedownload.com). XGBoost uses CUDA when a GPU is present. The NN loader falls back to a Keras 2.14 weight loader on newer TF/Keras (e.g. Colab).
+
 ## Flask web app
 <img src="https://github.com/kyleskom/NBA-Machine-Learning-Sports-Betting/blob/master/Screenshots/Flask-App.png" width="922" height="580" />
 
@@ -60,18 +71,18 @@ python -m Create_Games
 
 # Train models
 cd ../Train-Models
-python -m XGBoost_Model_ML --dataset dataset_2012-26 --trials 100 --splits 5 --calibration sigmoid
-python -m XGBoost_Model_UO --dataset dataset_2012-26 --trials 100 --splits 5 --calibration sigmoid
-python -m NN_Model_ML
-python -m NN_Model_UO
-python -m Logistic_Regression_ML --dataset dataset_2012-26_new --trials 50 --splits 5 --calibration sigmoid
-python -m Logistic_Regression_UO --dataset dataset_2012-26_new --trials 50 --splits 5 --calibration sigmoid
+python -m XGBoost_Model_ML --dataset dataset_2012-27 --trials 100 --splits 5 --calibration sigmoid
+python -m XGBoost_Model_UO --dataset dataset_2012-27 --trials 100 --splits 5 --calibration sigmoid
+python -m NN_Model_ML --dataset dataset_2012-27
+python -m NN_Model_UO --dataset dataset_2012-27
+python -m Logistic_Regression_ML --dataset dataset_2012-27 --trials 50 --splits 5 --calibration sigmoid
+python -m Logistic_Regression_UO --dataset dataset_2012-27 --trials 50 --splits 5 --calibration sigmoid
 ```
 
 ### Neural network notes
-- The current NN training scripts are the original versions with hard-coded dataset and model paths.
-- They train on `dataset_2012-24_new` and save into `Models/` with timestamped names.
-- If you want configurable flags or feature/scaler sidecars, switch back to the newer NN scripts.
+- NN scripts accept `--dataset`, trial-count, seed, and chronological split flags.
+- They train on `dataset_2012-27` and save into `Models/` with metric/parameter-based names.
+- Rebuild the leak-free `dataset_2012-27` with Create_Games before retraining. NN training and serving prefer `tf_keras` when installed, otherwise native `tf.keras`; both use the standard Adam optimizer (no Keras-2-only legacy optimizer).
 
 ### Backfilling missing data
 Get_Data normally fetches only new dates in the current season. To fill missing dates:

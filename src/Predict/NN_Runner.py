@@ -3,9 +3,9 @@ import re
 from pathlib import Path
 
 import numpy as np
-import tensorflow as tf
 from colorama import Fore, Style, init, deinit
-from keras.models import load_model
+from src.Utils.keras_compat import keras, load_model
+from src.Utils.features import NN_ML_FEATURES, NN_UO_FEATURES, select_features
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
 
@@ -50,14 +50,50 @@ def _select_best_model(prefix, pattern):
     return max(candidates, key=score)
 
 
+def _load_legacy_keras(path):
+    """Load a .keras file saved by Keras 2.14 on newer TF/Keras.
+
+    Keras 2.14 stored weights under `_layer_checkpoint_dependencies/<layer>/vars/<i>`,
+    which newer loaders no longer find. Rebuild the model from config.json and copy
+    each layer's weights in by name.
+    """
+    import io
+    import json
+    import zipfile
+
+    import h5py
+    model_from_json = keras.models.model_from_json
+
+    with zipfile.ZipFile(path) as z:
+        config = z.read("config.json").decode()
+        weights = z.read("model.weights.h5")
+    model = model_from_json(config)
+    with h5py.File(io.BytesIO(weights), "r") as h5:
+        root = h5["_layer_checkpoint_dependencies"] if "_layer_checkpoint_dependencies" in h5 else h5["layers"]
+        for layer in model.layers:
+            if not layer.weights:
+                continue
+            vars_group = root[layer.name]["vars"]
+            layer.set_weights([vars_group[str(i)][()] for i in range(len(vars_group))])
+    return model
+
+
+def _load_any(path):
+    try:
+        return load_model(str(path), compile=False)
+    except Exception as e:
+        print(f"Standard load failed ({type(e).__name__}); using legacy Keras 2.14 loader for {Path(path).name}")
+        return _load_legacy_keras(path)
+
+
 def _load_models():
     global _model, _ou_model
     if _model is None:
         ml_path = _select_best_model("Trained-Model-ML-", ML_PATTERN)
-        _model = load_model(str(ml_path), compile=False)
+        _model = _load_any(ml_path)
     if _ou_model is None:
         ou_path = _select_best_model("Trained-Model-OU-", OU_PATTERN)
-        _ou_model = load_model(str(ou_path), compile=False)
+        _ou_model = _load_any(ou_path)
 
 
 def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
@@ -65,14 +101,15 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
 
     ml_predictions_array = []
 
+    data = select_features(frame_ml, NN_ML_FEATURES).to_numpy(dtype=float)
+    data = keras.utils.normalize(data, axis=1)
     for row in data:
         ml_predictions_array.append(_model.predict(np.array([row])))
 
     frame_uo = copy.deepcopy(frame_ml)
     frame_uo['OU'] = np.asarray(todays_games_uo)
-    data = frame_uo.values
-    data = data.astype(float)
-    data = tf.keras.utils.normalize(data, axis=1)
+    data = select_features(frame_uo, NN_UO_FEATURES).to_numpy(dtype=float)
+    data = keras.utils.normalize(data, axis=1)
 
     ou_predictions_array = []
 
@@ -87,6 +124,14 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
         under_over = int(np.argmax(ou_predictions_array[count]))
         winner_confidence = ml_predictions_array[count]
         un_confidence = ou_predictions_array[count]
+        if under_over == 2:
+            confidence = round(float(ou_predictions_array[count][0][2]) * 100, 1)
+            winner_team = home_team if winner == 1 else away_team
+            win_confidence = round(float(winner_confidence[0][winner]) * 100, 1)
+            print(f"{winner_team} ({win_confidence}%) | {home_team} vs {away_team}: "
+                  f"PUSH {todays_games_uo[count]} ({confidence}%)")
+            count += 1
+            continue
         if winner == 1:
             winner_confidence = round(winner_confidence[0][1] * 100, 1)
             if under_over == 0:
@@ -145,3 +190,4 @@ def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_
         count += 1
 
     deinit()
+    return np.array([p[0] for p in ml_predictions_array])

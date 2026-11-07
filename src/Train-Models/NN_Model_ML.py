@@ -2,30 +2,24 @@ import argparse
 import sqlite3
 import time
 from pathlib import Path
+import sys
+
+# Support direct execution from src/Train-Models as documented.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from src.Utils.features import NN_ML_FEATURES, select_features
 
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+from src.Utils.keras_compat import keras, load_model
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models"
 
-DEFAULT_DATASET = "dataset_2012-24_new"
+DEFAULT_DATASET = "dataset_2012-27"
 TARGET_COLUMN = "Home-Team-Win"
 DATE_COLUMN = "Date"
-DROP_COLUMNS = [
-    "index",
-    "Score",
-    "Home-Team-Win",
-    "TEAM_NAME",
-    "Date",
-    "index.1",
-    "TEAM_NAME.1",
-    "Date.1",
-    "OU",
-    "OU-Cover",
-]
 NUM_CLASSES = 2
 
 
@@ -40,11 +34,11 @@ def prepare_data(df):
         data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN], errors="coerce")
         data = data.sort_values(DATE_COLUMN)
     y = data[TARGET_COLUMN].astype(int).to_numpy()
-    X = data.drop(columns=DROP_COLUMNS, errors="ignore")
+    X = select_features(data, NN_ML_FEATURES)
     X = X.replace([np.inf, -np.inf], np.nan)
     X = X.fillna(X.median(numeric_only=True)).fillna(0)
     X = X.to_numpy(dtype=float)
-    X = tf.keras.utils.normalize(X, axis=1)
+    X = keras.utils.normalize(X, axis=1)
     return X, y
 
 
@@ -80,17 +74,17 @@ def sample_params(rng):
 
 
 def build_model(input_dim, params):
-    reg = tf.keras.regularizers.l2(params["l2"]) if params["l2"] > 0 else None
-    inputs = tf.keras.Input(shape=(input_dim,))
+    reg = keras.regularizers.l2(params["l2"]) if params["l2"] > 0 else None
+    inputs = keras.Input(shape=(input_dim,))
     x = inputs
     for units in params["units"]:
-        x = tf.keras.layers.Dense(units, activation="relu", kernel_regularizer=reg)(x)
+        x = keras.layers.Dense(units, activation="relu", kernel_regularizer=reg)(x)
         if params["batch_norm"]:
-            x = tf.keras.layers.BatchNormalization()(x)
+            x = keras.layers.BatchNormalization()(x)
         if params["dropout"] > 0:
-            x = tf.keras.layers.Dropout(params["dropout"])(x)
-    outputs = tf.keras.layers.Dense(NUM_CLASSES, activation="softmax")(x)
-    return tf.keras.Model(inputs, outputs)
+            x = keras.layers.Dropout(params["dropout"])(x)
+    outputs = keras.layers.Dense(NUM_CLASSES, activation="softmax")(x)
+    return keras.Model(inputs, outputs)
 
 
 def format_param(value, precision=3):
@@ -126,17 +120,17 @@ def main():
     temp_path = MODEL_DIR / "best_ml_temp.keras"
 
     for trial in range(1, args.trials + 1):
-        tf.keras.backend.clear_session()
+        keras.backend.clear_session()
         params = sample_params(rng)
         model = build_model(X_train.shape[1], params)
         model.compile(
-            optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=params["lr"]),
+            optimizer=keras.optimizers.Adam(learning_rate=params["lr"]),
             loss="sparse_categorical_crossentropy",
             metrics=["accuracy"],
         )
         callbacks = [
-            tf.keras.callbacks.EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True),
-            tf.keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=5, min_lr=1e-6),
+            keras.callbacks.EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True),
+            keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=5, min_lr=1e-6),
         ]
         history = model.fit(
             X_train,
@@ -162,9 +156,9 @@ def main():
         print("No valid model trained.")
         return
 
-    best_model = tf.keras.models.load_model(temp_path, compile=False)
+    best_model = load_model(temp_path, compile=False)
     best_model.compile(
-        optimizer=tf.keras.optimizers.legacy.Adam(learning_rate=best["params"]["lr"]),
+        optimizer=keras.optimizers.Adam(learning_rate=best["params"]["lr"]),
         loss="sparse_categorical_crossentropy",
         metrics=["accuracy"],
     )

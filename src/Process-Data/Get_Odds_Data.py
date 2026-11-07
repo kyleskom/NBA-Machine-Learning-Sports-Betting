@@ -68,6 +68,14 @@ def table_exists(con, table_name):
     return cursor.fetchone() is not None
 
 
+def resolve_table(con, season_key):
+    """Write to the table Create_Games reads: an existing odds_<season> table wins."""
+    for name in (f"odds_{season_key}", season_key):
+        if table_exists(con, name):
+            return name
+    return f"odds_{season_key}"
+
+
 def select_current_season(config, today):
     for season_key, value in config["get-odds-data"].items():
         start_date = datetime.strptime(value["start_date"], "%Y-%m-%d").date()
@@ -225,7 +233,7 @@ def main(sportsbook="fanduel", backfill=False, season=None, today=None, db_path=
                     print("Season not found in config:", season)
                     return
             for season_key, value in season_items:
-                backfill_season(con, season_key, value, sportsbook, today)
+                backfill_season(con, resolve_table(con, season_key), value, sportsbook, today)
             return
 
         season_key, value, start_date, end_date = select_current_season(config, today)
@@ -233,6 +241,7 @@ def main(sportsbook="fanduel", backfill=False, season=None, today=None, db_path=
             print("No current season found for today:", today)
             return
 
+        season_key = resolve_table(con, season_key)
         fetch_end = min(today, end_date)
         existing_dates = get_existing_dates(con, season_key)
         latest_date = max(existing_dates) if existing_dates else None
