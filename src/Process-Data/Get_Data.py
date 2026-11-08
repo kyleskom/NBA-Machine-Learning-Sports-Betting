@@ -14,6 +14,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(1, os.fspath(BASE_DIR))
 
 from src.Utils.tools import get_json_data, to_data_frame  # noqa: E402
+from src.Storage.normalized import canonical_path_for, connect as connect_canonical, save_team_snapshot  # noqa: E402
 
 CONFIG_PATH = BASE_DIR / "config.toml"
 DB_PATH = BASE_DIR / "Data" / "TeamData.sqlite"
@@ -66,7 +67,7 @@ def fetch_data(url, date_pointer, start_year, season_key):
     return pd.DataFrame(data={})
 
 
-def backfill_season(con, url, season_key, value, existing_dates, today):
+def backfill_season(con, canonical_con, url, season_key, value, existing_dates, today):
     start_date = datetime.strptime(value["start_date"], "%Y-%m-%d").date()
     end_date = datetime.strptime(value["end_date"], "%Y-%m-%d").date()
     fetch_end = min(today - timedelta(days=1), end_date)
@@ -91,6 +92,7 @@ def backfill_season(con, url, season_key, value, existing_dates, today):
         table_name = date_pointer.strftime("%Y-%m-%d")
         df["Date"] = table_name
         df.to_sql(table_name, con, if_exists="replace", index=False)
+        save_team_snapshot(canonical_con, df, table_name, season_key)
         existing_dates.add(date_pointer)
 
         time.sleep(random.randint(MIN_DELAY_SECONDS, MAX_DELAY_SECONDS))
@@ -98,14 +100,15 @@ def backfill_season(con, url, season_key, value, existing_dates, today):
         # TODO: Add tests
 
 
-def main(config=None, db_path=DB_PATH, today=None, backfill=False, season=None):
+def main(config=None, db_path=DB_PATH, canonical_path=None, today=None, backfill=False, season=None):
     if config is None:
         config = load_config()
     url = config["data_url"]
     if today is None:
         today = datetime.today().date()
 
-    with sqlite3.connect(db_path) as con:
+    canonical_path = canonical_path or canonical_path_for(db_path)
+    with sqlite3.connect(db_path) as con, connect_canonical(canonical_path) as canonical_con:
         existing_dates = set(get_table_dates(con))
         if backfill:
             season_items = config["get-data"].items()
@@ -118,7 +121,7 @@ def main(config=None, db_path=DB_PATH, today=None, backfill=False, season=None):
                     return
 
             for season_key, value in season_items:
-                backfill_season(con, url, season_key, value, existing_dates, today)
+                backfill_season(con, canonical_con, url, season_key, value, existing_dates, today)
             return
 
         season_key, value, start_date, end_date = select_current_season(config, today)
@@ -148,6 +151,7 @@ def main(config=None, db_path=DB_PATH, today=None, backfill=False, season=None):
             table_name = date_pointer.strftime("%Y-%m-%d")
             df["Date"] = table_name
             df.to_sql(table_name, con, if_exists="replace", index=False)
+            save_team_snapshot(canonical_con, df, table_name, season_key)
 
             time.sleep(random.randint(MIN_DELAY_SECONDS, MAX_DELAY_SECONDS))
 

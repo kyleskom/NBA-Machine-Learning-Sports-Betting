@@ -1,11 +1,19 @@
+import argparse
 import sqlite3
 from datetime import datetime
+import os
+import sys
+sys.path.insert(0, os.fspath(__import__("pathlib").Path(__file__).resolve().parents[2]))
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import toml
 
+from src.Players.identity import team_id
+from src.Storage.normalized import (canonical_path_for, connect as connect_canonical,
+                                    load_games as load_normalized_games,
+                                    load_latest_team_snapshot)
 from src.Utils.Dictionaries import (
     team_index_07,
     team_index_08,
@@ -20,7 +28,7 @@ CONFIG_PATH = BASE_DIR / "config.toml"
 ODDS_DB_PATH = BASE_DIR / "Data" / "OddsData.sqlite"
 TEAMS_DB_PATH = BASE_DIR / "Data" / "TeamData.sqlite"
 OUTPUT_DB_PATH = BASE_DIR / "Data" / "dataset.sqlite"
-OUTPUT_TABLE = "dataset_2012-26"
+OUTPUT_TABLE = "dataset_2012-26_team"
 
 TEAM_INDEX_BY_SEASON = {
     "2007-08": team_index_07,
@@ -42,8 +50,8 @@ TEAM_INDEX_BY_SEASON = {
     "2023-24": team_index_current,
     "2024-25": team_index_current,
     "2025-26": team_index_current,
+    "2026-27": team_index_current,
 }
-
 
 def table_exists(con, table_name):
     cursor = con.execute(
@@ -74,26 +82,29 @@ def get_team_index_map(season_key):
     return team_index_current if start_year >= 2022 else team_index_14
 
 
-def fetch_team_table(teams_con, date_str):
-    if not table_exists(teams_con, date_str):
+def fetch_team_table(teams_con, date_str, canonical_con=None):
+    # DateTo snapshots contain that day's results. Only an earlier snapshot is safe.
+    if canonical_con is not None:
+        snapshot = load_latest_team_snapshot(canonical_con, date_str)
+        if snapshot is not None and not snapshot.empty:
+            return snapshot
+    candidates = [r[0] for r in teams_con.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                  if len(r[0]) == 10 and r[0] < date_str and r[0][:4].isdigit()]
+    if not candidates:
         return None
-    return pd.read_sql_query(f'SELECT * FROM "{date_str}"', teams_con)
+    previous = max(candidates)
+    if (datetime.fromisoformat(date_str)-datetime.fromisoformat(previous)).days > 7:
+        return None
+    return pd.read_sql_query(f'SELECT * FROM "{previous}"', teams_con)
 
 
-def build_game_features(team_df, home_team, away_team, index_map):
-    home_index = index_map.get(home_team)
-    away_index = index_map.get(away_team)
-    if home_index is None or away_index is None:
+def build_game_features(team_df, home_team, away_team, index_map=None):
+    home_id, away_id = team_id(home_team), team_id(away_team)
+    home = team_df[team_df.TEAM_ID.astype(int) == home_id]
+    away = team_df[team_df.TEAM_ID.astype(int) == away_id]
+    if len(home) != 1 or len(away) != 1:
         return None
-    if len(team_df.index) != 30:
-        return None
-
-    home_team_series = team_df.iloc[home_index]
-    away_team_series = team_df.iloc[away_index]
-    return pd.concat([
-        home_team_series,
-        away_team_series.rename(index={col: f"{col}.1" for col in team_df.columns.values}),
-    ])
+    return pd.concat([home.iloc[0], away.iloc[0].rename(index={c:f"{c}.1" for c in team_df.columns})])
 
 
 def select_odds_table(odds_con, season_key):
@@ -109,9 +120,10 @@ def select_odds_table(odds_con, season_key):
     return None
 
 
-def main():
+def main(output_table=None):
+    if output_table is None:
+        output_table = OUTPUT_TABLE
     config = toml.load(CONFIG_PATH)
-
     scores = []
     win_margin = []
     ou_values = []
@@ -120,15 +132,21 @@ def main():
     days_rest_away = []
     days_rest_home = []
 
-    with sqlite3.connect(ODDS_DB_PATH) as odds_con, sqlite3.connect(TEAMS_DB_PATH) as teams_con:
-        for season_key in config["create-games"].keys():
+    canonical_path = canonical_path_for(ODDS_DB_PATH)
+    with sqlite3.connect(ODDS_DB_PATH) as odds_con, sqlite3.connect(TEAMS_DB_PATH) as teams_con, connect_canonical(canonical_path) as canonical_con:
+        team_cache = {}
+        for season_key, season_settings in config["create-games"].items():
             print(season_key)
-            odds_table = select_odds_table(odds_con, season_key)
-            if not odds_table:
-                print(f"Missing odds tables for {season_key}.")
-                continue
-
-            odds_df = pd.read_sql_query(f'SELECT * FROM "{odds_table}"', odds_con)
+            odds_sportsbook = season_settings.get("odds_sportsbook", "fanduel")
+            odds_df = load_normalized_games(
+                canonical_con, season_key, sportsbook=odds_sportsbook
+            )
+            if odds_df.empty:
+                odds_table = select_odds_table(odds_con, season_key)
+                if not odds_table:
+                    print(f"Missing odds data for {season_key}.")
+                    continue
+                odds_df = pd.read_sql_query(f'SELECT * FROM "{odds_table}"', odds_con)
             if odds_df.empty:
                 print(f"No odds data for {season_key}.")
                 continue
@@ -137,7 +155,9 @@ def main():
 
             for row in odds_df.itertuples(index=False):
                 date_str = normalize_date(row.Date)
-                team_df = fetch_team_table(teams_con, date_str)
+                if date_str not in team_cache:
+                    team_cache[date_str] = fetch_team_table(teams_con, date_str, canonical_con)
+                team_df = team_cache[date_str]
                 if team_df is None:
                     continue
 
@@ -145,6 +165,8 @@ def main():
                 if game is None:
                     continue
 
+                game["Date"] = date_str
+                game["Date.1"] = date_str
                 scores.append(row.Points)
                 ou_values.append(row.OU)
                 days_rest_home.append(row.Days_Rest_Home)
@@ -160,6 +182,7 @@ def main():
 
                 games.append(game)
 
+
     if not games:
         print("No game rows produced. Check odds and team tables.")
         return
@@ -172,15 +195,20 @@ def main():
     frame["OU-Cover"] = np.asarray(ou_cover)
     frame["Days-Rest-Home"] = np.asarray(days_rest_home)
     frame["Days-Rest-Away"] = np.asarray(days_rest_away)
-
-    for field in frame.columns.values:
-        if "TEAM_" in field or "Date" in field:
-            continue
-        frame[field] = frame[field].astype(float)
+    # Concatenating mixed team/name Series leaves numeric columns as object.
+    # Infer their numeric dtype so SQLite stores numbers instead of numpy blobs.
+    frame = frame.infer_objects()
 
     with sqlite3.connect(OUTPUT_DB_PATH) as con:
-        frame.to_sql(OUTPUT_TABLE, con, if_exists="replace", index=False)
+        frame.to_sql(output_table, con, if_exists="replace", index=False)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Build training game-level dataset.")
+    parser.add_argument(
+        "--output-table",
+        default=OUTPUT_TABLE,
+        help=f"Destination table name in {OUTPUT_DB_PATH.name}.",
+    )
+    args = parser.parse_args()
+    main(output_table=args.output_table)

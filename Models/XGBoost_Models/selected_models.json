@@ -1,0 +1,20 @@
+{
+  "ML": {
+    "kind": "ML",
+    "filename": "XGBoost_68.9%_ML_md3_eta0p077_sub0p741_col0p891_cbl0p874_cbn0p908_mcw2_g4p482_mds4_mb864_l0p303_a0p094_nb699.json",
+    "dataset": "dataset_2012-26_team",
+    "test_accuracy": null,
+    "test_log_loss": null,
+    "promoted": true,
+    "selection_reason": "Restored pretrained team-stat model; feature order recovered from the original training dataset."
+  },
+  "UO": {
+    "kind": "UO",
+    "filename": "XGBoost_50.1%_UO_md12_eta0p112_sub0p939_col0p687_cbl0p783_cbn0p635_mcw7_g1p606_mds4_mb823_l0p984_a0p281_nb829.json",
+    "dataset": "dataset_2012-26_team",
+    "test_accuracy": null,
+    "test_log_loss": null,
+    "promoted": true,
+    "selection_reason": "Restored pretrained team-stat model; feature order recovered from the original training dataset."
+  }
+}

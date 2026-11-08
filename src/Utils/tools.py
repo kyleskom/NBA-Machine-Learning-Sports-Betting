@@ -1,5 +1,7 @@
 import re
+import logging
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import requests
@@ -41,10 +43,59 @@ def get_json_data(url):
     return json.get('resultSets')
 
 
-def get_todays_games_json(url):
-    raw_data = requests.get(url, headers=games_header)
-    json = raw_data.json()
-    return json.get('gs').get('g')
+def _scoreboard_games(payload, game_date):
+    """Normalize current NBA/ESPN scoreboards to the existing h/v format."""
+    if not isinstance(payload, dict):
+        raise ValueError('Scoreboard must be a JSON object')
+    if 'scoreboard' in payload:
+        board = payload['scoreboard']
+        if board.get('gameDate') != game_date:
+            raise ValueError('NBA scoreboard is for a different game date')
+        games = board['games']
+        source = 'nba'
+    elif 'events' in payload:
+        games = payload['events']
+        source = 'espn'
+    elif isinstance(payload.get('gs'), dict):
+        games = payload['gs']['g']
+        if not isinstance(games, list):
+            raise ValueError('Scoreboard games must be a list')
+        return games
+    else:
+        raise ValueError('Unrecognized scoreboard response')
+    if not isinstance(games, list):
+        raise ValueError('Scoreboard games must be a list')
+    result = []
+    for game in games:
+        if source == 'nba':
+            home = game['homeTeam']
+            away = game['awayTeam']
+            home_name = f"{home['teamCity']} {home['teamName']}"
+            away_name = f"{away['teamCity']} {away['teamName']}"
+        else:
+            sides = {item['homeAway']: item['team']['displayName']
+                     for item in game['competitions'][0]['competitors']}
+            home_name, away_name = sides['home'], sides['away']
+        # Keep the team-name contract expected by feature and odds lookups.
+        home_name = home_name.replace('Los Angeles Clippers', 'LA Clippers')
+        away_name = away_name.replace('Los Angeles Clippers', 'LA Clippers')
+        result.append({'h': {'tc': '', 'tn': home_name}, 'v': {'tc': '', 'tn': away_name}})
+    return result
+
+
+def get_todays_games_json(url, game_date=None):
+    day = game_date or datetime.now(ZoneInfo('America/New_York')).date().isoformat()
+    fallback = ('https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard'
+                f'?dates={day.replace("-", "")}&limit=100')
+    for endpoint in (url, fallback):
+        try:
+            response = requests.get(endpoint, headers=games_header, timeout=20)
+            response.raise_for_status()
+            return _scoreboard_games(response.json(), day)
+        except (requests.RequestException, ValueError, KeyError, TypeError, IndexError, AttributeError) as exc:
+            logging.getLogger(__name__).warning('Schedule feed unavailable (%s): %s', endpoint, exc)
+    print('Unable to retrieve today\'s NBA schedule. Try again later; no predictions generated.')
+    return []
 
 
 def to_data_frame(data):
@@ -61,8 +112,8 @@ def create_todays_games(input_list):
     for game in input_list:
         home = game.get('h')
         away = game.get('v')
-        home_team = home.get('tc') + ' ' + home.get('tn')
-        away_team = away.get('tc') + ' ' + away.get('tn')
+        home_team = (home.get('tc') + ' ' + home.get('tn')).strip()
+        away_team = (away.get('tc') + ' ' + away.get('tn')).strip()
         games.append([home_team, away_team])
     return games
 

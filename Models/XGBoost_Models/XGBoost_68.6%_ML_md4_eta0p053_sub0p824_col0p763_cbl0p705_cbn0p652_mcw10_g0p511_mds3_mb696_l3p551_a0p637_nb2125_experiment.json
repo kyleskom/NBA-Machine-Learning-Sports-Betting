@@ -1,0 +1,255 @@
+{
+  "calibration": "sigmoid",
+  "dataset": {
+    "dataset": "dataset_2012-26_player_v2",
+    "date_end": "2026-06-13",
+    "date_start": "2012-11-02",
+    "feature_count": 196,
+    "rows": 17749,
+    "sha256": "5ac5dbdce74809ad3891cedcc1d5e685cc308112ceecc22abf37d261f395756c"
+  },
+  "final_diagnostics": {
+    "accuracy": 0.6860643185298622,
+    "brier_score": 0.2085056949364453,
+    "expected_calibration_error": 0.035966006125574226,
+    "log_loss": 0.6055408017184672,
+    "reliability": [
+      {
+        "count": 59,
+        "lower": 0.2,
+        "mean_prediction": 0.278448,
+        "observed_rate": 0.118644,
+        "upper": 0.3
+      },
+      {
+        "count": 238,
+        "lower": 0.3,
+        "mean_prediction": 0.351709,
+        "observed_rate": 0.323529,
+        "upper": 0.4
+      },
+      {
+        "count": 225,
+        "lower": 0.4,
+        "mean_prediction": 0.447386,
+        "observed_rate": 0.404444,
+        "upper": 0.5
+      },
+      {
+        "count": 221,
+        "lower": 0.5,
+        "mean_prediction": 0.549551,
+        "observed_rate": 0.58371,
+        "upper": 0.6
+      },
+      {
+        "count": 234,
+        "lower": 0.6,
+        "mean_prediction": 0.64817,
+        "observed_rate": 0.679487,
+        "upper": 0.7
+      },
+      {
+        "count": 227,
+        "lower": 0.7,
+        "mean_prediction": 0.748469,
+        "observed_rate": 0.77533,
+        "upper": 0.8
+      },
+      {
+        "count": 102,
+        "lower": 0.8,
+        "mean_prediction": 0.831376,
+        "observed_rate": 0.833333,
+        "upper": 0.9
+      }
+    ],
+    "rows": 1306
+  },
+  "final_split": {
+    "final_dates": 209,
+    "final_end": "2026-06-13",
+    "final_rows": 1306,
+    "final_start": "2025-10-01",
+    "method": "fixed_date",
+    "train_dates": 2609,
+    "train_end": "2025-06-22",
+    "train_rows": 16443,
+    "train_start": "2012-11-02"
+  },
+  "kind": "ML",
+  "market_and_backtest": {
+    "backtest": {
+      "available": true,
+      "closing_line_value": null,
+      "limitation": "Closing-line value is unavailable until odds_quotes retains timestamped quote history.",
+      "max_drawdown_units": -4.0,
+      "min_expected_value": 0.02,
+      "min_probability": 0.54,
+      "profit_units": 758.932109,
+      "roi": 1.224084,
+      "stake_units": 620.0,
+      "win_rate": 0.691935
+    },
+    "market": {
+      "available": true,
+      "evaluated_rows": 1306,
+      "matched_rows": 1306,
+      "no_vig_brier_score": 0.2631856381534203,
+      "no_vig_log_loss": 0.7395463319263927,
+      "quote_timing": "unknown (the current schema does not retain opening/closing timestamps)",
+      "sportsbook": "fanduel",
+      "total_rows": 1306
+    }
+  },
+  "policy_selection": {
+    "available": true,
+    "candidates": [
+      {
+        "bets": 752.0,
+        "max_drawdown_units": -6.134949,
+        "min_expected_value": 0.02,
+        "min_probability": 0.54,
+        "profit_units": 657.10528,
+        "roi": 0.87381
+      },
+      {
+        "bets": 697.0,
+        "max_drawdown_units": -6.134949,
+        "min_expected_value": 0.02,
+        "min_probability": 0.56,
+        "profit_units": 610.351672,
+        "roi": 0.875684
+      },
+      {
+        "bets": 641.0,
+        "max_drawdown_units": -6.134949,
+        "min_expected_value": 0.02,
+        "min_probability": 0.58,
+        "profit_units": 582.351685,
+        "roi": 0.908505
+      },
+      {
+        "bets": 586.0,
+        "max_drawdown_units": -5.525193,
+        "min_expected_value": 0.02,
+        "min_probability": 0.6,
+        "profit_units": 543.666387,
+        "roi": 0.927758
+      },
+      {
+        "bets": 738.0,
+        "max_drawdown_units": -6.134949,
+        "min_expected_value": 0.03,
+        "min_probability": 0.54,
+        "profit_units": 653.297702,
+        "roi": 0.885227
+      },
+      {
+        "bets": 684.0,
+        "max_drawdown_units": -6.134949,
+        "min_expected_value": 0.03,
+        "min_probability": 0.56,
+        "profit_units": 607.406164,
+        "roi": 0.888021
+      },
+      {
+        "bets": 630.0,
+        "max_drawdown_units": -6.134949,
+        "min_expected_value": 0.03,
+        "min_probability": 0.58,
+        "profit_units": 577.406177,
+        "roi": 0.916518
+      },
+      {
+        "bets": 577.0,
+        "max_drawdown_units": -5.525193,
+        "min_expected_value": 0.03,
+        "min_probability": 0.6,
+        "profit_units": 540.180811,
+        "roi": 0.936189
+      },
+      {
+        "bets": 700.0,
+        "max_drawdown_units": -6.0,
+        "min_expected_value": 0.05,
+        "min_probability": 0.54,
+        "profit_units": 655.50778,
+        "roi": 0.93644
+      },
+      {
+        "bets": 647.0,
+        "max_drawdown_units": -6.0,
+        "min_expected_value": 0.05,
+        "min_probability": 0.56,
+        "profit_units": 608.616242,
+        "roi": 0.940674
+      },
+      {
+        "bets": 595.0,
+        "max_drawdown_units": -5.525193,
+        "min_expected_value": 0.05,
+        "min_probability": 0.58,
+        "profit_units": 578.435927,
+        "roi": 0.972161
+      },
+      {
+        "bets": 545.0,
+        "max_drawdown_units": -4.525193,
+        "min_expected_value": 0.05,
+        "min_probability": 0.6,
+        "profit_units": 541.692123,
+        "roi": 0.993931
+      },
+      {
+        "bets": 681.0,
+        "max_drawdown_units": -6.0,
+        "min_expected_value": 0.07,
+        "min_probability": 0.54,
+        "profit_units": 653.903171,
+        "roi": 0.96021
+      },
+      {
+        "bets": 629.0,
+        "max_drawdown_units": -6.0,
+        "min_expected_value": 0.07,
+        "min_probability": 0.56,
+        "profit_units": 607.973171,
+        "roi": 0.966571
+      },
+      {
+        "bets": 578.0,
+        "max_drawdown_units": -5.525193,
+        "min_expected_value": 0.07,
+        "min_probability": 0.58,
+        "profit_units": 578.640314,
+        "roi": 1.001108
+      },
+      {
+        "bets": 530.0,
+        "max_drawdown_units": -4.525193,
+        "min_expected_value": 0.07,
+        "min_probability": 0.6,
+        "profit_units": 543.472193,
+        "roi": 1.025419
+      }
+    ],
+    "min_bets": 50,
+    "selected": {
+      "bets": 752.0,
+      "max_drawdown_units": -6.134949,
+      "min_expected_value": 0.02,
+      "min_probability": 0.54,
+      "profit_units": 657.10528,
+      "roi": 0.87381
+    }
+  },
+  "sealed_final_note": "Do not use this final period to tune future candidates. Change it only when opening a new evaluation cycle.",
+  "selection_cv_log_loss": 0.633854047010814,
+  "training": {
+    "calibration_fraction": 0.1,
+    "objective": "binary:logistic",
+    "policy_fraction": 0.1,
+    "recency_half_life_days": 730
+  }
+}

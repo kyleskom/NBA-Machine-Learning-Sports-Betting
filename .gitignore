@@ -105,3 +105,6 @@ venv.bak/
 
 .idea
 .DS_Store
+
+# Frozen evaluation datasets, fitted models and run ledgers (regenerate locally)
+Data/Backtests/

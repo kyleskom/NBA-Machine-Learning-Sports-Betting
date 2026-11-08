@@ -1,11 +1,12 @@
 import argparse
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import sys
 
 import numpy as np
 import pandas as pd
+import toml
 
 try:
     import xgboost as xgb
@@ -18,10 +19,17 @@ except ImportError:
     load_model = None
 
 BASE_DIR = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(BASE_DIR))
+from src.Utils import ModelFeatures  # noqa: E402
+from src.Predict.model_selection import selected_model_path  # noqa: E402
+from src.Utils.season import live_team_stats_url, runtime_season, scores_url  # noqa: E402
+
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models"
 
 DROP_COLUMNS_ML = [
+    "index",
+    "index.1",
     "Score",
     "Home-Team-Win",
     "TEAM_NAME",
@@ -34,6 +42,8 @@ DROP_COLUMNS_ML = [
     "OU-Cover",
 ]
 DROP_COLUMNS_UO = [
+    "index",
+    "index.1",
     "Score",
     "Home-Team-Win",
     "TEAM_NAME",
@@ -63,17 +73,26 @@ def load_frame_columns(path):
 
 
 def load_live_frames():
-    sys.path.insert(0, str(BASE_DIR))
-    from main import create_todays_games_data, load_schedule, DATA_URL, TODAYS_GAMES_URL
+    from main import create_todays_games_data, load_schedule
     from src.Utils.tools import get_json_data, to_data_frame, get_todays_games_json, create_todays_games
 
-    stats_json = get_json_data(DATA_URL)
+    config = toml.load(BASE_DIR / "config.toml")
+    today = datetime.now()
+    season = runtime_season(config, today)
+    stats_json = get_json_data(live_team_stats_url(config, season, today.date() - timedelta(days=1)))
     df = to_data_frame(stats_json)
-    schedule_df = load_schedule()
-    today = datetime.today()
-    games = create_todays_games(get_todays_games_json(TODAYS_GAMES_URL))
+    schedule_df = load_schedule(season)
+    games = create_todays_games(get_todays_games_json(scores_url(season)))
+    odds = {
+        f"{home}:{away}": {
+            "under_over_odds": 0.0,
+            home: {"money_line_odds": 0},
+            away: {"money_line_odds": 0},
+        }
+        for home, away in games
+    }
     data, todays_games_uo, frame_ml, _, _ = create_todays_games_data(
-        games, df, None, schedule_df, today
+        games, df, odds, schedule_df, today
     )
     if frame_ml is None or frame_ml.empty:
         raise RuntimeError("No games found to build inference frames.")
@@ -83,7 +102,7 @@ def load_live_frames():
 
 
 def find_latest_model(pattern):
-    candidates = list(MODEL_DIR.rglob(pattern))
+    candidates = [path for path in MODEL_DIR.rglob(pattern) if not path.stem.endswith("_features")]
     if not candidates:
         return None
     return max(candidates, key=lambda path: path.stat().st_mtime)
@@ -99,6 +118,9 @@ def describe_model_input(model_path, label):
     model = load_model(str(model_path), compile=False)
     input_features = model.input_shape[-1]
     print(f"{label} model input features: {input_features} ({model_path})")
+    feature_columns = ModelFeatures.load_feature_columns(model_path)
+    if feature_columns:
+        print(f"{label} sidecar columns: {len(feature_columns)}")
     return input_features
 
 
@@ -113,6 +135,9 @@ def describe_xgb_input(model_path, label):
     booster.load_model(str(model_path))
     feature_count = booster.num_features()
     print(f"{label} model input features: {feature_count} ({model_path})")
+    feature_columns = ModelFeatures.load_feature_columns(model_path)
+    if feature_columns:
+        print(f"{label} sidecar columns: {len(feature_columns)}")
     return feature_count
 
 
@@ -131,7 +156,7 @@ def compare_columns(label, train_cols, infer_cols):
 
 def main():
     parser = argparse.ArgumentParser(description="Compare training vs inference feature sizes.")
-    parser.add_argument("--dataset", default="dataset_2012-26_new", help="Dataset table name.")
+    parser.add_argument("--dataset", default="dataset_2012-26_team", help="Dataset table name.")
     parser.add_argument("--frame-ml", help="CSV path to inference frame_ml.")
     parser.add_argument("--frame-uo", help="CSV path to inference frame_uo.")
     parser.add_argument("--use-live", action="store_true", help="Build inference frames from live data.")
@@ -164,8 +189,9 @@ def main():
     describe_model_input(nn_ml_model, "NN ML")
     describe_model_input(nn_ou_model, "NN OU")
 
-    xgb_ml_model = Path(args.xgb_ml_model) if args.xgb_ml_model else find_latest_model("XGBoost_*_ML*.json")
-    xgb_ou_model = Path(args.xgb_uo_model) if args.xgb_uo_model else find_latest_model("XGBoost_*_UO*.json")
+    xgb_dir = MODEL_DIR / "XGBoost_Models"
+    xgb_ml_model = Path(args.xgb_ml_model) if args.xgb_ml_model else selected_model_path("ML", xgb_dir)
+    xgb_ou_model = Path(args.xgb_uo_model) if args.xgb_uo_model else selected_model_path("UO", xgb_dir)
     describe_xgb_input(xgb_ml_model, "XGB ML")
     describe_xgb_input(xgb_ou_model, "XGB OU")
 
