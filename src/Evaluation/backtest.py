@@ -292,7 +292,7 @@ def main(argv=None):
         p.add_argument('--drop-feature', action='append', default=[], help='Column or glob; repeat to ablate groups')
         p.add_argument('--predictions', type=Path, help='External game_id/home_probability CSV; training provenance unverified')
         p.add_argument('--dataset-db', type=Path, default=BASE_DIR / 'Data' / 'dataset.sqlite')
-        p.add_argument('--dataset', default='dataset_2012-26_player_v2')
+        p.add_argument('--dataset', default='dataset_2012-26_team')
         if command == 'baseline':
             p.add_argument('--start', required=True, help='First evaluation date YYYY-MM-DD')
             p.add_argument('--end', help='Last evaluation date; defaults to latest available')

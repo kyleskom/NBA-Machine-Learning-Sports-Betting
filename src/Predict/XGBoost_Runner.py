@@ -7,7 +7,7 @@ import xgboost as xgb
 from colorama import Fore, Style, init, deinit
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
-from src.Utils import PlayerContext
+from src.Utils import ModelFeatures
 from src.Predict.model_selection import selected_model_path
 
 
@@ -51,14 +51,14 @@ def _load_models():
         xgb_ml = xgb.Booster()
         xgb_ml.load_model(str(ml_path))
         xgb_ml_calibrator = _load_calibrator(ml_path)
-        xgb_ml_features = PlayerContext.load_feature_columns(ml_path)
+        xgb_ml_features = ModelFeatures.load_feature_columns(ml_path)
     if xgb_uo is None:
         uo_path = _select_model_path("UO")
         xgb_uo_path = uo_path
         xgb_uo = xgb.Booster()
         xgb_uo.load_model(str(uo_path))
         xgb_uo_calibrator = _load_calibrator(uo_path)
-        xgb_uo_features = PlayerContext.load_feature_columns(uo_path)
+        xgb_uo_features = ModelFeatures.load_feature_columns(uo_path)
 
 
 def _predict_probs(model, data, calibrator=None, num_classes=None):
@@ -72,9 +72,9 @@ def _predict_probs(model, data, calibrator=None, num_classes=None):
 
 def _prepare_model_data(model, frame, feature_columns, label="model"):
     if feature_columns:
-        return PlayerContext.align_frame_to_columns(frame, feature_columns).values
+        return ModelFeatures.align_frame_to_columns(frame, feature_columns).values
 
-    raise ValueError(f"{label}: feature manifest required. Retrain with player-v2 data.")
+    raise ValueError(f"{label}: feature manifest required. Retrain with team-stat data.")
 
 
 def _american_odds(value):
@@ -141,9 +141,10 @@ def _format_game_line(home_team, away_team, winner_is_home, winner_confidence, u
     )
 
 
-def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
+def print_predictions(records):
+    """Render the shared prediction records with the original CLI colors."""
+    init()
     try:
-        records = xgb_predictions(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion)
         for record in records:
             moneyline, total = record['moneyline'], record['total']
             winner_is_home = moneyline['pick'] == record['home_team']
@@ -151,9 +152,19 @@ def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team
             print(_format_game_line(record['home_team'], record['away_team'], winner_is_home,
                                     round(confidence * 100, 1), {'UNDER': 0, 'OVER': 1, 'PUSH': 2}[total['pick']],
                                     total['line'], round(total['probability'] * 100, 1)))
-        print('------------Expected Value & Kelly Criterion-----------' if kelly_criterion else '---------------------Expected Value--------------------')
+        print('---------------------Expected Value--------------------')
         for record in records:
-            print(f"{record['home_team']} EV: {record['expected_value']['home']}")
-            print(f"{record['away_team']} EV: {record['expected_value']['away']}")
+            for side in ('home', 'away'):
+                ev = record['expected_value'][side]
+                color = Fore.GREEN if ev is not None and ev > 0 else Fore.RED
+                value = 'unavailable' if ev is None else str(ev)
+                fraction = record.get('kelly', {}).get(side)
+                stake = f' Fraction of Bankroll: {fraction}%' if fraction is not None else ''
+                print(f"{record[side + '_team']} EV: {color}{value}{Style.RESET_ALL}{stake}")
     finally:
         deinit()
+
+
+def xgb_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):
+    records = xgb_predictions(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion)
+    print_predictions(records)

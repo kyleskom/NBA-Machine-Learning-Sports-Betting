@@ -20,7 +20,6 @@ from src.Players.identity import team_id
 from src.Storage.normalized import connect as connect_canonical, save_odds_rows
 
 CONFIG_PATH = BASE_DIR / "config.toml"
-PLAYER_DB_PATH = BASE_DIR / "Data" / "PlayerData.sqlite"
 CANONICAL_DB_PATH = BASE_DIR / "Data" / "NBAData.sqlite"
 DEFAULT_CSV_PATH = BASE_DIR / "Data" / "nba-odds-2026-27-consensus.csv"
 SOURCE_URL = (
@@ -47,19 +46,18 @@ def download_source(path=DEFAULT_CSV_PATH):
     return path
 
 
-def validate_scores(frame, player_db_path=PLAYER_DB_PATH):
-    with sqlite3.connect(f"file:{Path(player_db_path).resolve()}?mode=ro", uri=True) as con:
-        logs = pd.read_sql_query(
-            """SELECT GAME_DATE, TEAM_ID, SUM(PTS) AS points
-               FROM player_game_logs
-               WHERE SEASON='2026-27' AND SEASON_TYPE='Regular Season'
-               GROUP BY GAME_DATE, TEAM_ID""",
-            con,
-        )
-    observed = {
-        (str(row.GAME_DATE), int(row.TEAM_ID)): int(row.points)
-        for row in logs.itertuples(index=False)
-    }
+def validate_scores(frame, canonical_db_path=None):
+    """Check imported scores against stored game results without player logs."""
+    path = Path(canonical_db_path or CANONICAL_DB_PATH).resolve()
+    with sqlite3.connect(f"{path.as_uri()}?mode=ro", uri=True) as con:
+        games = con.execute(
+            """SELECT game_date,home_team_id,away_team_id,points,win_margin
+               FROM games WHERE season='2026-27' AND points IS NOT NULL AND win_margin IS NOT NULL"""
+        ).fetchall()
+    observed = {}
+    for day, home, away, points, margin in games:
+        observed[(day, home)] = (points + margin) / 2
+        observed[(day, away)] = (points - margin) / 2
     for row in frame.itertuples(index=False):
         day = pd.Timestamp(row.date_et).date().isoformat()
         for team, score in ((row.home_team, row.home_score), (row.away_team, row.away_score)):
@@ -67,7 +65,7 @@ def validate_scores(frame, player_db_path=PLAYER_DB_PATH):
             if key not in observed or observed[key] != int(score):
                 raise ValueError(
                     f"Score check failed for {day} {team}: source={score}, "
-                    f"player-log total={observed.get(key)}"
+                    f"stored game score={observed.get(key)}. Import game results first."
                 )
 
 

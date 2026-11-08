@@ -8,7 +8,7 @@ from colorama import Fore, Style, init, deinit
 from keras.models import load_model
 from src.Utils import Expected_Value
 from src.Utils import Kelly_Criterion as kc
-from src.Utils import PlayerContext
+from src.Utils import ModelFeatures
 
 init()
 
@@ -39,7 +39,13 @@ def _list_model_candidates(prefix):
 
 
 def _select_best_model(prefix, pattern):
-    candidates = [p for p in _list_model_candidates(prefix) if PlayerContext.feature_sidecar_path(p).exists()]
+    candidates = []
+    for path in _list_model_candidates(prefix):
+        try:
+            if ModelFeatures.load_feature_columns(path):
+                candidates.append(path)
+        except ValueError:
+            continue
     if not candidates:
         raise FileNotFoundError(f"No model found for prefix {prefix} in {MODEL_DIR}")
 
@@ -58,19 +64,19 @@ def _load_models():
     if _model is None:
         ml_path = _select_best_model("Trained-Model-ML-", ML_PATTERN)
         _model = load_model(str(ml_path), compile=False)
-        _model_features = PlayerContext.load_feature_columns(ml_path)
+        _model_features = ModelFeatures.load_feature_columns(ml_path)
     if _ou_model is None:
         ou_path = _select_best_model("Trained-Model-OU-", OU_PATTERN)
         _ou_model = load_model(str(ou_path), compile=False)
-        _ou_model_features = PlayerContext.load_feature_columns(ou_path)
+        _ou_model_features = ModelFeatures.load_feature_columns(ou_path)
 
 
 def _prepare_nn_data(model, frame, feature_columns, label):
     if feature_columns:
-        values = PlayerContext.align_frame_to_columns(frame, feature_columns).values
+        values = ModelFeatures.align_frame_to_columns(frame, feature_columns).values
         return tf.keras.utils.normalize(values, axis=1)
 
-    raise ValueError(f"{label}: feature manifest required. Retrain with player-v2 data.")
+    raise ValueError(f"{label}: feature manifest required. Retrain with team-stat data.")
 
 
 def nn_runner(data, todays_games_uo, frame_ml, games, home_team_odds, away_team_odds, kelly_criterion):

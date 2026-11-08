@@ -5,6 +5,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from src.Utils.ModelFeatures import FEATURE_VERSION
+
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 MODEL_DIR = BASE_DIR / "Models" / "XGBoost_Models"
@@ -28,10 +30,10 @@ def selected_model_path(kind, model_dir=MODEL_DIR):
     model_dir = Path(model_dir)
     selected = _read(_path(model_dir, REGISTRY_NAME), {}).get(kind, {})
     path = model_dir / selected.get("filename", "")
-    if path.exists():
+    if path.is_file():
         return path
     candidates = [path for path in model_dir.glob(f"*{kind}*.json")
-                  if not path.stem.endswith("_features") and (model_dir / f"{path.stem}_features.json").exists()]
+                  if not path.stem.endswith("_features") and _read(model_dir / f"{path.stem}_features.json", {}).get("version") == FEATURE_VERSION]
     return max(candidates, key=lambda candidate: candidate.stat().st_mtime) if candidates else None
 
 
@@ -80,7 +82,9 @@ def record_candidate(kind, model_path, dataset, accuracy, log_loss, model_dir=MO
         comparable = comparable and (
             "evaluation_key" not in incumbent or incumbent.get("evaluation_key") == evaluation_key
         )
-    promoted = not incumbent or (comparable and candidate["test_log_loss"] < incumbent["test_log_loss"])
+    promoted = not incumbent or (comparable and (
+        incumbent.get("test_log_loss") is None or candidate["test_log_loss"] < incumbent["test_log_loss"]
+    ))
     candidate["promoted"] = promoted
     history.append(candidate)
     history_path.write_text(json.dumps(history, indent=2) + "\n")

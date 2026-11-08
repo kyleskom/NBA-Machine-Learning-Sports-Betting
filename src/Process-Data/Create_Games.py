@@ -10,8 +10,6 @@ import numpy as np
 import pandas as pd
 import toml
 
-from src.Utils import PlayerContext
-from src.Players.features import PlayerFeatureEngine
 from src.Players.identity import team_id
 from src.Storage.normalized import (canonical_path_for, connect as connect_canonical,
                                     load_games as load_normalized_games,
@@ -29,10 +27,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 CONFIG_PATH = BASE_DIR / "config.toml"
 ODDS_DB_PATH = BASE_DIR / "Data" / "OddsData.sqlite"
 TEAMS_DB_PATH = BASE_DIR / "Data" / "TeamData.sqlite"
-PLAYER_DB_PATH = BASE_DIR / "Data" / "PlayerData.sqlite"
 OUTPUT_DB_PATH = BASE_DIR / "Data" / "dataset.sqlite"
-PLAYER_FEATURES_TABLE = PlayerContext.PLAYER_FEATURES_TABLE
-OUTPUT_TABLE = "dataset_2012-26_player_v2"
+OUTPUT_TABLE = "dataset_2012-26_team"
 
 TEAM_INDEX_BY_SEASON = {
     "2007-08": team_index_07,
@@ -56,24 +52,6 @@ TEAM_INDEX_BY_SEASON = {
     "2025-26": team_index_current,
     "2026-27": team_index_current,
 }
-
-DEFAULT_PLAYER_WINDOWS = [7, 14, 30]
-PLAYER_ROLL_METRICS = ("MIN", "PTS", "REB", "AST", "USG_WEIGHTED")
-PLAYER_BASE_METRICS = [
-    "PLR_MIN_SUM",
-    "PLR_PTS_SUM",
-    "PLR_REB_SUM",
-    "PLR_AST_SUM",
-    "PLR_USG_WEIGHTED_SUM",
-]
-PLAYER_INJURY_METRICS = [
-    "INJ_OUT_MIN_WT",
-    "INJ_Q_MIN_WT",
-    "INJ_DOUBTFUL_MIN_WT",
-    "INJ_AVAIL_MIN_WT",
-    "INJ_COVERAGE",
-]
-
 
 def table_exists(con, table_name):
     cursor = con.execute(
@@ -142,70 +120,10 @@ def select_odds_table(odds_con, season_key):
     return None
 
 
-def get_player_feature_columns(config):
-    return PlayerContext.get_player_feature_columns(config)
-
-
-def get_player_defaults(config, feature_cols):
-    return PlayerContext.get_player_defaults(config, feature_cols)
-
-
-def build_player_feature_row(feature_map, date_str, home_team, away_team, feature_cols, default_values):
-    return PlayerContext.build_player_feature_row(feature_map, date_str, home_team, away_team,
-                                                  feature_cols, default_values)
-
-
-def player_columns(frame):
-    prefixes = ('H_PLR_', 'A_PLR_', 'H_INJ_', 'A_INJ_', 'H_LINEUP_', 'A_LINEUP_')
-    return [column for column in frame.columns if column.startswith(prefixes)]
-
-
-def player_v2_table_name(table_name):
-    if table_name == OUTPUT_TABLE:
-        return f'{table_name}_legacy_copy'
-    return table_name if table_name.endswith('_player_v2') else f'{table_name}_player_v2'
-
-
-def augment_existing_dataset(input_table, output_table=None, reference_table=OUTPUT_TABLE):
-    """Create a player-aware copy of an existing game dataset without changing labels."""
-    output_table = output_table or player_v2_table_name(input_table)
-    key_columns = ['Date', 'TEAM_NAME', 'TEAM_NAME.1']
-    with sqlite3.connect(OUTPUT_DB_PATH) as con:
-        legacy = pd.read_sql_query(f'SELECT * FROM "{input_table}"', con)
-        reference = pd.read_sql_query(f'SELECT * FROM "{reference_table}"', con)
-        missing = set(key_columns) - set(legacy.columns)
-        if missing:
-            raise ValueError(f'{input_table} cannot be upgraded; missing game keys {sorted(missing)}')
-        features = player_columns(reference)
-        if not features:
-            raise ValueError(f'{reference_table} does not contain player features')
-        lookup = reference[key_columns + features].copy()
-        if lookup.duplicated(key_columns).any():
-            raise ValueError(f'{reference_table} has duplicate game identity keys')
-        legacy = legacy.drop(columns=player_columns(legacy), errors='ignore')
-        upgraded = legacy.merge(lookup, on=key_columns, how='left', validate='many_to_one', sort=False)
-        unmatched = int(upgraded[features[0]].isna().sum())
-        if unmatched:
-            config = toml.load(CONFIG_PATH)
-            engine = PlayerFeatureEngine.from_database(PLAYER_DB_PATH, config)
-            if engine.logs.empty:
-                raise ValueError(f'{input_table}: {unmatched} games need player history, but the player database is empty')
-            missing_rows = upgraded[features[0]].isna()
-            for index, row in upgraded.loc[missing_rows].iterrows():
-                values = engine.matchup(row['TEAM_NAME'], row['TEAM_NAME.1'], row['Date'])
-                upgraded.loc[index, features] = [values[column] for column in features]
-            print(f'{input_table}: generated point-in-time player features for {unmatched} early rows absent from {reference_table}')
-        upgraded.to_sql(output_table, con, if_exists='replace', index=False)
-    return output_table, len(upgraded), len(features)
-
-
-def main(output_table=None, include_player_features=True):
+def main(output_table=None):
     if output_table is None:
         output_table = OUTPUT_TABLE
     config = toml.load(CONFIG_PATH)
-    player_feature_cols = get_player_feature_columns(config)
-    player_defaults = get_player_defaults(config, player_feature_cols)
-
     scores = []
     win_margin = []
     ou_values = []
@@ -213,13 +131,9 @@ def main(output_table=None, include_player_features=True):
     games = []
     days_rest_away = []
     days_rest_home = []
-    player_rows = []
 
     canonical_path = canonical_path_for(ODDS_DB_PATH)
     with sqlite3.connect(ODDS_DB_PATH) as odds_con, sqlite3.connect(TEAMS_DB_PATH) as teams_con, connect_canonical(canonical_path) as canonical_con:
-        player_feature_map = PlayerFeatureEngine.from_database(PLAYER_DB_PATH, config)
-        if include_player_features and player_feature_map.logs.empty:
-            raise ValueError("No player game logs. Run Get_Player_Data --backfill before building player-v2 data.")
         team_cache = {}
         for season_key, season_settings in config["create-games"].items():
             print(season_key)
@@ -266,17 +180,6 @@ def main(output_table=None, include_player_features=True):
                 else:
                     ou_cover.append(2)
 
-                if include_player_features:
-                    player_rows.append(
-                        build_player_feature_row(
-                            player_feature_map,
-                            date_str,
-                            row.Home,
-                            row.Away,
-                            player_feature_cols,
-                            player_defaults,
-                        )
-                    )
                 games.append(game)
 
 
@@ -292,20 +195,10 @@ def main(output_table=None, include_player_features=True):
     frame["OU-Cover"] = np.asarray(ou_cover)
     frame["Days-Rest-Home"] = np.asarray(days_rest_home)
     frame["Days-Rest-Away"] = np.asarray(days_rest_away)
+    # Concatenating mixed team/name Series leaves numeric columns as object.
+    # Infer their numeric dtype so SQLite stores numbers instead of numpy blobs.
+    frame = frame.infer_objects()
 
-    if include_player_features:
-        if not player_rows:
-            player_rows = [dict(player_defaults) for _ in range(len(frame.index))]
-        player_frame = pd.DataFrame(player_rows)
-        frame = pd.concat([frame.reset_index(drop=True), player_frame.reset_index(drop=True)], axis=1)
-
-    for field in frame.columns.values:
-        if "TEAM_" in field or "Date" in field:
-            continue
-        frame[field] = frame[field].astype(float)
-
-    if include_player_features:
-        print("Player history coverage:", frame[["H_PLR_GAME_COVERAGE", "A_PLR_GAME_COVERAGE"]].mean().to_dict())
     with sqlite3.connect(OUTPUT_DB_PATH) as con:
         frame.to_sql(output_table, con, if_exists="replace", index=False)
 
@@ -317,20 +210,5 @@ if __name__ == "__main__":
         default=OUTPUT_TABLE,
         help=f"Destination table name in {OUTPUT_DB_PATH.name}.",
     )
-    parser.add_argument(
-        "--no-player-features",
-        action="store_true",
-        help="Disable player/injury feature join and build legacy-style dataset columns only.",
-    )
-    parser.add_argument(
-        "--augment-table",
-        action="append",
-        help="Create a <table>_player_v2 copy using player features from the current v2 dataset; repeat for multiple tables.",
-    )
     args = parser.parse_args()
-    if args.augment_table:
-        for table in args.augment_table:
-            output, rows, features = augment_existing_dataset(table)
-            print(f'{table} -> {output}: {rows} rows, {features} player columns')
-    else:
-        main(output_table=args.output_table, include_player_features=not args.no_player_features)
+    main(output_table=args.output_table)

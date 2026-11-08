@@ -33,18 +33,5 @@ class TestUpdateData(unittest.TestCase):
         self.assertEqual(calls, [
             ("team", {"backfill": True, "season": "2025-26"}),
             ("odds", {"sportsbook": "fanduel", "backfill": True, "season": "2025-26"}),
-            ("player", ["--season", "2025-26"]),
             ("dataset",),
         ])
-
-    def test_reports_only_skips_historical_collectors(self):
-        calls = []
-        modules = {
-            "team": SimpleNamespace(main=lambda **kwargs: calls.append(("team", kwargs))),
-            "odds": SimpleNamespace(main=lambda **kwargs: calls.append(("odds", kwargs))),
-            "player": SimpleNamespace(main=lambda args: calls.append(("player", args)) or 0),
-            "dataset": SimpleNamespace(main=lambda: calls.append(("dataset",))),
-        }
-        status = update_data.update(["2025-26"], reports_only=True, modules=modules, output=lambda _: None)
-        self.assertEqual(status, 0)
-        self.assertEqual(calls, [("player", ["--reports-only"])])

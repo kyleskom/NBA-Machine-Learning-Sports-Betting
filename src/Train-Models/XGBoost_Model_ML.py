@@ -14,7 +14,7 @@ from sklearn.metrics import accuracy_score, log_loss
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(1, os.fspath(BASE_DIR))
-from src.Utils import PlayerContext  # noqa: E402
+from src.Utils import ModelFeatures  # noqa: E402
 from src.Predict.model_selection import record_candidate  # noqa: E402
 from src.Evaluation.experiment import (  # noqa: E402
     chronological_cv_indices, chronological_holdout_indices, classification_diagnostics,
@@ -24,7 +24,7 @@ from src.Evaluation.experiment import (  # noqa: E402
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 MODEL_DIR = BASE_DIR / "Models" / "XGBoost_Models"
 
-DEFAULT_DATASET = "dataset_2012-26_player_v2"
+DEFAULT_DATASET = "dataset_2012-26_team"
 TARGET_COLUMN = "Home-Team-Win"
 DATE_COLUMN = "Date"
 DROP_COLUMNS = [
@@ -49,7 +49,7 @@ def load_dataset(dataset_name):
 
 
 def prepare_data(df):
-    data = df.copy()
+    data = ModelFeatures.team_only_frame(df).copy()
     if DATE_COLUMN in data.columns:
         data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN], errors="coerce")
         data = data.sort_values(DATE_COLUMN, kind="stable")
@@ -331,7 +331,7 @@ def main():
     model_path = MODEL_DIR / model_name
     best_model.save_model(str(model_path))
     print(f"Saved model: {model_path}")
-    feature_path = PlayerContext.save_feature_columns(model_path, feature_columns)
+    feature_path = ModelFeatures.save_feature_columns(model_path, feature_columns)
     print(f"Saved feature columns: {feature_path}")
 
     if calibrator is not None:

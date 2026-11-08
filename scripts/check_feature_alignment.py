@@ -20,7 +20,7 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BASE_DIR))
-from src.Utils import PlayerContext  # noqa: E402
+from src.Utils import ModelFeatures  # noqa: E402
 from src.Predict.model_selection import selected_model_path  # noqa: E402
 from src.Utils.season import live_team_stats_url, runtime_season, scores_url  # noqa: E402
 
@@ -118,7 +118,7 @@ def describe_model_input(model_path, label):
     model = load_model(str(model_path), compile=False)
     input_features = model.input_shape[-1]
     print(f"{label} model input features: {input_features} ({model_path})")
-    feature_columns = PlayerContext.load_feature_columns(model_path)
+    feature_columns = ModelFeatures.load_feature_columns(model_path)
     if feature_columns:
         print(f"{label} sidecar columns: {len(feature_columns)}")
     return input_features
@@ -135,7 +135,7 @@ def describe_xgb_input(model_path, label):
     booster.load_model(str(model_path))
     feature_count = booster.num_features()
     print(f"{label} model input features: {feature_count} ({model_path})")
-    feature_columns = PlayerContext.load_feature_columns(model_path)
+    feature_columns = ModelFeatures.load_feature_columns(model_path)
     if feature_columns:
         print(f"{label} sidecar columns: {len(feature_columns)}")
     return feature_count
@@ -156,7 +156,7 @@ def compare_columns(label, train_cols, infer_cols):
 
 def main():
     parser = argparse.ArgumentParser(description="Compare training vs inference feature sizes.")
-    parser.add_argument("--dataset", default="dataset_2012-26_player_v2", help="Dataset table name.")
+    parser.add_argument("--dataset", default="dataset_2012-26_team", help="Dataset table name.")
     parser.add_argument("--frame-ml", help="CSV path to inference frame_ml.")
     parser.add_argument("--frame-uo", help="CSV path to inference frame_uo.")
     parser.add_argument("--use-live", action="store_true", help="Build inference frames from live data.")

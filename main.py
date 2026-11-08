@@ -4,8 +4,6 @@ from zoneinfo import ZoneInfo
 from pathlib import Path
 from urllib.parse import urlsplit, parse_qs, urlencode, urlunsplit
 from src.Players.identity import team_id
-from src.Players.store import connect as connect_players
-from src.Players.reports import refresh_reports
 
 import pandas as pd
 import tensorflow as tf
@@ -14,10 +12,9 @@ from colorama import Fore, Style
 
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 from src.Predict import NN_Runner, XGBoost_Runner
-from src.Predict.service import availability_reasons, response as prediction_response, xgboost_board
+from src.Predict.service import market_reasons, response as prediction_response, xgboost_board
 from src.Storage.normalized import connect as connect_canonical, load_games
 from src.Utils.Dictionaries import team_index_current
-from src.Utils import PlayerContext
 from src.Utils.season import live_team_stats_url, runtime_season, schedule_path, scores_url
 from src.Utils.tools import (
     create_todays_games_from_odds,
@@ -30,23 +27,13 @@ from src.Utils.tools import (
 CONFIG_PATH = Path(__file__).resolve().parent / "config.toml"
 
 
-def create_todays_games_data(games, df, odds, schedule_df, today, config=None, include_player_features=True):
+def create_todays_games_data(games, df, odds, schedule_df, today, config=None):
     match_data = []
-    player_rows = []
     todays_games_uo = []
     home_team_odds = []
     away_team_odds = []
-    player_feature_cols = []
-    player_defaults = {}
-    player_lookup = {"exact": {}, "history": {}}
-
-    if config is None:
-        config = toml.load(CONFIG_PATH)
-    if include_player_features:
-        player_feature_cols, player_defaults, player_lookup = PlayerContext.load_player_context(config)
     current = pd.Timestamp(today)
     current = current.tz_localize("America/New_York") if current.tzinfo is None else current
-    today_str = current.tz_convert("America/New_York").date().isoformat()
 
     for game in games:
         home_team, away_team = game
@@ -97,31 +84,12 @@ def create_todays_games_data(games, df, odds, schedule_df, today, config=None, i
         stats['Days-Rest-Home'] = home_days_off.days
         stats['Days-Rest-Away'] = away_days_off.days
         match_data.append(stats)
-        if include_player_features:
-            player_rows.append(
-                PlayerContext.build_player_feature_row(
-                    player_lookup,
-                    today_str,
-                    home_team,
-                    away_team,
-                    player_feature_cols,
-                    player_defaults,
-                    allow_asof=True,
-                    as_of=current,
-                )
-            )
 
     if not match_data:
         return None, [], pd.DataFrame(), [], []
 
     games_data_frame = pd.concat(match_data, ignore_index=True, axis=1)
     games_data_frame = games_data_frame.T
-    if include_player_features:
-        player_frame = pd.DataFrame(player_rows or [dict(player_defaults) for _ in range(len(games_data_frame.index))])
-        games_data_frame = pd.concat(
-            [games_data_frame.reset_index(drop=True), player_frame.reset_index(drop=True)],
-            axis=1,
-        )
 
     frame_ml = games_data_frame.drop(columns=['TEAM_ID', 'TEAM_NAME', 'TEAM_ID.1', 'TEAM_NAME.1', 'Date', 'Date.1', 'index', 'index.1'], errors="ignore")
     data = frame_ml.values
@@ -200,48 +168,43 @@ def run_models(data, normalized_data, todays_games_uo, frame_ml, games, home_tea
 
 
 def collect_prediction_inputs(config, season, today, games, odds):
-    """Refresh reports before choosing the cutoff used to read their snapshots."""
-    with connect_players() as con:
-        reports = refresh_reports(con, config, today.date().isoformat())
-    # Daily-lineup reports use their fetch time as their publication time. A
-    # cutoff captured before the refresh would exclude the just-fetched reports.
-    as_of = datetime.now(ZoneInfo("America/New_York"))
+    """Build team-stat prediction inputs without player reports or player history."""
     parts = urlsplit(live_team_stats_url(config, season, today.date() - timedelta(days=1)))
     query = parse_qs(parts.query, keep_blank_values=True)
     query['DateTo'] = [(today.date() - timedelta(days=1)).strftime('%m/%d/%Y')]
     team_stats = to_data_frame(get_json_data(urlunsplit((parts.scheme, parts.netloc, parts.path,
                                                          urlencode(query, doseq=True), parts.fragment))))
-    inputs = create_todays_games_data(games, team_stats, odds, load_schedule(season), as_of, config=config)
-    return reports, inputs
+    inputs = create_todays_games_data(games, team_stats, odds, load_schedule(season), today, config=config)
+    return inputs
 
 
 def predict_board(sportsbook='fanduel', kelly=False):
-    """Build a structured XGBoost board with READY/PASS status for each game."""
+    """Build a team-stat XGBoost board with READY/PASS status for each game."""
     config = toml.load(CONFIG_PATH)
     today = datetime.now(ZoneInfo("America/New_York"))
     season = runtime_season(config, today)
     odds = SbrOddsProvider(sportsbook=sportsbook).get_odds()
     games, odds = resolve_games(odds, sportsbook, verbose=False, season=season)
     if games is None or odds is None:
-        return prediction_response([], sportsbook, {'error': 'No usable odds were returned'})
-    reports, inputs = collect_prediction_inputs(config, season, today, games, odds)
+        return prediction_response([], sportsbook)
+    inputs = collect_prediction_inputs(config, season, today, games, odds)
     data, totals, frame, home_odds, away_odds = inputs
     if data is None:
-        return prediction_response([], sportsbook, reports)
+        return prediction_response([], sportsbook)
     board = xgboost_board(data, totals, frame, games, home_odds, away_odds, config, kelly)
-    return prediction_response(board, sportsbook, reports)
+    return prediction_response(board, sportsbook)
 
 
 def print_board(result):
-    print('Player report downloads (availability checked per game):', result['report_refresh'])
+    ready = []
     for game in result['games']:
-        matchup = f"{game['away_team']} @ {game['home_team']}"
         if game['status'] == 'PASS':
-            print(f"PASS {matchup}: {'; '.join(game['reasons'])}")
-            continue
-        moneyline, total = game['moneyline'], game['total']
-        confidence = max(moneyline['home_probability'], moneyline['away_probability']) * 100
-        print(f"{matchup}: {moneyline['pick']} ({confidence:.1f}%), {total['pick']} {total['line']} ({total['probability'] * 100:.1f}%)")
+            print(f"PASS {game['away_team']} @ {game['home_team']}: {'; '.join(game['reasons'])}")
+        else:
+            ready.append(game)
+    if ready:
+        print("---------------XGBoost Model Predictions---------------")
+        XGBoost_Runner.print_predictions(ready)
 
 
 def main(args):
@@ -261,16 +224,15 @@ def main(args):
     if games is None:
         return
 
-    reports, inputs = collect_prediction_inputs(config, season, today, games, odds)
+    inputs = collect_prediction_inputs(config, season, today, games, odds)
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = inputs
-    print('Player report downloads (availability checked per game):', reports)
     if data is None:
         print("No valid games found to predict.")
         return
 
     eligible = []
     for index, (home, away) in enumerate(games[:len(frame_ml.index)]):
-        reasons = availability_reasons(frame_ml.iloc[index], config)
+        reasons = market_reasons(todays_games_uo[index], home_team_odds[index], away_team_odds[index])
         if reasons:
             print(f"PASS {away} @ {home}: {'; '.join(reasons)}")
         else:

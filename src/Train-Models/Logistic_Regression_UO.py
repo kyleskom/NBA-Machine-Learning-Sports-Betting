@@ -1,5 +1,6 @@
 import argparse
 import sqlite3
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -12,9 +13,11 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 BASE_DIR = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(BASE_DIR))
+from src.Utils import ModelFeatures
 DATASET_DB = BASE_DIR / "Data" / "dataset.sqlite"
 
-DEFAULT_DATASET = "dataset_2012-26_player_v2"
+DEFAULT_DATASET = "dataset_2012-26_team"
 TARGET_COLUMN = "OU-Cover"
 DATE_COLUMN = "Date"
 DROP_COLUMNS = [
@@ -38,7 +41,7 @@ def load_dataset(dataset_name):
 
 
 def prepare_data(df):
-    data = df.copy()
+    data = ModelFeatures.team_only_frame(df).copy()
     if DATE_COLUMN in data.columns:
         data[DATE_COLUMN] = pd.to_datetime(data[DATE_COLUMN], errors="coerce")
         data = data.sort_values(DATE_COLUMN)

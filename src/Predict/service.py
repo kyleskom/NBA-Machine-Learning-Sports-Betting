@@ -1,29 +1,21 @@
 """Structured prediction board shared by the command line and Flask app."""
 from datetime import datetime, timezone
+import math
 
 from .XGBoost_Runner import xgb_predictions
 
 
-def availability_reasons(row, config):
+def market_reasons(total, home_odds, away_odds):
+    """Keep incomplete prices off the prediction board without player-data gates."""
     reasons = []
-    if row.get('H_PLR_GAME_COVERAGE', 0) < 1 or row.get('A_PLR_GAME_COVERAGE', 0) < 1:
-        reasons.append('player history is missing or stale')
-    policy = config.get('bet-eligibility', {})
-    if not policy.get('require_complete_availability', True):
-        return reasons
-    required = ['H_INJ_COVERAGE', 'A_INJ_COVERAGE', 'H_PLR_ROSTER_CONFIRMED', 'A_PLR_ROSTER_CONFIRMED']
-    labels = {
-        'H_INJ_COVERAGE': 'home injury report incomplete', 'A_INJ_COVERAGE': 'away injury report incomplete',
-        'H_PLR_ROSTER_CONFIRMED': 'home roster unresolved', 'A_PLR_ROSTER_CONFIRMED': 'away roster unresolved',
-        'H_LINEUP_COVERAGE': 'home lineup incomplete', 'A_LINEUP_COVERAGE': 'away lineup incomplete',
-    }
-    reasons.extend(labels[column] for column in required if row.get(column, 0) < 1)
-    if policy.get('require_confirmed_lineups', True):
-        for prefix, side in [('H', 'home'), ('A', 'away')]:
-            confirmed = row.get(f'{prefix}_LINEUP_CONFIRMED_STARTERS', 0)
-            if confirmed < 5:
-                projected = row.get(f'{prefix}_LINEUP_PROJECTED_STARTERS', 0)
-                reasons.append(f'{side} lineup unconfirmed ({confirmed:g}/5 confirmed, {projected:g}/5 projected)')
+    for label, value in [('total line', total), ('home moneyline', home_odds), ('away moneyline', away_odds)]:
+        try:
+            numeric = float(value)
+            valid = math.isfinite(numeric) and (numeric > 0 if label == 'total line' else abs(numeric) >= 100)
+        except (TypeError, ValueError):
+            valid = False
+        if not valid:
+            reasons.append(f'{label} is missing or invalid')
     return reasons
 
 
@@ -31,7 +23,7 @@ def xgboost_board(data, totals, frame, games, home_odds, away_odds, config, kell
     """Return an eligible prediction or an explicit PASS for every supplied matchup."""
     board, eligible = [], []
     for index, game in enumerate(games[:len(frame.index)]):
-        reasons = availability_reasons(frame.iloc[index], config)
+        reasons = market_reasons(totals[index], home_odds[index], away_odds[index])
         item = {'home_team': game[0], 'away_team': game[1], 'status': 'PASS' if reasons else 'READY',
                 'reasons': reasons}
         board.append(item)
@@ -47,9 +39,9 @@ def xgboost_board(data, totals, frame, games, home_odds, away_odds, config, kell
     return board
 
 
-def response(board, sportsbook, report_refresh=None):
+def response(board, sportsbook):
     return {'generated_at': datetime.now(timezone.utc).isoformat(), 'sportsbook': sportsbook,
-            'report_refresh': report_refresh or {}, 'games': board}
+            'games': board}
 
 
 def template_games(result):

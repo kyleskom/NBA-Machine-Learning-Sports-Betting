@@ -1,8 +1,8 @@
 """Refresh the NBA data pipeline with one command.
 
 The default run repairs the active season, or the most recently completed
-season during the offseason, refreshes live player reports, and rebuilds the
-player-aware training dataset.  Use --all-history to repair every configured
+season during the offseason, and rebuilds the team-stat training dataset.
+Use --all-history to repair every configured
 season instead.
 """
 from __future__ import annotations
@@ -50,34 +50,27 @@ def target_season(config, today=None):
     return max(candidates)[1]
 
 
-def update(seasons, sportsbook="fanduel", rebuild_dataset=True, reports_only=False,
+def update(seasons, sportsbook="fanduel", rebuild_dataset=True,
            modules=None, output=print):
     """Run collectors in dependency order.  Injection keeps this orchestration testable."""
     modules = modules or {
         "team": load_script("Get_Data.py", "update_team_data"),
         "odds": load_script("Get_Odds_Data.py", "update_odds_data"),
-        "player": load_script("Get_Player_Data.py", "update_player_data"),
         "consensus": load_script("Import_Consensus_Odds.py", "update_consensus_odds"),
         "dataset": load_script("Create_Games.py", "update_create_games"),
     }
     failed = False
-    if reports_only:
-        output("Refreshing live injury, lineup, and roster reports...")
-        return 1 if modules["player"].main(["--reports-only"]) else 0
     for season in seasons:
         output(f"Updating team data for {season}...")
         modules["team"].main(backfill=True, season=season)
         output(f"Updating {sportsbook} odds for {season}...")
         modules["odds"].main(sportsbook=sportsbook, backfill=True, season=season)
-        output(f"Updating player logs for {season} and live reports...")
-        status = modules["player"].main(["--season", season])
-        failed |= bool(status)
         if "consensus" in modules:
             output(f"Importing configured consensus market data for {season}...")
             status = modules["consensus"].main(season)
             failed |= bool(status)
-    if rebuild_dataset and not reports_only:
-        output("Rebuilding the player-aware training dataset...")
+    if rebuild_dataset:
+        output("Rebuilding the team-stat training dataset...")
         modules["dataset"].main()
     return 1 if failed else 0
 
@@ -88,7 +81,6 @@ def main(argv=None):
     parser.add_argument("--all-history", action="store_true",
                         help="Repair missing data for every configured season.")
     parser.add_argument("--sportsbook", default="fanduel", help="Sportsbook used for historical odds.")
-    parser.add_argument("--reports-only", action="store_true", help="Refresh live availability reports only.")
     parser.add_argument("--skip-dataset", action="store_true", help="Do not rebuild the training dataset.")
     parser.add_argument("--dry-run", action="store_true", help="Show the chosen update scope without collecting data.")
     args = parser.parse_args(argv)
@@ -102,9 +94,9 @@ def main(argv=None):
     if args.dry_run:
         print("Would update:", ", ".join(seasons))
         print("Sportsbook:", args.sportsbook)
-        print("Dataset rebuild:", not args.skip_dataset and not args.reports_only)
+        print("Dataset rebuild:", not args.skip_dataset)
         return 0
-    return update(seasons, args.sportsbook, not args.skip_dataset, args.reports_only)
+    return update(seasons, args.sportsbook, not args.skip_dataset)
 
 
 if __name__ == "__main__":
