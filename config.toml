@@ -115,6 +115,13 @@ data_url = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom
         start_year = "2025"
         end_year = "2026"
 
+    [get-data.2026-27]
+        start_date = "2026-10-20"
+        # Collection cutoff through June; not a scheduled Finals date.
+        end_date = "2027-06-30"
+        start_year = "2026"
+        end_year = "2027"
+
 [get-odds-data]
     [get-odds-data.2023-24]
         start_date = "2023-10-23"
@@ -133,6 +140,12 @@ data_url = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom
         end_date = "2026-6-21"
         start_year = "2025"
         end_year = "2026"
+
+    [get-odds-data.2026-27]
+        start_date = "2026-10-20"
+        end_date = "2027-06-30"
+        start_year = "2026"
+        end_year = "2027"
 
 [create-games]
     [create-games.2012-13]
@@ -218,3 +231,9 @@ data_url = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom
         end_date = "2026-6-21"
         start_year = "2025"
         end_year = "2026"
+
+    [create-games.2026-27]
+        start_date = "2026-10-20"
+        end_date = "2027-06-30"
+        start_year = "2026"
+        end_year = "2027"
