@@ -31,8 +31,17 @@ pip3 install -r requirements.txt
 python3 main.py -xgb -odds=fanduel
 ```
 
-Odds will be fetched automatically when `-odds` is provided. Supported books:
+Odds will be fetched automatically when `-odds` is provided. Supported books (via Sportsbook Review scrape):
 `fanduel`, `draftkings`, `betmgm`, `pointsbet`, `caesars`, `wynn`, `bet_rivers_ny`
+
+Or fetch from [Lumify](https://lumify.ai) (hosted API, no scrape) with a free instant key from
+https://lumify.ai/docs/ai:
+
+```bash
+export LUMIFY_API_KEY=lmfy-...
+python3 main.py -xgb -odds=lumify              # defaults to FanDuel lines
+python3 main.py -xgb -odds=lumify:draftkings   # choose a bookmaker
+```
 
 If `-odds` is omitted, the script will prompt for manual odds and totals.
 
