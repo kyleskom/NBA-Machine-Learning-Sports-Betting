@@ -14,6 +14,7 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(1, os.fspath(BASE_DIR))
 
 from src.Utils.tools import get_json_data, to_data_frame  # noqa: E402
+from src.DataProviders import DunkApiTeamStats  # noqa: E402
 
 CONFIG_PATH = BASE_DIR / "config.toml"
 DB_PATH = BASE_DIR / "Data" / "TeamData.sqlite"
@@ -54,6 +55,9 @@ def get_table_dates(con):
 
 
 def fetch_data(url, date_pointer, start_year, season_key):
+    # stats.nba.com no longer answers leaguedashteamstats (#516); with DUNKAPI_KEY set, the same table comes from DunkAPI.
+    if DunkApiTeamStats.api_key():
+        return DunkApiTeamStats.get_team_stats(date_pointer, season_key)
     for attempt in range(1, MAX_RETRIES + 1):
         raw_data = get_json_data(
             url.format(date_pointer.month, date_pointer.day, start_year, date_pointer.year, season_key)

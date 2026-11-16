@@ -26,6 +26,15 @@ Install dependencies:
 pip3 install -r requirements.txt
 ```
 
+## Team stats source
+stats.nba.com no longer answers the `leaguedashteamstats` request this project uses (#516). To keep the daily team stats coming, set a DunkAPI key and both `Get_Data` and `main.py` pull the same per-game table (same columns and ranks) from DunkAPI instead:
+
+```bash
+export DUNKAPI_KEY=your_key   # free key, 500 credits a month: https://dunkapi.com/signup
+```
+
+Each daily update is one call (5 credits). Without the variable, the project uses stats.nba.com as before.
+
 ## Quick start
 ```bash
 python3 main.py -xgb -odds=fanduel
