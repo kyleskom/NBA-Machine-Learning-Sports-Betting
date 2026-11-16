@@ -5,6 +5,7 @@ import pandas as pd
 import tensorflow as tf
 from colorama import Fore, Style
 
+from src.DataProviders import DunkApiTeamStats
 from src.DataProviders.SbrOddsProvider import SbrOddsProvider
 from src.Predict import NN_Runner, XGBoost_Runner
 from src.Utils.Dictionaries import team_index_current
@@ -19,6 +20,7 @@ from src.Utils.tools import (
 TODAYS_GAMES_URL = "https://data.nba.com/data/10s/v2015/json/mobile_teams/nba/2026/scores/00_todays_scores.json"
 DATA_URL = "https://stats.nba.com/stats/leaguedashteamstats?Conference=&DateFrom=&DateTo=&Division=&GameScope=&GameSegment=&Height=&ISTRound=&LastNGames=0&LeagueID=00&Location=&MeasureType=Base&Month=0&OpponentTeamID=0&Outcome=&PORound=0&PaceAdjust=N&PerMode=PerGame&Period=0&PlayerExperience=&PlayerPosition=&PlusMinus=N&Rank=N&Season=2026-27&SeasonSegment=&SeasonType=Regular%20Season&ShotClockRange=&StarterBench=&TeamID=0&TwoWay=0&VsConference=&VsDivision="
 SCHEDULE_PATH = "Data/nba-2026-UTC.csv"
+CURRENT_SEASON = "2026-27"
 
 
 def create_todays_games_data(games, df, odds, schedule_df, today):
@@ -137,8 +139,11 @@ def main(args):
     if games is None:
         return
 
-    stats_json = get_json_data(DATA_URL)
-    df = to_data_frame(stats_json)
+    if DunkApiTeamStats.api_key():
+        df = DunkApiTeamStats.get_team_stats(datetime.today().date(), CURRENT_SEASON)
+    else:
+        stats_json = get_json_data(DATA_URL)
+        df = to_data_frame(stats_json)
     schedule_df = load_schedule()
     today = datetime.today()
     data, todays_games_uo, frame_ml, home_team_odds, away_team_odds = create_todays_games_data(
